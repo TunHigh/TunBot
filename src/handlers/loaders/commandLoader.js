@@ -236,7 +236,7 @@ function prepareCommandsForRegistration(commands) {
     return truncated;
 }
 
-async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {
+async function registerCommandsToDiscord(client, clientId, guildId, commands, totalSubcommands) {
     if (!clientId) {
         throw new Error('CLIENT_ID is required for slash command registration');
     }
@@ -245,7 +245,13 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
         throw new Error('Discord REST client is not available for slash command registration');
     }
 
-    logger.info(`Preparing to register ${totalSubcommands + commands.length} commands globally`);
+    const isGuildRegistration = Boolean(guildId);
+    const scope = isGuildRegistration ? `guild ${guildId}` : 'globally';
+    const endpoint = isGuildRegistration
+        ? `/applications/${clientId}/guilds/${guildId}/commands`
+        : `/applications/${clientId}/commands`;
+
+    logger.info(`Preparing to register ${totalSubcommands + commands.length} commands ${scope}`);
     logger.info('Validating commands before registration...');
     validateCommands(commands);
     logger.info('Command validation passed');
@@ -253,22 +259,27 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
     const commandsToRegister = prepareCommandsForRegistration(commands);
 
     if (botConfig.commands?.deleteCommands) {
-        logger.info('Clearing existing global commands before registration...');
-        await client.rest.put(`/applications/${clientId}/commands`, { body: [] });
+        logger.info(`Clearing existing ${scope} commands before registration...`);
+        await client.rest.put(endpoint, { body: [] });
     }
 
-    logger.info(`Registering ${commandsToRegister.length} global commands...`);
-    await client.rest.put(`/applications/${clientId}/commands`, { body: commandsToRegister });
-    logger.info(`Successfully registered ${commandsToRegister.length} global commands`);
-    logger.info('Global commands may take up to an hour to appear in all servers on first deploy');
+    logger.info(`Registering ${commandsToRegister.length} commands ${scope}...`);
+    await client.rest.put(endpoint, { body: commandsToRegister });
+    logger.info(`Successfully registered ${commandsToRegister.length} commands ${scope}`);
+
+    if (isGuildRegistration) {
+        logger.info('Guild commands are available immediately after registration.');
+    } else {
+        logger.info('Global commands may take up to an hour to appear in all servers on first deploy.');
+    }
 }
 
 export async function registerCommands(client, options = {}) {
-    const { clientId = null } = options;
+    const { clientId = null, guildId = null } = options;
 
     try {
         const { commands, totalSubcommands } = collectCommandPayloads(client);
-        await registerGlobalCommands(client, clientId, commands, totalSubcommands);
+        await registerCommandsToDiscord(client, clientId, guildId, commands, totalSubcommands);
     } catch (error) {
         logger.error('Error registering commands:', error);
         throw error;
