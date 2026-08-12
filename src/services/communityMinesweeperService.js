@@ -10,9 +10,12 @@ import { logger } from '../utils/logger.js';
 
 const BOARD_SIZE = 5;
 const TOTAL_CELLS = BOARD_SIZE * BOARD_SIZE;
-const MINE_COUNT = 4;
-const SAFE_CELL_COUNT = TOTAL_CELLS - MINE_COUNT;
-const TOTAL_REWARD = 20_000;
+const DEFAULT_MINE_COUNT = 4;
+const DEFAULT_TOTAL_REWARD = 20_000;
+const MIN_MINE_COUNT = 1;
+const MAX_MINE_COUNT = TOTAL_CELLS - 1;
+const MIN_TOTAL_REWARD = 100;
+const MAX_TOTAL_REWARD = 100_000_000;
 const GAME_TIMEOUT_MS = 5 * 60 * 1000;
 const MIN_INTERVAL_MS = 60 * 1000;
 
@@ -42,9 +45,32 @@ export function formatMinesweeperInterval(milliseconds) {
     .join(':');
 }
 
-export async function configureCommunityMinesweeper(client, guildId, channelId, intervalMs) {
+export function isValidMinesweeperMineCount(value) {
+  return Number.isInteger(value) && value >= MIN_MINE_COUNT && value <= MAX_MINE_COUNT;
+}
+
+export function isValidMinesweeperReward(value) {
+  return Number.isInteger(value) && value >= MIN_TOTAL_REWARD && value <= MAX_TOTAL_REWARD;
+}
+
+export async function configureCommunityMinesweeper(
+  client,
+  guildId,
+  channelId,
+  intervalMs,
+  mineCount,
+  totalReward,
+) {
   if (!Number.isInteger(intervalMs) || intervalMs < MIN_INTERVAL_MS) {
     throw new Error('Khoảng thời gian không hợp lệ.');
+  }
+
+  if (!isValidMinesweeperMineCount(mineCount)) {
+    throw new Error(`Số mìn phải từ ${MIN_MINE_COUNT} đến ${MAX_MINE_COUNT}.`);
+  }
+
+  if (!isValidMinesweeperReward(totalReward)) {
+    throw new Error(`Tổng thưởng phải từ $${MIN_TOTAL_REWARD.toLocaleString('en-US')} đến $${MAX_TOTAL_REWARD.toLocaleString('en-US')}.`);
   }
 
   const nextGameAt = Date.now() + intervalMs;
@@ -53,6 +79,8 @@ export async function configureCommunityMinesweeper(client, guildId, channelId, 
       enabled: true,
       channelId,
       intervalMs,
+      mineCount,
+      totalReward,
       nextGameAt,
     },
   }, { source: 'caidatmin' });
@@ -66,6 +94,8 @@ export async function disableCommunityMinesweeper(client, guildId) {
       enabled: false,
       channelId: null,
       intervalMs: null,
+      mineCount: null,
+      totalReward: null,
       nextGameAt: null,
     },
   }, { source: 'caidatmin' });
@@ -76,18 +106,19 @@ export async function getCommunityMinesweeperConfig(client, guildId) {
   const gameConfig = config.communityMinesweeper;
 
   if (!gameConfig || typeof gameConfig !== 'object') {
-    return {
-      enabled: false,
-      channelId: null,
-      intervalMs: null,
-      nextGameAt: null,
-    };
+    return getDisabledConfig();
   }
 
   return {
     enabled: gameConfig.enabled === true,
     channelId: typeof gameConfig.channelId === 'string' ? gameConfig.channelId : null,
     intervalMs: Number.isInteger(gameConfig.intervalMs) ? gameConfig.intervalMs : null,
+    mineCount: isValidMinesweeperMineCount(gameConfig.mineCount)
+      ? gameConfig.mineCount
+      : DEFAULT_MINE_COUNT,
+    totalReward: isValidMinesweeperReward(gameConfig.totalReward)
+      ? gameConfig.totalReward
+      : DEFAULT_TOTAL_REWARD,
     nextGameAt: Number.isInteger(gameConfig.nextGameAt) ? gameConfig.nextGameAt : null,
   };
 }
@@ -108,7 +139,6 @@ export async function checkCommunityMinesweeperGames(client) {
           guildId,
           channelId: config.channelId,
         });
-
         await disableCommunityMinesweeper(client, guildId);
         continue;
       }
@@ -121,7 +151,7 @@ export async function checkCommunityMinesweeperGames(client) {
         },
       }, { source: 'community_minesweeper_scheduler' });
 
-      await startCommunityMinesweeper(client, guild, channel);
+      await startCommunityMinesweeper(client, guild, channel, config);
     } catch (error) {
       logger.error('[COMMUNITY_MINESWEEPER] Scheduler check failed', {
         guildId,
@@ -131,10 +161,10 @@ export async function checkCommunityMinesweeperGames(client) {
   }
 }
 
-export async function startCommunityMinesweeper(client, guild, channel) {
+export async function startCommunityMinesweeper(client, guild, channel, config) {
   if (activeGames.has(guild.id)) return null;
 
-  const game = createGame(guild.id);
+  const game = createGame(guild.id, config);
   activeGames.set(guild.id, game);
 
   try {
@@ -145,7 +175,8 @@ export async function startCommunityMinesweeper(client, guild, channel) {
 
     const collector = game.message.createMessageComponentCollector({
       time: GAME_TIMEOUT_MS,
-      filter: (interaction) => interaction.isButton() && interaction.customId.startsWith(`community_mines_${game.id}_`),
+      filter: (interaction) => interaction.isButton()
+        && interaction.customId.startsWith(`community_mines_${game.id}_`),
     });
 
     game.collector = collector;
@@ -154,51 +185,59 @@ export async function startCommunityMinesweeper(client, guild, channel) {
       const index = Number(interaction.customId.split('_').at(-1));
 
       if (!Number.isInteger(index) || index < 0 || index >= TOTAL_CELLS) {
-        return interaction.reply({ content: 'Ô chơi không hợp lệ.', ephemeral: true }).catch(() => {});
+        await interaction.reply({ content: 'Ô chơi không hợp lệ.', ephemeral: true }).catch(() => {});
+        return;
       }
 
       if (game.finished || game.revealed.has(index) || game.processing.has(index)) {
-        return interaction.deferUpdate().catch(() => {});
+        await interaction.deferUpdate().catch(() => {});
+        return;
       }
 
       game.processing.add(index);
 
       try {
+        await interaction.deferUpdate();
+
         if (game.mines.has(index)) {
           game.revealed.add(index);
-          await interaction.deferUpdate();
-          await game.message.edit({
-            embeds: [buildEmbed(game, `💥 ${interaction.user} đã dò trúng mìn! Ô này không có thưởng.`)],
-            components: buildComponents(game),
-          });
+          game.mineTriggeredBy = interaction.user;
+          game.outcome = 'mine';
+          collector.stop('mine');
+
+          await channel.send({
+            embeds: [
+              new EmbedBuilder()
+                .setColor('#E74C3C')
+                .setTitle('💥 Dẫm Mìn — Trò Chơi Kết Thúc')
+                .setDescription(
+                  `${interaction.user} đã dẫm trúng mìn.\n`
+                  + `Toàn bộ **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng đã mở bị hủy và **không ai được cộng wallet**.`,
+                )
+                .setTimestamp(),
+            ],
+          }).catch(() => {});
+
           return;
         }
 
         const reward = game.rewards.get(index);
-        await interaction.deferUpdate();
-
-        await EconomyService.addMoney(
-          client,
-          guild.id,
-          interaction.user.id,
-          reward,
-          'community_minesweeper',
-        );
-
         game.revealed.add(index);
-        game.claimedReward += reward;
+        game.pendingReward += reward;
         game.winners.push({ userId: interaction.user.id, reward });
 
+        await interaction.followUp({
+          content: `💰 ${interaction.user} đã mở ô chứa **$${reward.toLocaleString('en-US')}**. Tiền đang được giữ tạm; chỉ được cộng vào wallet nếu cả cộng đồng mở hết ô an toàn mà không dẫm mìn.`,
+          ephemeral: false,
+        }).catch(() => {});
+
         await game.message.edit({
-          embeds: [buildEmbed(game, `💰 ${interaction.user} nhận được **$${reward.toLocaleString('en-US')}** vào wallet!`)],
+          embeds: [buildEmbed(game)],
           components: buildComponents(game),
         });
 
-        const safeCellsRevealed = [...game.revealed]
-          .filter((revealedIndex) => !game.mines.has(revealedIndex))
-          .length;
-
-        if (safeCellsRevealed === SAFE_CELL_COUNT) {
+        if (getSafeCellsRevealed(game) === game.safeCellCount) {
+          game.outcome = 'completed';
           collector.stop('completed');
         }
       } catch (error) {
@@ -209,17 +248,10 @@ export async function startCommunityMinesweeper(client, guild, channel) {
           error: error.message,
         });
 
-        if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({
-            content: 'Không thể cộng tiền thưởng. Vui lòng thử một ô khác.',
-            ephemeral: true,
-          }).catch(() => {});
-        } else {
-          await interaction.followUp({
-            content: 'Không thể cộng tiền thưởng. Vui lòng thử một ô khác.',
-            ephemeral: true,
-          }).catch(() => {});
-        }
+        await interaction.followUp({
+          content: 'Không thể xử lý ô chơi này. Vui lòng thử một ô khác.',
+          ephemeral: true,
+        }).catch(() => {});
       } finally {
         game.processing.delete(index);
       }
@@ -229,12 +261,20 @@ export async function startCommunityMinesweeper(client, guild, channel) {
       game.finished = true;
       activeGames.delete(guild.id);
 
-      const summary = reason === 'completed'
-        ? `🎉 Toàn bộ **$${TOTAL_REWARD.toLocaleString('en-US')}** đã được tìm thấy!`
-        : `⌛ Hết giờ! Đã trao **$${game.claimedReward.toLocaleString('en-US')}** / **$${TOTAL_REWARD.toLocaleString('en-US')}**.`;
+      let status;
+      if (reason === 'completed' && game.outcome === 'completed') {
+        const paidReward = await payPendingRewards(client, guild.id, game);
+        status = paidReward === game.totalReward
+          ? `🎉 Đã mở hết ô an toàn! **$${paidReward.toLocaleString('en-US')}** đã được cộng vào wallet của người chơi.`
+          : `⚠️ Đã mở hết ô an toàn, nhưng chỉ cộng được **$${paidReward.toLocaleString('en-US')}** / **$${game.totalReward.toLocaleString('en-US')}**. Hãy kiểm tra log bot.`;
+      } else if (reason === 'mine' || game.outcome === 'mine') {
+        status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn. Toàn bộ **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng tạm giữ đã bị hủy.`;
+      } else {
+        status = `⌛ Hết giờ! **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng tạm giữ đã hết hiệu lực và không được cộng vào wallet.`;
+      }
 
       await game.message.edit({
-        embeds: [buildEmbed(game, summary, true)],
+        embeds: [buildEmbed(game, status, true)],
         components: buildComponents(game, true),
       }).catch((error) => {
         logger.warn('[COMMUNITY_MINESWEEPER] Could not close game message', {
@@ -247,7 +287,8 @@ export async function startCommunityMinesweeper(client, guild, channel) {
     logger.info('[COMMUNITY_MINESWEEPER] Game started', {
       guildId: guild.id,
       channelId: channel.id,
-      totalReward: TOTAL_REWARD,
+      mineCount: game.mineCount,
+      totalReward: game.totalReward,
     });
 
     return game;
@@ -257,43 +298,78 @@ export async function startCommunityMinesweeper(client, guild, channel) {
   }
 }
 
-function createGame(guildId) {
+function getDisabledConfig() {
+  return {
+    enabled: false,
+    channelId: null,
+    intervalMs: null,
+    mineCount: DEFAULT_MINE_COUNT,
+    totalReward: DEFAULT_TOTAL_REWARD,
+    nextGameAt: null,
+  };
+}
+
+function createGame(guildId, config) {
   const mines = new Set();
 
-  while (mines.size < MINE_COUNT) {
+  while (mines.size < config.mineCount) {
     mines.add(Math.floor(Math.random() * TOTAL_CELLS));
   }
 
   const safeIndexes = Array.from({ length: TOTAL_CELLS }, (_, index) => index)
     .filter((index) => !mines.has(index));
 
-  const rewards = splitReward(TOTAL_REWARD, safeIndexes);
-
   return {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
     guildId,
+    mineCount: config.mineCount,
+    safeCellCount: safeIndexes.length,
+    totalReward: config.totalReward,
     mines,
-    rewards,
+    rewards: splitReward(config.totalReward, safeIndexes),
     revealed: new Set(),
     processing: new Set(),
     winners: [],
-    claimedReward: 0,
+    pendingReward: 0,
+    outcome: null,
+    mineTriggeredBy: null,
     finished: false,
     message: null,
     collector: null,
   };
 }
 
-function splitReward(total, safeIndexes) {
-  const values = Array(safeIndexes.length).fill(100);
-  let remaining = total - values.reduce((sum, value) => sum + value, 0);
+async function payPendingRewards(client, guildId, game) {
+  let paidReward = 0;
 
-  while (remaining > 0) {
-    const slot = Math.floor(Math.random() * values.length);
-    const maximumAddition = Math.min(remaining, 1_000);
-    const addition = Math.max(1, Math.floor(Math.random() * maximumAddition) + 1);
-    values[slot] += addition;
-    remaining -= addition;
+  for (const winner of game.winners) {
+    try {
+      await EconomyService.addMoney(
+        client,
+        guildId,
+        winner.userId,
+        winner.reward,
+        'community_minesweeper_completed',
+      );
+      paidReward += winner.reward;
+    } catch (error) {
+      logger.error('[COMMUNITY_MINESWEEPER] Failed to pay completed game reward', {
+        guildId,
+        userId: winner.userId,
+        reward: winner.reward,
+        error: error.message,
+      });
+    }
+  }
+
+  return paidReward;
+}
+
+function splitReward(total, safeIndexes) {
+  const values = Array(safeIndexes.length).fill(0);
+
+  for (let amount = total; amount > 0; amount -= 1) {
+    values[Math.floor(Math.random() * values.length)] += 1;
   }
 
   shuffle(values);
@@ -301,24 +377,32 @@ function splitReward(total, safeIndexes) {
   return new Map(safeIndexes.map((index, rewardIndex) => [index, values[rewardIndex]]));
 }
 
+function getSafeCellsRevealed(game) {
+  return [...game.revealed].filter((index) => !game.mines.has(index)).length;
+}
+
 function buildEmbed(game, status = null, finished = false) {
-  const remainingReward = TOTAL_REWARD - game.claimedReward;
-  const remainingSafeCells = SAFE_CELL_COUNT - [...game.revealed].filter((index) => !game.mines.has(index)).length;
+  const safeCellsRevealed = getSafeCellsRevealed(game);
+  const remainingSafeCells = game.safeCellCount - safeCellsRevealed;
 
   return new EmbedBuilder()
     .setColor(finished ? '#95A5A6' : '#F1C40F')
-    .setTitle('💣 Săn Mìn Cộng Đồng — Kho Báu $20,000')
+    .setTitle(`💣 Săn Mìn Cộng Đồng — Kho Báu $${game.totalReward.toLocaleString('en-US')}`)
     .setDescription(
       [
-        'Tất cả thành viên đều có thể bấm ô để săn tiền thưởng.',
-        'Mỗi ô an toàn sẽ cộng tiền trực tiếp vào **wallet** của người bấm. Ô mìn không có thưởng.',
+        'Mở hết tất cả ô an toàn để nhận tiền. Nếu bất kỳ ai dẫm mìn, trò chơi kết thúc và toàn bộ thưởng đã mở bị hủy.',
         '',
-        `💰 Còn lại: **$${remainingReward.toLocaleString('en-US')}**`,
-        `🧭 Ô thưởng chưa tìm thấy: **${remainingSafeCells}**`,
+        `💣 Số mìn: **${game.mineCount}**`,
+        `💰 Thưởng đang tạm giữ: **$${game.pendingReward.toLocaleString('en-US')}**`,
+        `🧭 Ô an toàn chưa mở: **${remainingSafeCells}**`,
         status ? `\n${status}` : '',
       ].join('\n'),
     )
-    .setFooter({ text: finished ? 'Trò chơi đã kết thúc' : 'Trò chơi tự kết thúc sau 5 phút' })
+    .setFooter({
+      text: finished
+        ? 'Trò chơi đã kết thúc'
+        : 'Tiền chỉ vào wallet khi mở hết ô an toàn mà không dẫm mìn',
+    })
     .setTimestamp();
 }
 

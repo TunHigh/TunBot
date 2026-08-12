@@ -1,43 +1,57 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { Minesweeper } from 'discord-gamecord';
-import { logger } from '../../utils/logger.js';
-import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
+import {
+  checkCommunityMinesweeperGames,
+  getCommunityMinesweeperConfig,
+  startCommunityMinesweeper,
+} from '../../services/communityMinesweeperService.js';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('minesweeper')
-    .setDescription('Chơi trò chơi Minesweeper - Click chuột để lật các ô trừ các ô mìn.'),
+    .setDescription('Tạo một lượt săn mìn cộng đồng mới'),
   category: 'Fun',
 
   async execute(interaction, config, client) {
-    try {
-      const Game = new Minesweeper({
-        message: interaction,
-        embed: {
-          title: '💣 Minesweeper',
-          color: '#2ECC71',
-          timestamp: true,
-          description: 'Click vào nút để lật các ô ngoại trừ các ô mìn. Hãy cẩn thận!',
-        },
-        emojis: {
-          flag: '🚩',
-          mine: '💣',
-        },
-        mines: 4,
-        timeoutTime: 60000,
-        winMessage: 'Bạn đã chiến thắng! Bạn đã tránh được tất cả các mìn. 🎉',
-        loseMessage: 'Bạn đã thua! Hãy cẩn thận hơn với các mìn lần sau. 💥',
-        playerOnlyMessage: 'Chỉ <@{{author}}> mới có thể sử dụng các nút lệnh!',
-        isSlashGame: true,
-      });
+    const { guildId, guild } = interaction;
 
-      await Game.startGame();
-      logger.debug(`Minesweeper command executed by user ${interaction.user.id} in guild ${interaction.guildId}`);
+    const gameConfig = await getCommunityMinesweeperConfig(client, guildId);
+
+    if (!gameConfig.enabled) {
+      return interaction.reply({
+        content: '❌ Trò chơi Minesweeper chưa được bật. Hãy liên hệ quản trị viên.',
+        ephemeral: true,
+      });
+    }
+
+    const channel = guild.channels.cache.get(gameConfig.channelId)
+      ?? await guild.channels.fetch(gameConfig.channelId).catch(() => null);
+
+    if (!channel?.isTextBased?.()) {
+      return interaction.reply({
+        content: '❌ Không tìm thấy kênh trò chơi.',
+        ephemeral: true,
+      });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    const alreadyRunning = channel.messages.cache
+      .find((msg) => msg.embeds[0]?.title?.includes('Săn Mìn Cộng Đồng')) || null;
+
+    if (alreadyRunning) {
+      return interaction.editReply({
+        content: '❌ Một lượt chơi đang chạy. Hãy chờ nó kết thúc.',
+      });
+    }
+
+    try {
+      await startCommunityMinesweeper(client, guild, channel, gameConfig);
+      return interaction.editReply({
+        content: '✅ Một lượt chơi mới đã được bắt đầu!',
+      });
     } catch (error) {
-      logger.error('Minesweeper command error:', error);
-      return await replyUserError(interaction, { 
-        type: ErrorTypes.UNKNOWN, 
-        message: 'Có lỗi xảy ra khi khởi tạo trò chơi Minesweeper.' 
+      return interaction.editReply({
+        content: `❌ Có lỗi xảy ra: ${error.message}`,
       });
     }
   },

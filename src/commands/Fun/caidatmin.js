@@ -12,8 +12,15 @@ import {
   disableCommunityMinesweeper,
   formatMinesweeperInterval,
   getCommunityMinesweeperConfig,
+  isValidMinesweeperMineCount,
+  isValidMinesweeperReward,
   parseMinesweeperInterval,
 } from '../../services/communityMinesweeperService.js';
+
+const MIN_MINE_COUNT = 1;
+const MAX_MINE_COUNT = 24;
+const MIN_TOTAL_REWARD = 100;
+const MAX_TOTAL_REWARD = 100_000_000;
 
 export default {
   data: new SlashCommandBuilder()
@@ -24,7 +31,7 @@ export default {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('setup')
-        .setDescription('Đặt kênh và chu kỳ xuất hiện trò chơi')
+        .setDescription('Đặt kênh, chu kỳ, số mìn và tổng thưởng')
         .addChannelOption((option) =>
           option
             .setName('channel')
@@ -36,6 +43,22 @@ export default {
           option
             .setName('time')
             .setDescription('Chu kỳ HH:MM:SS, tối thiểu 00:01:00')
+            .setRequired(true),
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName('mines')
+            .setDescription('Số mìn trên bảng 5x5')
+            .setMinValue(MIN_MINE_COUNT)
+            .setMaxValue(MAX_MINE_COUNT)
+            .setRequired(true),
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName('reward')
+            .setDescription('Tổng tiền thưởng của mỗi lượt')
+            .setMinValue(MIN_TOTAL_REWARD)
+            .setMaxValue(MAX_TOTAL_REWARD)
             .setRequired(true),
         ),
     )
@@ -62,6 +85,8 @@ export default {
     if (subcommand === 'setup') {
       const channel = interaction.options.getChannel('channel');
       const time = interaction.options.getString('time');
+      const mineCount = interaction.options.getInteger('mines');
+      const totalReward = interaction.options.getInteger('reward');
       const intervalMs = parseMinesweeperInterval(time);
 
       if (!channel?.isTextBased?.() || channel.type !== ChannelType.GuildText) {
@@ -78,11 +103,27 @@ export default {
         });
       }
 
+      if (!isValidMinesweeperMineCount(mineCount)) {
+        return replyUserError(interaction, {
+          type: ErrorTypes.VALIDATION,
+          message: `Số mìn phải từ **${MIN_MINE_COUNT}** đến **${MAX_MINE_COUNT}**.`,
+        });
+      }
+
+      if (!isValidMinesweeperReward(totalReward)) {
+        return replyUserError(interaction, {
+          type: ErrorTypes.VALIDATION,
+          message: `Tổng thưởng phải từ **$${MIN_TOTAL_REWARD.toLocaleString('en-US')}** đến **$${MAX_TOTAL_REWARD.toLocaleString('en-US')}**.`,
+        });
+      }
+
       const { nextGameAt } = await configureCommunityMinesweeper(
         interaction.client,
         interaction.guildId,
         channel.id,
         intervalMs,
+        mineCount,
+        totalReward,
       );
 
       return InteractionHelper.safeEditReply(interaction, {
@@ -92,8 +133,10 @@ export default {
             [
               `Kênh trò chơi: ${channel}`,
               `Chu kỳ: **${formatMinesweeperInterval(intervalMs)}**`,
-              'Mỗi lượt có tổng thưởng **$20,000**, chia ngẫu nhiên vào các ô không có mìn.',
-              `Lượt đầu tiên sẽ xuất hiện ngẫu nhiên trước <t:${Math.floor(nextGameAt / 1000)}:R>.`,
+              `Số mìn: **${mineCount}**`,
+              `Tổng thưởng mỗi lượt: **$${totalReward.toLocaleString('en-US')}**`,
+              'Người chơi chỉ được cộng wallet khi mở hết ô an toàn. Dẫm mìn sẽ hủy toàn bộ thưởng của lượt đó.',
+              `Lượt đầu tiên sẽ xuất hiện <t:${Math.floor(nextGameAt / 1000)}:R>.`,
             ].join('\n'),
           ),
         ],
@@ -123,10 +166,12 @@ export default {
           [
             `Kênh: <#${config.channelId}>`,
             `Chu kỳ: **${formatMinesweeperInterval(config.intervalMs)}**`,
+            `Số mìn: **${config.mineCount}**`,
+            `Tổng thưởng mỗi lượt: **$${config.totalReward.toLocaleString('en-US')}**`,
             config.nextGameAt
               ? `Lượt tiếp theo: <t:${Math.floor(config.nextGameAt / 1000)}:R>`
               : 'Lượt tiếp theo đang được lên lịch.',
-            'Tổng thưởng mỗi lượt: **$20,000**.',
+            'Dẫm mìn sẽ kết thúc lượt và hủy toàn bộ thưởng tạm giữ.',
           ].join('\n'),
         ),
       ],
