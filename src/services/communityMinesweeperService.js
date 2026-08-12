@@ -209,7 +209,7 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
             embeds: [
               new EmbedBuilder()
                 .setColor('#E74C3C')
-                .setTitle('💥 Dẫm Mìn — Trò Chơi Kết Thúc')
+                .setTitle('💥 Dò Mìn — Trò Chơi Kết Thúc')
                 .setDescription(
                   `${interaction.user} đã dẫm trúng mìn.\n`
                   + `Toàn bộ **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng đã mở bị hủy và **không ai được cộng wallet**.`,
@@ -268,9 +268,9 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
           ? `🎉 Đã mở hết ô an toàn! **$${paidReward.toLocaleString('en-US')}** đã được cộng vào wallet của người chơi.`
           : `⚠️ Đã mở hết ô an toàn, nhưng chỉ cộng được **$${paidReward.toLocaleString('en-US')}** / **$${game.totalReward.toLocaleString('en-US')}**. Hãy kiểm tra log bot.`;
       } else if (reason === 'mine' || game.outcome === 'mine') {
-        status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn. Toàn bộ **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng tạm giữ đã bị hủy.`;
+        status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn. Toàn bộ **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng đã bị hủy.`;
       } else {
-        status = `⌛ Hết giờ! **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng tạm giữ đã hết hiệu lực và không được cộng vào wallet.`;
+        status = `⌛ Hết giờ! **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng tạm giữ đã hết hiệu lực và không được cộng vào ví của bạn.`;
       }
 
       await game.message.edit({
@@ -387,7 +387,7 @@ function buildEmbed(game, status = null, finished = false) {
 
   return new EmbedBuilder()
     .setColor(finished ? '#95A5A6' : '#F1C40F')
-    .setTitle(`💣 Săn Mìn Cộng Đồng — Kho Báu $${game.totalReward.toLocaleString('en-US')}`)
+    .setTitle(`💣 Dò Mìn Cộng Đồng — Kho Báu $${game.totalReward.toLocaleString('en-US')}`)
     .setDescription(
       [
         'Mở hết tất cả ô an toàn để nhận tiền. Nếu bất kỳ ai dẫm mìn, trò chơi kết thúc và toàn bộ thưởng đã mở bị hủy.',
@@ -401,7 +401,7 @@ function buildEmbed(game, status = null, finished = false) {
     .setFooter({
       text: finished
         ? 'Trò chơi đã kết thúc'
-        : 'Tiền chỉ vào wallet khi mở hết ô an toàn mà không dẫm mìn',
+        : 'Tiền chỉ vào ví khi mở hết ô an toàn mà không dẫm mìn',
     })
     .setTimestamp();
 }

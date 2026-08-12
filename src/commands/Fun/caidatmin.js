@@ -25,7 +25,7 @@ const MAX_TOTAL_REWARD = 100_000_000;
 export default {
   data: new SlashCommandBuilder()
     .setName('caidatmin')
-    .setDescription('Cài đặt trò chơi săn mìn cộng đồng')
+    .setDescription('Cài đặt trò chơi dò mìn cộng đồng')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false)
     .addSubcommand((subcommand) =>
@@ -155,7 +155,7 @@ export default {
 
     if (!config.enabled) {
       return InteractionHelper.safeEditReply(interaction, {
-        embeds: [infoEmbed('Săn Mìn Cộng Đồng', 'Trò chơi hiện chưa được bật. Dùng `/caidatmin setup` để cấu hình.')],
+        embeds: [infoEmbed('Dò Mìn Cộng Đồng', 'Trò chơi hiện chưa được bật. Dùng `/caidatmin setup` để cấu hình.')],
       });
     }
 
