@@ -76,7 +76,7 @@ async function handlePrefixCommand(message, client) {
     if (isMaintenanceMode() && !isBotOwner(message.author.id)) {
       await message.channel.send({
         embeds: [createEmbed({
-          title: 'Maintenance Mode',
+          title: 'Chế Độ Bảo Trì',
           description: getBotMessage('maintenanceMode'),
           color: 'warning',
         })],
@@ -87,7 +87,7 @@ async function handlePrefixCommand(message, client) {
     if (!isCommandCategoryEnabled(command.category)) {
       await message.channel.send({
         embeds: [createEmbed({
-          title: 'Feature Disabled',
+          title: 'Tính Năng Đã Tắt',
           description: getBotMessage('commandDisabled'),
           color: 'error',
         })],
@@ -99,8 +99,8 @@ async function handlePrefixCommand(message, client) {
     if (!supportsPrefixExecution(command) || restriction.blocked) {
       if (restriction.blocked && restriction.reason) {
         const embed = createEmbed({
-          title: 'Slash Command Only',
-          description: `${restriction.reason}\nUse \`/${resolvedCommandName}\` instead.`,
+          title: 'Chỉ Dùng Slash Command',
+          description: `${restriction.reason}\nHãy dùng \`/${resolvedCommandName}\` thay thế.`,
           color: 'info',
         });
         await message.channel.send({ embeds: [embed] }).catch(() => {});
@@ -110,8 +110,8 @@ async function handlePrefixCommand(message, client) {
 
     if (!(await isCommandEnabled(client, message.guild.id, resolvePrefixAccessKey(command.data, args), command.category))) {
       const embed = createEmbed({
-        title: 'Command Disabled',
-        description: 'This command has been disabled for this server.',
+        title: 'Lệnh Đã Bị Tắt',
+        description: 'Lệnh này đã bị tắt trên server này.',
         color: 'error',
       });
       await message.channel.send({ embeds: [embed] }).catch(() => {});
@@ -130,8 +130,8 @@ async function handlePrefixCommand(message, client) {
     if (!abuseProtection.allowed) {
       const formattedCooldown = formatCooldownDuration(abuseProtection.remainingMs);
       const embed = createEmbed({
-        title: 'Command Cooldown',
-        description: `This command is on cooldown. Please wait ${formattedCooldown} before trying again.`,
+        title: 'Lệnh Đang Hồi Chiêu',
+        description: `Lệnh này đang hồi chiêu. Vui lòng chờ ${formattedCooldown} rồi thử lại nhé.`,
         color: 'error',
       });
       await message.channel.send({ embeds: [embed] }).catch(() => {});
@@ -166,7 +166,7 @@ async function handleCountingGame(message, client) {
         currentStreak: 0,
       });
 
-      const failureMessage = await message.channel.send(`❌ Count broken by <@${message.author.id}>. The sequence has been reset to **1**.`);
+      const failureMessage = await message.channel.send(`❌ <@${message.author.id}> đã đếm sai số. Chuỗi đếm đã được đặt lại về **1**.`);
       setTimeout(() => {
         failureMessage.delete().catch(() => {});
       }, 10000);

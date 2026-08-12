@@ -22,12 +22,12 @@ export default {
         const reportChannelId = resolveLogChannel(guildConfig, 'reports');
 
         if (!reportChannelId) {
-            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'The report channel has not been set up. Ask a moderator to use `/logging dashboard` or `/logging channel`.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Kênh báo cáo chưa được thiết lập. Hãy nhờ quản trị viên dùng `/logging dashboard` hoặc `/logging channel`.' });
         }
 
         const ownerMention = interaction.guild.ownerId
-            ? `<@${interaction.guild.ownerId}> New report!`
-            : 'New report!';
+            ? `<@${interaction.guild.ownerId}> Báo cáo mới!`
+            : 'Báo cáo mới!';
 
         await logEvent({
             client,
@@ -35,13 +35,13 @@ export default {
             eventType: EVENT_TYPES.REPORT_FILE,
             content: ownerMention,
             data: {
-                title: 'User Report',
+                title: 'Báo Cáo Người Dùng',
                 lines: [
-                    formatLogLine('Reported User', `${targetUser.tag} (\`${targetUser.id}\`)`),
-                    formatLogLine('Reported By', `${interaction.user.tag} (\`${interaction.user.id}\`)`),
-                    formatLogLine('Channel', interaction.channel.toString()),
+                    formatLogLine('Người Bị Báo Cáo', `${targetUser.tag} (\`${targetUser.id}\`)`),
+                    formatLogLine('Người Báo Cáo', `${interaction.user.tag} (\`${interaction.user.id}\`)`),
+                    formatLogLine('Kênh', interaction.channel.toString()),
                 ],
-                blockFields: [{ name: 'Reason', value: reason }],
+                blockFields: [{ name: 'Lý Do', value: reason }],
                 author: await resolveUserAuthor(client, targetUser.id),
                 thumbnail: targetUser.displayAvatarURL(),
             },
@@ -49,8 +49,8 @@ export default {
 
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [createEmbed({
-                title: 'Report Submitted',
-                description: `Your report against **${targetUser.tag}** has been successfully filed and sent to the moderation team. Thank you!`,
+                title: 'Đã Gửi Báo Cáo',
+                description: `Báo cáo của bạn về **${targetUser.tag}** đã được gửi thành công đến đội ngũ quản trị. Cảm ơn bạn!`,
             })],
         });
 

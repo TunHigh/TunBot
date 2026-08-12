@@ -10,21 +10,21 @@ export function validateBirthday(month, day) {
   if (typeof month !== 'number' || typeof day !== 'number') {
     return {
       isValid: false,
-      error: 'Month and day must be numbers'
+      error: 'Tháng và ngày phải là số'
     };
   }
 
   if (month < 1 || month > 12) {
     return {
       isValid: false,
-      error: 'Month must be between 1 and 12'
+      error: 'Tháng phải nằm trong khoảng từ 1 đến 12'
     };
   }
 
   if (day < 1 || day > 31) {
     return {
       isValid: false,
-      error: 'Day must be between 1 and 31'
+      error: 'Ngày phải nằm trong khoảng từ 1 đến 31'
     };
   }
 
@@ -34,7 +34,7 @@ export function validateBirthday(month, day) {
   if (isNaN(date.getTime()) || date.getMonth() !== month - 1 || date.getDate() !== day) {
     return {
       isValid: false,
-      error: 'Invalid date. Please check the month and day combination (e.g., February 29th only exists in leap years)'
+      error: 'Ngày không hợp lệ. Hãy kiểm tra lại tổ hợp tháng và ngày (ví dụ: ngày 29 tháng 2 chỉ tồn tại trong năm nhuận)'
     };
   }
 
@@ -68,7 +68,7 @@ export async function setBirthday(client, guildId, userId, month, day) {
       throw new TitanBotError(
         'Failed to save birthday to database',
         ErrorTypes.DATABASE,
-        'Failed to set your birthday. Please try again later.',
+        'Không thể lưu ngày sinh của bạn. Vui lòng thử lại sau.',
         { userId, guildId, month, day }
       );
     }
@@ -173,7 +173,7 @@ export async function deleteBirthday(client, guildId, userId) {
       throw new TitanBotError(
         'Failed to delete birthday from database',
         ErrorTypes.DATABASE,
-        'Failed to remove your birthday. Please try again.',
+        'Không thể xóa ngày sinh của bạn. Vui lòng thử lại.',
         { userId, guildId }
       );
     }
@@ -344,10 +344,10 @@ export async function checkBirthdays(client) {
         
         await channel.send({
           embeds: [{
-            title: '🎉 Happy Birthday! 🎂',
-            description: `A very happy birthday to ${mentionList}! Wishing you an amazing day! 🎈`,
+            title: '🎉 Chúc Mừng Sinh Nhật! 🎂',
+            description: `Chúc mừng sinh nhật thật vui vẻ đến ${mentionList}! Chúc bạn một ngày thật tuyệt vời! 🎈`,
             color: 0xff69b4,
-            footer: { text: 'Birthday Bot' },
+            footer: { text: 'Bot Sinh Nhật' },
             timestamp: new Date()
           }]
         });

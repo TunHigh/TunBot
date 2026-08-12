@@ -16,17 +16,17 @@ export default {
                 const startIndex = (page - 1) * ITEMS_PER_PAGE;
                 const pageItems = shopItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
                 const embed = new EmbedBuilder()
-                    .setTitle('Store')
+                    .setTitle('Cửa Hàng')
                     .setColor(getColor('primary'))
-                    .setDescription('Use `/buy item_id:<id> quantity:<amount>` to purchase an item.');
+                    .setDescription('Dùng `/buy item_id:<id> quantity:<amount>` để mua một món đồ.');
                 pageItems.forEach(item => {
                     embed.addFields({
                         name: `${item.name} (${item.id})`,
-                        value: `**Type:** ${item.type}\n **Price:** $${item.price.toLocaleString()}\n${item.description}`,
+                        value: `**Loại:** ${item.type}\n **Giá:** $${item.price.toLocaleString()}\n${item.description}`,
                         inline: false,
                     });
                 });
-                embed.setFooter({ text: `Page ${page}/${totalPages}` });
+                embed.setFooter({ text: `Trang ${page}/${totalPages}` });
                 return embed;
             };
 
@@ -36,12 +36,12 @@ export default {
                     new ActionRowBuilder().addComponents(
                         new ButtonBuilder()
                             .setCustomId('shop_prev')
-                            .setLabel('⬅️ Previous')
+                            .setLabel('⬅️ Trang trước')
                             .setStyle(ButtonStyle.Secondary)
                             .setDisabled(page === 1),
                         new ButtonBuilder()
                             .setCustomId('shop_next')
-                            .setLabel('Next ➡️')
+                            .setLabel('Trang sau ➡️')
                             .setStyle(ButtonStyle.Secondary)
                             .setDisabled(page === totalPages),
                     ),
@@ -61,7 +61,7 @@ export default {
 
             collector.on('collect', async (buttonInteraction) => {
                 if (buttonInteraction.user.id !== interaction.user.id) {
-                    await buttonInteraction.reply({ content: '❌ You cannot use these buttons. Run `/shop` to get your own shop view.', flags: 64 });
+                    await buttonInteraction.reply({ content: '❌ Bạn không thể dùng các nút này. Chạy `/shop` để mở cửa hàng riêng của bạn.', flags: 64 });
                     return;
                 }
                 const { customId } = buttonInteraction;

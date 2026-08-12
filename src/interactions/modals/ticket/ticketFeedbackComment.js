@@ -21,8 +21,8 @@ export default {
         if (!guildId || !channelId) {
             await InteractionHelper.safeReply(interaction, {
                 embeds: [buildEmbed(
-                    '⚠️ Invalid Feedback Submission',
-                    'This feedback form appears to be malformed.',
+                    '⚠️ Gửi phản hồi không hợp lệ',
+                    'Biểu mẫu phản hồi này có vẻ bị lỗi.',
                     getColor('error'),
                 )],
                 flags: MessageFlags.Ephemeral,
@@ -34,8 +34,8 @@ export default {
         if (!comment) {
             await InteractionHelper.safeReply(interaction, {
                 embeds: [buildEmbed(
-                    '⚠️ Empty Feedback',
-                    'Please enter a comment before submitting your feedback.',
+                    '⚠️ Phản hồi trống',
+                    'Vui lòng nhập bình luận trước khi gửi phản hồi.',
                     getColor('warning'),
                 )],
                 flags: MessageFlags.Ephemeral,
@@ -58,8 +58,8 @@ export default {
         if (!ticketData) {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [buildEmbed(
-                    '⚠️ Ticket Not Found',
-                    'Could not find the ticket associated with this feedback.',
+                    '⚠️ Không tìm thấy Ticket',
+                    'Không thể tìm thấy ticket liên quan đến phản hồi này.',
                     getColor('error'),
                 )],
             });
@@ -69,8 +69,8 @@ export default {
         if (interaction.user.id !== ticketData.userId) {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [buildEmbed(
-                    '❌ Not Allowed',
-                    'Only the ticket creator can submit feedback for this ticket.',
+                    '❌ Không được phép',
+                    'Chỉ người tạo ticket mới có thể gửi phản hồi cho ticket này.',
                     getColor('error'),
                 )],
             });
@@ -105,8 +105,8 @@ export default {
 
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [buildEmbed(
-                '✅ Feedback Submitted',
-                'Your written feedback has been recorded. Thank you for helping us improve!',
+                '✅ Đã gửi phản hồi',
+                'Phản hồi bằng văn bản của bạn đã được ghi nhận. Cảm ơn bạn đã giúp chúng tôi cải thiện dịch vụ!',
                 getColor('success'),
             )],
         });

@@ -9,7 +9,7 @@ import { claimTicket } from '../../services/ticket.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("claim")
-        .setDescription("Claims an open ticket, assigning it to you.")
+        .setDescription("Nhận xử lý một vé hỗ trợ đang mở cho bạn.")
         .setDMPermission(false),
 
     async execute(interaction, guildConfig, client) {
@@ -20,11 +20,11 @@ export default {
 
         const permissionContext = await getTicketPermissionContext({ client, interaction });
         if (!permissionContext.ticketData) {
-            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'This command can only be used in a valid ticket channel.' });
+            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Lệnh này chỉ có thể dùng trong một kênh vé hỗ trợ hợp lệ.' });
         }
 
         if (!permissionContext.canManageTicket) {
-            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission or the configured `Ticket Staff Role` to claim tickets.' });
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền `Manage Channels` hoặc `Ticket Staff Role` đã cấu hình để nhận xử lý vé.' });
         }
 
         await claimTicket(interaction.channel, interaction.user);
@@ -32,8 +32,8 @@ export default {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    "Ticket Claimed!",
-                    "You have successfully claimed this ticket.",
+                    "Đã Nhận Vé!",
+                    "Bạn đã nhận xử lý vé này thành công.",
                 ),
             ],
         });

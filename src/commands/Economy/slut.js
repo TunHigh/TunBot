@@ -8,36 +8,36 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 const SLUT_COOLDOWN = 45 * 60 * 1000;
 
 const SLUT_ACTIVITIES = [
-    { name: "Cam Stream", min: 120, max: 450, risk: 0.2 },
-    { name: "Private Dance Session", min: 220, max: 700, risk: 0.25 },
-    { name: "After-Hours Club Host", min: 320, max: 900, risk: 0.3 },
-    { name: "VIP Companion Booking", min: 550, max: 1400, risk: 0.35 },
-    { name: "Exclusive Livestream", min: 850, max: 2200, risk: 0.4 },
+    { name: "Livestream webcam", min: 120, max: 450, risk: 0.2 },
+    { name: "Buổi nhảy riêng tư", min: 220, max: 700, risk: 0.25 },
+    { name: "Tiếp viên CLB đêm khuya", min: 320, max: 900, risk: 0.3 },
+    { name: "Hộ tống VIP", min: 550, max: 1400, risk: 0.35 },
+    { name: "Livestream độc quyền", min: 850, max: 2200, risk: 0.4 },
 ];
 
 const POSITIVE_OUTCOMES = [
-    "Your stream blew up and tips poured in.",
-    "A VIP booking paid far above average.",
-    "Your after-hours shift was packed and profitable.",
-    "Premium requests came through and your payout jumped.",
+    "Buổi phát sóng của bạn bùng nổ và tiền tip đổ về như mưa.",
+    "Một lượt đặt chỗ VIP trả cao hơn hẳn mức trung bình.",
+    "Ca đêm của bạn kín khách và sinh lời đều đều.",
+    "Các yêu cầu Premium ồ ạt tới và tiền nhận được tăng vọt.",
 ];
 
 const FINE_OUTCOMES = [
-    "Venue security issued a compliance fine.",
-    "A moderation strike triggered a platform fee.",
-    "You were flagged and had to pay a penalty.",
+    "Bảo vệ địa điểm phạt bạn vì vi phạm quy định.",
+    "Một cảnh cáo vi phạm khiến nền tảng thu phí phạt.",
+    "Bạn bị gắn cờ và phải nộp phạt.",
 ];
 
 const ROBBED_OUTCOMES = [
-    "A fake buyer chargeback wiped part of your earnings.",
-    "A scam booking cleaned out a chunk of your cash.",
-    "You got baited by a fraud account and lost money.",
+    "Một khách giả mạo khiếu nại hoàn tiền cuỗm mất một phần thu nhập.",
+    "Một lượt đặt chỗ lừa đảo rút sạch một khoản tiền của bạn.",
+    "Bạn bị tài khoản lừa đảo chơi khăm và mất tiền.",
 ];
 
 const LOSS_OUTCOMES = [
-    "The set flopped and you had to cover operating costs.",
-    "You burned budget on prep and made no return.",
-    "The shift went sideways and left you in the red.",
+    "Buổi diễn thất bại và bạn phải bù chi phí vận hành.",
+    "Bạn đốt tiền vào khâu chuẩn bị nhưng chẳng thu lại được gì.",
+    "Ca làm trục trặc khiến bạn lỗ vốn.",
 ];
 
 function randomInt(min, max) {
@@ -60,7 +60,7 @@ function resolveOutcome(activity, wallet) {
             type: 'payout',
             delta: amount,
             message: randomChoice(POSITIVE_OUTCOMES),
-            title: `${activity.name} - Payout`
+            title: `${activity.name} - Nhận Thưởng`
         };
     }
 
@@ -74,7 +74,7 @@ function resolveOutcome(activity, wallet) {
             type: 'fine',
             delta: -amount,
             message: randomChoice(FINE_OUTCOMES),
-            title: `${activity.name} - Fined`
+            title: `${activity.name} - Bị Phạt`
         };
     }
 
@@ -86,7 +86,7 @@ function resolveOutcome(activity, wallet) {
             type: 'robbed',
             delta: -amount,
             message: randomChoice(ROBBED_OUTCOMES),
-            title: `${activity.name} - Robbed`
+            title: `${activity.name} - Bị Cướp`
         };
     }
 
@@ -97,14 +97,14 @@ function resolveOutcome(activity, wallet) {
         type: 'loss',
         delta: -amount,
         message: randomChoice(LOSS_OUTCOMES),
-        title: `${activity.name} - Loss`
+        title: `${activity.name} - Thua Lỗ`
     };
 }
 
 export default {
     data: new SlashCommandBuilder()
         .setName('slut')
-        .setDescription('Take a risky provocative job for random payout or loss'),
+        .setDescription('Làm một công việc nhạy cảm đầy rủi ro để nhận thưởng hoặc chịu lỗ'),
 
     execute: withErrorHandling(async (interaction, config, client) => {
         const deferred = await InteractionHelper.safeDefer(interaction);
@@ -134,7 +134,7 @@ export default {
                 throw createError(
                     "Slut cooldown active",
                     ErrorTypes.RATE_LIMIT,
-                    `You need to wait before you can work again! Try again in **${Math.ceil(remainingTime / 60000)}** minutes.`,
+                    `Bạn cần đợi thêm trước khi làm việc tiếp! Thử lại sau **${Math.ceil(remainingTime / 60000)}** phút nhé.`,
                     { timeRemaining: remainingTime, cooldownType: 'slut' }
                 );
             }
@@ -169,11 +169,11 @@ export default {
             const amountLabel = `${outcome.delta >= 0 ? '+' : '-'}$${Math.abs(outcome.delta).toLocaleString()}`;
             const summaryLines = [
                 `${outcome.message}`,
-                `💸 **Net Result:** ${amountLabel}`,
-                `💳 **Current Balance:** $${userData.wallet.toLocaleString()}`,
-                `📊 **Total Sessions:** ${userData.totalSluts}`,
-                `💵 **Total Earned:** $${(userData.totalSlutEarnings || 0).toLocaleString()}`,
-                `🧾 **Total Lost:** $${(userData.totalSlutLosses || 0).toLocaleString()}`
+                `💸 **Kết quả ròng:** ${amountLabel}`,
+                `💳 **Số dư hiện tại:** $${userData.wallet.toLocaleString()}`,
+                `📊 **Tổng phiên:** ${userData.totalSluts}`,
+                `💵 **Tổng kiếm được:** $${(userData.totalSlutEarnings || 0).toLocaleString()}`,
+                `🧾 **Tổng đã mất:** $${(userData.totalSlutLosses || 0).toLocaleString()}`
             ];
 
             const embed = createEmbed({

@@ -17,47 +17,47 @@ import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('count')
-    .setDescription('Manage the server counting game')
+    .setDescription('Quản lý trò chơi đếm số của máy chủ')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false)
     .addSubcommand((subcommand) =>
       subcommand
         .setName('setup')
-        .setDescription('Start a counting game in a text channel')
+        .setDescription('Bắt đầu trò chơi đếm số trong một kênh văn bản')
         .addChannelOption((option) =>
           option
             .setName('channel')
-            .setDescription('The channel where counting will take place')
+            .setDescription('Kênh diễn ra trò đếm số')
             .setRequired(true)
             .addChannelTypes(ChannelType.GuildText),
         )
         .addStringOption((option) =>
           option
             .setName('system')
-            .setDescription('The counting system to use')
+            .setDescription('Hệ thống đếm số sẽ dùng')
             .setRequired(true)
             .addChoices(...getCountingSystemChoices()),
         ),
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName('disable').setDescription('Disable the counting game for this server'),
+      subcommand.setName('disable').setDescription('Tắt trò chơi đếm số cho máy chủ này'),
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName('status').setDescription('View current counting game status'),
+      subcommand.setName('status').setDescription('Xem trạng thái trò chơi đếm số hiện tại'),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('reset')
-        .setDescription('Reset the current counting sequence')
+        .setDescription('Đặt lại chuỗi đếm hiện tại')
         .addIntegerOption((option) =>
           option
             .setName('start')
-            .setDescription('The number to start at after reset')
+            .setDescription('Số sẽ bắt đầu sau khi đặt lại')
             .setMinValue(1),
         ),
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName('leaderboard').setDescription('Show the counting game leaderboard'),
+      subcommand.setName('leaderboard').setDescription('Hiển thị bảng xếp hạng trò chơi đếm số'),
     ),
   category: 'Fun',
 
@@ -70,7 +70,7 @@ export default {
       }
 
       if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the **Manage Server** permission to use this command.' });
+        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền **Quản lý máy chủ** để dùng lệnh này.' });
       }
 
       const guildId = interaction.guildId;
@@ -81,19 +81,19 @@ export default {
         const channel = interaction.options.getChannel('channel');
         const system = interaction.options.getString('system');
         if (!channel || channel.type !== ChannelType.GuildText) {
-          return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please choose a text channel for the counting game.' });
+          return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Vui lòng chọn một kênh văn bản cho trò chơi đếm số.' });
         }
 
         if (config.enabled && config.channelId && config.channelId !== channel.id) {
-          return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `This server already has an active counting channel configured: <#${config.channelId}>. Disable the current counting game first, or use that existing channel.` });
+          return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Máy chủ này đã có kênh đếm số đang hoạt động: <#${config.channelId}>. Hãy tắt trò chơi hiện tại trước, hoặc dùng kênh có sẵn đó.` });
         }
 
         await activateCountingGame(interaction.client, guildId, channel.id, system);
         return await InteractionHelper.safeEditReply(interaction, {
           embeds: [
             successEmbed(
-              'Counting Game Enabled',
-              `The counting game is now active in ${channel} using the **${getCountingSystemLabel(system)}** system. Players must count up from **1** and may not post two numbers in a row.`,
+              'Đã Bật Trò Chơi Đếm Số',
+              `Trò chơi đếm số đang hoạt động trong ${channel} với hệ thống **${getCountingSystemLabel(system)}**. Người chơi phải đếm từ **1** và không được gửi hai số liên tiếp.`,
             ),
           ],
         });
@@ -102,32 +102,32 @@ export default {
       if (subcommand === 'disable') {
         if (!config.enabled) {
           return await InteractionHelper.safeEditReply(interaction, {
-            embeds: [infoEmbed('Counting Game Disabled', 'The counting game is already disabled for this server.')],
+            embeds: [infoEmbed('Trò Chơi Đếm Số Đã Tắt', 'Trò chơi đếm số đã bị tắt cho máy chủ này rồi.')],
           });
         }
 
         await disableCountingGame(interaction.client, guildId);
         return await InteractionHelper.safeEditReply(interaction, {
-          embeds: [successEmbed('Counting Game Disabled', 'The counting game has been disabled.')],
+          embeds: [successEmbed('Đã Tắt Trò Chơi Đếm Số', 'Trò chơi đếm số đã được tắt.')],
         });
       }
 
       if (subcommand === 'status') {
         const fields = [
-          { name: 'Enabled', value: config.enabled ? 'Yes' : 'No', inline: true },
-          { name: 'Channel', value: config.channelId ? `<#${config.channelId}>` : 'Not configured', inline: true },
-          { name: 'System', value: getCountingSystemLabel(config.system), inline: true },
-          { name: 'Next count', value: getExpectedCountValue(config), inline: true },
-          { name: 'Current streak', value: `${config.currentStreak}`, inline: true },
-          { name: 'Best streak', value: `${config.bestStreak || 0}`, inline: true },
-          { name: 'Last counter', value: config.lastUserId ? `<@${config.lastUserId}>` : 'None', inline: true },
+          { name: 'Đã Bật', value: config.enabled ? 'Có' : 'Không', inline: true },
+          { name: 'Kênh', value: config.channelId ? `<#${config.channelId}>` : 'Chưa cấu hình', inline: true },
+          { name: 'Hệ Thống', value: getCountingSystemLabel(config.system), inline: true },
+          { name: 'Số Tiếp Theo', value: getExpectedCountValue(config), inline: true },
+          { name: 'Chuỗi Hiện Tại', value: `${config.currentStreak}`, inline: true },
+          { name: 'Chuỗi Tốt Nhất', value: `${config.bestStreak || 0}`, inline: true },
+          { name: 'Người Đếm Cuối', value: config.lastUserId ? `<@${config.lastUserId}>` : 'Không có', inline: true },
         ];
 
         return await InteractionHelper.safeEditReply(interaction, {
           embeds: [
             createEmbed({
-              title: 'Counting Game Status',
-              description: 'Overview of the currently configured counting game.',
+              title: 'Trạng Thái Trò Chơi Đếm Số',
+              description: 'Tổng quan về trò chơi đếm số đang được cấu hình.',
               fields,
               color: 'primary',
             }),
@@ -137,7 +137,7 @@ export default {
 
       if (subcommand === 'reset') {
         if (!config.enabled) {
-          return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Enable the counting game first with `/count setup`.' });
+          return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Hãy bật trò chơi đếm số trước bằng `/count setup`.' });
         }
 
         const startNumber = interaction.options.getInteger('start') || 1;
@@ -146,8 +146,8 @@ export default {
         return await InteractionHelper.safeEditReply(interaction, {
           embeds: [
             successEmbed(
-              'Counting Game Reset',
-              `The counting sequence has been reset. Start again with **${startNumber}** in <#${config.channelId}>.`,
+              'Đã Đặt Lại Trò Chơi Đếm Số',
+              `Chuỗi đếm đã được đặt lại. Hãy bắt đầu lại với **${startNumber}** trong <#${config.channelId}>.`,
             ),
           ],
         });
@@ -159,18 +159,18 @@ export default {
         return await InteractionHelper.safeEditReply(interaction, {
           embeds: [
             createEmbed({
-              title: 'Counting Game Leaderboard',
-              description: leaderboard.length > 0 ? leaderboard.join('\n') : 'No counts have been recorded yet.',
+              title: 'Bảng Xếp Hạng Trò Chơi Đếm Số',
+              description: leaderboard.length > 0 ? leaderboard.join('\n') : 'Chưa có lượt đếm nào được ghi nhận.',
               color: 'primary',
             }),
           ],
         });
       }
 
-      return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please choose a valid counting game action.' });
+      return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Vui lòng chọn một hành động hợp lệ cho trò chơi đếm số.' });
     } catch (error) {
       logger.error('Count command error:', error);
-      return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Something went wrong while managing the counting game.' });
+      return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi quản lý trò chơi đếm số.' });
     }
   },
 };

@@ -7,27 +7,27 @@ import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('cases')
-        .setDescription('View moderation cases and audit logs')
+        .setDescription('Xem vụ việc điều hành và nhật ký kiểm tra')
         .setDefaultMemberPermissions(PermissionFlagsBits.ViewAuditLog)
         .setDMPermission(false)
         .addStringOption(option =>
             option.setName('filter')
-                .setDescription('Filter cases by type or user')
+                .setDescription('Lọc vụ việc theo loại hoặc người dùng')
                 .addChoices(
-                    { name: 'All Cases', value: 'all' },
-                    { name: 'Bans', value: 'Member Banned' },
-                    { name: 'Kicks', value: 'Member Kicked' },
-                    { name: 'Timeouts', value: 'Member Timed Out' },
-                    { name: 'Warnings', value: 'User Warned' }
+                    { name: 'Tất cả vụ việc', value: 'all' },
+                    { name: 'Cấm', value: 'Member Banned' },
+                    { name: 'Đuổi', value: 'Member Kicked' },
+                    { name: 'Khóa tạm thời', value: 'Member Timed Out' },
+                    { name: 'Cảnh cáo', value: 'User Warned' }
                 )
         )
         .addUserOption(option =>
             option.setName('user')
-                .setDescription('Filter cases by specific user')
+                .setDescription('Lọc vụ việc theo một người dùng cụ thể')
         )
         .addIntegerOption(option =>
             option.setName('limit')
-                .setDescription('Number of cases to show (default: 10)')
+                .setDescription('Số vụ việc hiển thị (mặc định: 10)')
                 .setMinValue(1)
                 .setMaxValue(50)
         ),
@@ -75,8 +75,8 @@ export default {
                 const pageCases = cases.slice(startIndex, endIndex);
 
                 const embed = createEmbed({
-                    title: 'Moderation Cases',
-                    description: `Showing moderation cases for **${interaction.guild.name}**\n\n**Page ${page} of ${totalPages}**`
+                    title: 'Vụ việc Điều hành',
+                    description: `Hiển thị vụ việc điều hành cho **${interaction.guild.name}**\n\n**Trang ${page} trên ${totalPages}**`
                 });
 
                 pageCases.forEach(case_ => {
@@ -84,14 +84,14 @@ export default {
                     const time = new Date(case_.createdAt).toLocaleTimeString();
                     
                     embed.addFields({
-                        name: `Case #${case_.caseId} - ${case_.action}`,
-                        value: `**Target:** ${case_.target}\n**Moderator:** ${case_.executor}\n**Date:** ${date} at ${time}\n**Reason:** ${case_.reason || 'No reason provided'}`,
+                        name: `Vụ việc #${case_.caseId} - ${case_.action}`,
+                        value: `**Người dùng:** ${case_.target}\n**Điều hành viên:** ${case_.executor}\n**Ngày:** ${date} lúc ${time}\n**Lý do:** ${case_.reason || 'Không có lý do'}`,
                         inline: false
                     });
                 });
 
                 embed.setFooter({
-                    text: `Total cases: ${cases.length} | Filter: ${filterType}${targetUser ?` | User: ${targetUser.tag}`: ''}`
+                    text: `Tổng số vụ việc: ${cases.length} | Bộ lọc: ${filterType}${targetUser ?` | Người dùng: ${targetUser.tag}`: ''}`
                 });
 
                 return embed;
@@ -102,19 +102,19 @@ export default {
                 
                 const prevButton = new ButtonBuilder()
                     .setCustomId('prev_page')
-                    .setLabel('⬅️ Previous')
+                    .setLabel('⬅️ Trước')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(page === 1);
 
                 const pageInfoButton = new ButtonBuilder()
                     .setCustomId('page_info')
-                    .setLabel(`Page ${page}/${totalPages}`)
+                    .setLabel(`Trang ${page}/${totalPages}`)
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(true);
 
                 const nextButton = new ButtonBuilder()
                     .setCustomId('next_page')
-                    .setLabel('Next ➡️')
+                    .setLabel('Tiếp ➡️')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(page === totalPages);
 
@@ -137,7 +137,7 @@ time: 120000
 
                 if (buttonInteraction.user.id !== interaction.user.id) {
                     await buttonInteraction.followUp({
-                        content: 'You cannot use these buttons. Run `/cases` to get your own case view.',
+                        content: 'Bạn không thể dùng các nút này. Hãy chạy `/cases` để xem vụ việc của riêng bạn.',
                         flags: MessageFlags.Ephemeral
                     });
                     return;
@@ -171,7 +171,7 @@ time: 120000
 
         } catch (error) {
             logger.error('Error in cases command:', error);
-            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while retrieving moderation cases. Please try again later.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi truy xuất vụ việc điều hành. Vui lòng thử lại sau.' });
         }
     }
 };

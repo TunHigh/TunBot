@@ -25,7 +25,7 @@ async function ensureGuildContext(interaction) {
   }
 
   if (!interaction.replied && !interaction.deferred) {
-    await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This action can only be used in a server.' });
+    await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Thao tác này chỉ có thể dùng trong máy chủ.' });
   }
 
   return false;
@@ -46,13 +46,13 @@ async function assertTicketPermission(interaction, client, actionLabel, options 
       throw createError(
         'Ticket permission timeout',
         ErrorTypes.RATE_LIMIT,
-        'The permission check took too long. Please try again.'
+        'Việc kiểm tra quyền mất quá nhiều thời gian. Vui lòng thử lại.'
       );
     }
     throw createError(
       'Ticket permission check failed',
       ErrorTypes.UNKNOWN,
-      `Failed to check permissions: ${error.message}`
+      `Không thể kiểm tra quyền: ${error.message}`
     );
   }
 
@@ -60,19 +60,19 @@ async function assertTicketPermission(interaction, client, actionLabel, options 
     throw createError(
       'Not a ticket channel',
       ErrorTypes.VALIDATION,
-      'This action can only be used in a valid ticket channel.'
+      'Thao tác này chỉ có thể dùng trong kênh ticket hợp lệ.'
     );
   }
 
   const allowed = allowTicketCreator ? context.canCloseTicket : context.canManageTicket;
   if (!allowed) {
     const permissionMessage = allowTicketCreator
-      ? 'You must have **Manage Channels**, the configured **Ticket Staff Role**, or be the **ticket creator**.'
-      : 'You must have **Manage Channels** or the configured **Ticket Staff Role**.';
+      ? 'Bạn cần có **Quản Lý Kênh**, **Role Staff Ticket** được cấu hình, hoặc là **người tạo ticket**.'
+      : 'Bạn cần có **Quản Lý Kênh** hoặc **Role Staff Ticket** được cấu hình.';
     throw createError(
       'Ticket permission denied',
       ErrorTypes.PERMISSION,
-      `${permissionMessage}\n\nYou cannot ${actionLabel}.`
+      `${permissionMessage}\n\nBạn không thể ${actionLabel}.`
     );
   }
 
@@ -85,17 +85,17 @@ async function ensureTicketPermission(interaction, client, actionLabel, options 
   const context = await getTicketPermissionContext({ client, interaction });
 
   if (!context.ticketData) {
-    await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This action can only be used in a valid ticket channel.' });
+    await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Thao tác này chỉ có thể dùng trong kênh ticket hợp lệ.' });
     return null;
   }
 
   const allowed = allowTicketCreator ? context.canCloseTicket : context.canManageTicket;
   if (!allowed) {
     const permissionMessage = allowTicketCreator
-      ? 'You must have **Manage Channels**, the configured **Ticket Staff Role**, or be the **ticket creator**.'
-      : 'You must have **Manage Channels** or the configured **Ticket Staff Role**.';
+      ? 'Bạn cần có **Quản Lý Kênh**, **Role Staff Ticket** được cấu hình, hoặc là **người tạo ticket**.'
+      : 'Bạn cần có **Quản Lý Kênh** hoặc **Role Staff Ticket** được cấu hình.';
 
-    await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: `${permissionMessage}\n\nYou cannot ${actionLabel}.` });
+    await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: `${permissionMessage}\n\nBạn không thể ${actionLabel}.` });
     return null;
   }
 
@@ -111,7 +111,7 @@ const createTicketHandler = {
       const rateLimitKey = `${interaction.user.id}:create_ticket`;
       const allowed = await checkRateLimit(rateLimitKey, 3, 60000);
       if (!allowed) {
-        await replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'You are creating tickets too quickly. Please wait a minute and try again.' });
+        await replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'Bạn đang tạo ticket quá nhanh. Hãy chờ một phút rồi thử lại nhé.' });
         return;
       }
 
@@ -122,18 +122,18 @@ const createTicketHandler = {
       const currentTicketCount = await getUserTicketCount(interaction.guildId, interaction.user.id);
       
       if (currentTicketCount >= maxTicketsPerUser) {
-        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `You have reached the maximum number of open tickets (${maxTicketsPerUser}).\n\nPlease close your existing tickets before creating a new one.\n\n**Current Tickets:** ${currentTicketCount}/${maxTicketsPerUser}` });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Bạn đã đạt số lượng ticket mở tối đa (${maxTicketsPerUser}).\n\nHãy đóng các ticket hiện tại trước khi tạo ticket mới.\n\n**Ticket hiện tại:** ${currentTicketCount}/${maxTicketsPerUser}` });
       }
       
       const modal = new ModalBuilder()
         .setCustomId('create_ticket_modal')
-        .setTitle('Create a Ticket');
+        .setTitle('Tạo Ticket');
 
       const reasonInput = new TextInputBuilder()
         .setCustomId('reason')
-        .setLabel('Why are you creating this ticket?')
+        .setLabel('Vì sao bạn tạo ticket này?')
         .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('Describe your issue...')
+        .setPlaceholder('Mô tả vấn đề của bạn...')
         .setRequired(true)
         .setMaxLength(1000);
 
@@ -144,7 +144,7 @@ const createTicketHandler = {
     } catch (error) {
       logger.error('Error creating ticket modal:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not open ticket creation form.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không thể mở biểu mẫu tạo ticket.' });
       }
     }
   }
@@ -171,8 +171,8 @@ const createTicketModalHandler = {
       );
       await interaction.editReply({
         embeds: [successEmbed(
-          'Ticket Created',
-          `Your ticket has been created in ${channel}!`
+          'Đã Tạo Ticket',
+          `Ticket của bạn đã được tạo trong ${channel}!`
         )]
       });
     } catch (error) {
@@ -187,17 +187,17 @@ const closeTicketHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      await assertTicketPermission(interaction, client, 'close this ticket', { allowTicketCreator: true }, 2000);
+      await assertTicketPermission(interaction, client, 'đóng ticket này', { allowTicketCreator: true }, 2000);
 
       const modal = new ModalBuilder()
         .setCustomId('ticket_close_modal')
-        .setTitle('Close Ticket');
+        .setTitle('Đóng Ticket');
 
       const reasonInput = new TextInputBuilder()
         .setCustomId('reason')
-        .setLabel('Reason for closing (optional)')
+        .setLabel('Lý do đóng (không bắt buộc)')
         .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('Add an optional reason for closing this ticket...')
+        .setPlaceholder('Thêm lý do đóng ticket nếu muốn...')
         .setRequired(false)
         .setMaxLength(1000);
 
@@ -209,7 +209,7 @@ const closeTicketHandler = {
       logger.error('Error closing ticket:', error);
 
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not open ticket close form.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không thể mở biểu mẫu đóng ticket.' });
       }
     }
   }
@@ -221,22 +221,22 @@ const closeTicketModalHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      await assertTicketPermission(interaction, client, 'close this ticket', { allowTicketCreator: true }, 2000);
+      await assertTicketPermission(interaction, client, 'đóng ticket này', { allowTicketCreator: true }, 2000);
 
       const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) return;
 
       const providedReason = interaction.fields.getTextInputValue('reason')?.trim();
-      const reason = providedReason || 'Closed via ticket button without a specific reason.';
+      const reason = providedReason || 'Đóng qua nút ticket mà không có lý do cụ thể.';
 
       await closeTicket(interaction.channel, interaction.user, reason);
-      await interaction.editReply({ embeds: [successEmbed('Ticket Closed', 'This ticket has been closed.')] });
+      await interaction.editReply({ embeds: [successEmbed('Đã Đóng Ticket', 'Ticket này đã được đóng.')] });
     } catch (error) {
       logger.error('Error submitting close ticket modal:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while closing the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi đóng ticket.' });
       } else if (interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while closing the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi đóng ticket.' });
       }
     }
   }
@@ -248,19 +248,19 @@ const claimTicketHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      await assertTicketPermission(interaction, client, 'claim tickets', {}, 2000);
+      await assertTicketPermission(interaction, client, 'nhận ticket', {}, 2000);
 
       const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) return;
       
       await claimTicket(interaction.channel, interaction.user);
-      await interaction.editReply({ embeds: [successEmbed('Ticket Claimed', 'You have claimed this ticket.')] });
+      await interaction.editReply({ embeds: [successEmbed('Đã Nhận Ticket', 'Bạn đã nhận ticket này.')] });
     } catch (error) {
       logger.error('Error claiming ticket:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while claiming the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi nhận ticket.' });
       } else if (interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while claiming the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi nhận ticket.' });
       }
     }
   }
@@ -272,25 +272,25 @@ const priorityTicketHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      await assertTicketPermission(interaction, client, 'change ticket priority', {}, 2000);
+      await assertTicketPermission(interaction, client, 'thay đổi mức ưu tiên ticket', {}, 2000);
 
       const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) return;
       
       const priority = args?.[0];
       if (!priority) {
-        await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'A priority value is required.' });
+        await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Cần có giá trị mức ưu tiên.' });
         return;
       }
 
       await updateTicketPriority(interaction.channel, priority, interaction.user);
-      await interaction.editReply({ embeds: [successEmbed('Priority Updated', `Ticket priority set to **${priority.toUpperCase()}**.`)] });
+      await interaction.editReply({ embeds: [successEmbed('Đã Cập Nhật Ưu Tiên', `Mức ưu tiên của ticket đã được đặt thành **${priority.toUpperCase()}**.`)] });
     } catch (error) {
       logger.error('Error updating ticket priority:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while updating the priority.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi cập nhật mức ưu tiên.' });
       } else if (interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while updating the priority.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi cập nhật mức ưu tiên.' });
       }
     }
   }
@@ -302,7 +302,7 @@ const pinTicketHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      await assertTicketPermission(interaction, client, 'pin tickets', {}, 2000);
+      await assertTicketPermission(interaction, client, 'ghim ticket', {}, 2000);
 
       const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) return;
@@ -311,7 +311,7 @@ const pinTicketHandler = {
       const category = channel.parent;
 
       if (!category) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This ticket is not in a category.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ticket này không nằm trong một danh mục nào.' });
         return;
       }
 
@@ -327,8 +327,8 @@ const pinTicketHandler = {
 
         await interaction.editReply({
           embeds: [createEmbed({
-            title: '📌 Ticket Unpinned',
-            description: 'This ticket has been unpinned and moved back to normal position.',
+            title: '📌 Đã Bỏ Ghim Ticket',
+            description: 'Ticket này đã được bỏ ghim và chuyển về vị trí bình thường.',
             color: 0x95A5A6
           })],
           flags: MessageFlags.Ephemeral
@@ -350,8 +350,8 @@ const pinTicketHandler = {
 
         await interaction.editReply({
           embeds: [createEmbed({
-            title: '📌 Ticket Pinned',
-            description: 'This ticket has been pinned to the top of the category.',
+            title: '📌 Đã Ghim Ticket',
+            description: 'Ticket này đã được ghim lên đầu danh mục.',
             color: 0x3498db
           })],
           flags: MessageFlags.Ephemeral
@@ -384,9 +384,9 @@ const pinTicketHandler = {
     } catch (error) {
       logger.error('Error pinning/unpinning ticket:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Failed to pin/unpin the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không thể ghim/bỏ ghim ticket.' });
       } else if (interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Failed to pin/unpin the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không thể ghim/bỏ ghim ticket.' });
       }
     }
   }
@@ -398,20 +398,20 @@ const unclaimTicketHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      await assertTicketPermission(interaction, client, 'unclaim tickets', {}, 2000);
+      await assertTicketPermission(interaction, client, 'hủy nhận ticket', {}, 2000);
 
       const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) return;
       
       const { unclaimTicket } = await import('../services/ticket.js');
       await unclaimTicket(interaction.channel, interaction.member);
-      await interaction.editReply({ embeds: [successEmbed('Ticket Unclaimed', 'This ticket has been unclaimed.')] });
+      await interaction.editReply({ embeds: [successEmbed('Đã Hủy Nhận Ticket', 'Ticket này đã được hủy nhận.')] });
     } catch (error) {
       logger.error('Error unclaiming ticket:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while unclaiming the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi hủy nhận ticket.' });
       } else if (interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while unclaiming the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi hủy nhận ticket.' });
       }
     }
   }
@@ -423,24 +423,24 @@ const reopenTicketHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      await assertTicketPermission(interaction, client, 'reopen tickets', {}, 2000);
+      await assertTicketPermission(interaction, client, 'mở lại ticket', {}, 2000);
 
       const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) return;
       
       const { reopenTicket } = await import('../services/ticket.js');
       const { movedToOpenCategory, openCategoryMoveFailed } = await reopenTicket(interaction.channel, interaction.member);
-      let reopenMessage = 'This ticket has been reopened.';
+      let reopenMessage = 'Ticket này đã được mở lại.';
       if (openCategoryMoveFailed) {
-        reopenMessage += ' Note: Could not move the channel back to the open tickets category.';
+        reopenMessage += ' Lưu ý: Không thể chuyển kênh về danh mục ticket mở.';
       }
-      await interaction.editReply({ embeds: [successEmbed('Ticket Reopened', reopenMessage)] });
+      await interaction.editReply({ embeds: [successEmbed('Đã Mở Lại Ticket', reopenMessage)] });
     } catch (error) {
       logger.error('Error reopening ticket:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while reopening the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi mở lại ticket.' });
       } else if (interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while reopening the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi mở lại ticket.' });
       }
     }
   }
@@ -452,20 +452,20 @@ const deleteTicketHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      await assertTicketPermission(interaction, client, 'delete tickets', {}, 2000);
+      await assertTicketPermission(interaction, client, 'xóa ticket', {}, 2000);
 
       const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) return;
       
       const { deleteTicket } = await import('../services/ticket.js');
       await deleteTicket(interaction.channel, interaction.member);
-      await interaction.editReply({ embeds: [successEmbed('Ticket Deleted', 'This ticket will be deleted shortly.')] });
+      await interaction.editReply({ embeds: [successEmbed('Đã Xóa Ticket', 'Ticket này sẽ sớm bị xóa.')] });
     } catch (error) {
       logger.error('Error deleting ticket:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while deleting the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi xóa ticket.' });
       } else if (interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while deleting the ticket.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi xóa ticket.' });
       }
     }
   }

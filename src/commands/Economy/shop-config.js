@@ -5,15 +5,15 @@ export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
         .setName('shop-config')
-        .setDescription('Configure shop settings. (Manage Server required)')
+        .setDescription('Cấu hình cài đặt cửa hàng. (Cần quyền quản lý máy chủ)')
         .addSubcommand(subcommand =>
             subcommand
                 .setName('setrole')
-                .setDescription('Set the Discord role granted when the Premium Role shop item is purchased.')
+                .setDescription('Đặt vai trò Discord được trao khi mua vật phẩm Vai trò Premium trong cửa hàng.')
                 .addRoleOption(option =>
                     option
                         .setName('role')
-                        .setDescription('The role to grant for Premium Role purchases.')
+                        .setDescription('Vai trò sẽ được trao khi mua Vai trò Premium.')
                         .setRequired(true),
                 ),
         ),

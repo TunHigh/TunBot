@@ -13,7 +13,7 @@ const SUCCESS_CHANCE = 0.7;
 export default {
     data: new SlashCommandBuilder()
         .setName('beg')
-        .setDescription('Beg for a small amount of money'),
+        .setDescription('Xin một chút tiền lẻ'),
 
     execute: withErrorHandling(async (interaction, config, client) => {
         const deferred = await InteractionHelper.safeDefer(interaction);
@@ -41,12 +41,12 @@ export default {
                 const seconds = Math.floor((remainingTime % 60000) / 1000);
 
                 let timeMessage =
-                    minutes > 0 ? `${minutes} minute(s)` : `${seconds} second(s)`;
+                    minutes > 0 ? `${minutes} phút` : `${seconds} giây`;
 
                 throw createError(
                     "Beg cooldown active",
                     ErrorTypes.RATE_LIMIT,
-                    `You are tired from begging! Try again in **${timeMessage}**.`,
+                    `Bạn mệt mỏi vì đi xin tiền rồi! Thử lại sau **${timeMessage}** nhé.`,
                     { remainingTime, minutes, seconds, cooldownType: 'beg' }
                 );
             }
@@ -63,28 +63,28 @@ export default {
                 newCash += amountWon;
 
                 const successMessages = [
-                    `A kind stranger drops **$${amountWon.toLocaleString()}** into your cup.`,
-                    `You spotted an unattended wallet! You grab **$${amountWon.toLocaleString()}** and run.`,
-                    `Someone took pity on you and gave you **$${amountWon.toLocaleString()}**!`,
-                    `You found **$${amountWon.toLocaleString()}** under a park bench.`,
+                    `Một người lạ tốt bụng bỏ **$${amountWon.toLocaleString()}** vào cốc của bạn.`,
+                    `Bạn thấy một chiếc ví bỏ quên! Bạn chộp lấy **$${amountWon.toLocaleString()}** rồi chạy mất hút.`,
+                    `Có người thương hại và cho bạn **$${amountWon.toLocaleString()}**!`,
+                    `Bạn nhặt được **$${amountWon.toLocaleString()}** dưới ghế đá công viên.`,
                 ];
 
                 replyEmbed = successEmbed(
-                    'Begging Successful',
+                    'Xin Tiền Thành Công',
                     successMessages[
                         Math.floor(Math.random() * successMessages.length)
                     ]
                 );
             } else {
                 const failMessages = [
-                    "The police chased you off. You got nothing.",
-                    "Someone yelled, 'Get a job!' and walked past.",
-                    "A squirrel stole the single coin you had.",
-                    "You tried to beg, but you were too embarrassed and gave up.",
+                    "Cảnh sát đuổi bạn đi. Bạn chẳng nhận được gì.",
+                    "Ai đó hét lên 'Đi kiếm việc làm đi!' rồi bỏ đi.",
+                    "Một con sóc cuỗm mất đồng xu duy nhất của bạn.",
+                    "Bạn định xin tiền nhưng ngại quá nên bỏ cuộc.",
                 ];
 
                 replyEmbed = warningEmbed(
-                    'Insufficient Funds',
+                    'Xin Tiền Thất Bại',
                     failMessages[Math.floor(Math.random() * failMessages.length)]
                 );
             }

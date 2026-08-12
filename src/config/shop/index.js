@@ -4,7 +4,7 @@ import { botConfig } from '../bot.js';
 const { currency } = botConfig.economy;
 
 export const shopConfig = {
-    name: 'TitanBot Shop',
+    name: 'Cửa Hàng TitanBot',
     currency: currency.name,
     currencyName: currency.name,
     currencyNamePlural: currency.namePlural || `${currency.name}s`,
@@ -13,29 +13,29 @@ export const shopConfig = {
     categories: [
         {
             id: 'consumables',
-            name: 'Consumables',
-            description: 'One-time use items that provide temporary benefits',
+            name: 'Vật Phẩm Tiêu Hao',
+            description: 'Vật phẩm dùng một lần mang lại lợi ích tạm thời',
             icon: '🍯',
             itemTypes: ['consumable']
         },
         {
             id: 'upgrades',
-            name: 'Upgrades',
-            description: 'Permanent upgrades that enhance your abilities',
+            name: 'Nâng Cấp',
+            description: 'Nâng cấp vĩnh viễn giúp tăng cường khả năng của bạn',
             icon: '⚡',
             itemTypes: ['upgrade']
         },
         {
             id: 'tools',
-            name: 'Tools',
-            description: 'Equipment that helps you gather resources more efficiently',
+            name: 'Công Cụ',
+            description: 'Trang bị giúp thu thập tài nguyên hiệu quả hơn',
             icon: '⛏️',
             itemTypes: ['tool']
         },
         {
             id: 'roles',
-            name: 'Roles',
-            description: 'Special roles with unique perks',
+            name: 'Vai Trò',
+            description: 'Vai trò đặc biệt với các đặc quyền riêng',
             icon: '🎭',
             itemTypes: ['role']
         }
@@ -97,7 +97,7 @@ mythic: '#E74C3C'
             enabled: true,
 interval: 86400000,
 announcementChannel: null,
-            message: '🛒 **Shop Restocked!** New items are now available!'
+            message: '🛒 **Cửa Hàng Đã Bổ Sung!** Có vật phẩm mới rồi đây!'
         },
         
         sales: {
@@ -106,7 +106,7 @@ announcementChannel: null,
                 {
 day: 0,
 discount: 0.2,
-                    message: '🔥 **Weekend Sale!** 20% off all items!'
+                    message: '🔥 **Giảm Giá Cuối Tuần!** Giảm 20% tất cả vật phẩm!'
                 },
             ]
         }
@@ -155,8 +155,8 @@ export function getCategoryForItem(itemType) {
         cat.itemTypes.includes(itemType)
     ) || {
         id: 'other',
-        name: 'Other',
-        description: 'Miscellaneous items',
+        name: 'Khác',
+        description: 'Các vật phẩm khác',
         icon: '📦'
     };
 }

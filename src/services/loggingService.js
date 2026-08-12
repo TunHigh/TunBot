@@ -283,8 +283,8 @@ function createLogEmbed(guild, eventType, data) {
 
     if (data.fields?.length) {
       const { before, after } = splitComparisonFields(data.fields);
-      if (before !== null) inlineFields.push({ name: 'Before', value: before, inline: true });
-      if (after !== null) inlineFields.push({ name: 'After', value: after, inline: true });
+      if (before !== null) inlineFields.push({ name: 'Trước', value: before, inline: true });
+      if (after !== null) inlineFields.push({ name: 'Sau', value: after, inline: true });
     }
   } else if (data.fields?.length) {
     const { before, after, rest } = splitComparisonFields(data.fields);
@@ -298,10 +298,10 @@ function createLogEmbed(guild, eventType, data) {
       });
 
       if (before !== null) {
-        inlineFields.push({ name: 'Before', value: before, inline: true });
+        inlineFields.push({ name: 'Trước', value: before, inline: true });
       }
       if (after !== null) {
-        inlineFields.push({ name: 'After', value: after, inline: true });
+        inlineFields.push({ name: 'Sau', value: after, inline: true });
       }
     } else {
       description = buildLogDescription({
@@ -318,7 +318,7 @@ function createLogEmbed(guild, eventType, data) {
   }
 
   if (data.section?.body) {
-    description = appendContentSection(description, data.section.title || 'Message', data.section.body);
+    description = appendContentSection(description, data.section.title || 'Tin nhắn', data.section.body);
   }
 
   if (data.inlineFields?.length) {
@@ -340,7 +340,7 @@ function createLogEmbed(guild, eventType, data) {
 
 function formatEventType(eventType) {
   if (!eventType || typeof eventType !== 'string') {
-    return 'Unknown Event';
+    return 'Sự kiện không xác định';
   }
 
   return eventType

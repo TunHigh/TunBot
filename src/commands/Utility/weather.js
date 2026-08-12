@@ -9,11 +9,11 @@ const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 export default {
     data: new SlashCommandBuilder()
         .setName("weather")
-        .setDescription("Get real-time weather information for a location")
+        .setDescription("Xem thông tin thời tiết trực tiếp cho một địa điểm")
         .addStringOption((option) =>
             option
                 .setName("city")
-                .setDescription("The city name, e.g., 'London' or 'Tokyo'")
+                .setDescription("Tên thành phố, vd: 'London' hoặc 'Tokyo'")
                 .setRequired(true),
         ),
 
@@ -41,7 +41,7 @@ export default {
                 city: city,
                 guildId: interaction.guildId
             });
-            await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `Could not find a location for **${city}**. Please check the spelling.` });
+            await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `Không tìm thấy địa điểm nào cho **${city}**. Vui lòng kiểm tra lại chính tả.` });
             return;
         }
 
@@ -60,7 +60,7 @@ export default {
                 userId: interaction.user.id,
                 guildId: interaction.guildId
             });
-            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'A weather service error occurred.' });
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi từ dịch vụ thời tiết.' });
             return;
         }
 
@@ -72,26 +72,26 @@ export default {
 
         const condition = getWeatherDescription(weatherCode);
 
-        const embed = createEmbed({ title: `Weather in ${cityDisplay}, ${country}`, description: condition.description })
+        const embed = createEmbed({ title: `Thời Tiết Ở ${cityDisplay}, ${country}`, description: condition.description })
             .addFields(
                 {
-                    name: "Temperature",
+                    name: "Nhiệt Độ",
                     value: `${temperature}°C`,
                     inline: true,
                 },
                 {
-                    name: "Humidity",
+                    name: "Độ Ẩm",
                     value: `${humidity}%`,
                     inline: true,
                 },
                 {
-                    name: "Wind Speed",
+                    name: "Tốc Độ Gió",
                     value: `${windSpeed} km/h`,
                     inline: true,
                 },
             )
             .setFooter({
-                text: `Latitude: ${latitude.toFixed(2)} | Longitude: ${longitude.toFixed(2)}`,
+                text: `Vĩ độ: ${latitude.toFixed(2)} | Kinh độ: ${longitude.toFixed(2)}`,
             });
 
         await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
@@ -107,17 +107,17 @@ export default {
 
 function getWeatherDescription(code) {
     if (code >= 0 && code <= 3) {
-        return { description: "Clear sky / Partly cloudy", emoji: "" };
+        return { description: "Trời quang / Có mây rải rác", emoji: "" };
     } else if (code >= 45 && code <= 48) {
-        return { description: "Fog and Rime fog", emoji: "" };
+        return { description: "Sương mù", emoji: "" };
     } else if (code >= 51 && code <= 67) {
-        return { description: "Drizzle or Rain", emoji: "" };
+        return { description: "Mưa phùn hoặc mưa", emoji: "" };
     } else if (code >= 71 && code <= 75) {
-        return { description: "Snow fall", emoji: "" };
+        return { description: "Tuyết rơi", emoji: "" };
     } else if (code >= 80 && code <= 86) {
-        return { description: "Showers (Rain/Snow)", emoji: "" };
+        return { description: "Mưa rào (Mưa/Tuyết)", emoji: "" };
     } else if (code >= 95 && code <= 99) {
-        return { description: "Thunderstorm", emoji: "" };
+        return { description: "Giông bão", emoji: "" };
     }
-    return { description: "Unknown conditions.", emoji: "" };
+    return { description: "Thời tiết không xác định.", emoji: "" };
 }

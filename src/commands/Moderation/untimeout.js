@@ -8,11 +8,11 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("untimeout")
-        .setDescription("Remove timeout from a user")
+        .setDescription("Gỡ khóa tạm thời khỏi một người dùng")
         .addUserOption((option) =>
             option
                 .setName("target")
-                .setDescription("User to untimeout")
+                .setDescription("Người dùng cần gỡ khóa tạm thời")
                 .setRequired(true),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
@@ -36,7 +36,7 @@ export default {
             throw new TitanBotError(
                 'Missing target user',
                 ErrorTypes.USER_INPUT,
-                'You must specify a user to untimeout.',
+                'Bạn phải chỉ định người dùng để gỡ khóa tạm thời.',
                 { subtype: 'invalid_user' },
             );
         }
@@ -58,7 +58,7 @@ export default {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    `🔓 **Removed timeout** from ${targetUser.tag}`,
+                    `🔓 **Đã gỡ khóa tạm thời** khỏi ${targetUser.tag}`,
                 ),
             ],
         });

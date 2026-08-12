@@ -22,7 +22,7 @@ async function handleMusicButton(interaction, client) {
 
     if (customId === MUSIC_BUTTON_IDS.QUEUE) {
         if (!player?.current) {
-            return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: 'Nothing is playing right now.' });
+            return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: 'Hiện không có bài nào đang phát.' });
         }
         if (!canControlMusic(interaction.member, player)) {
             return replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: VOICE_CHANNEL_DENIAL });
@@ -45,7 +45,7 @@ async function handleMusicButton(interaction, client) {
 
     if (queuePaginationIds.includes(customId)) {
         if (!player?.current) {
-            return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: 'Nothing is playing right now.' });
+            return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: 'Hiện không có bài nào đang phát.' });
         }
         if (!canControlMusic(interaction.member, player)) {
             return replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: VOICE_CHANNEL_DENIAL });
@@ -82,7 +82,7 @@ async function handleMusicButton(interaction, client) {
     }
 
     if (!player) {
-        return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: 'No music is playing. Use `/play` first.' });
+        return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: 'Không có nhạc nào đang phát. Hãy dùng `/play` trước.' });
     }
 
     if (!canControlMusic(interaction.member, player)) {
@@ -149,7 +149,7 @@ export const musicButtonHandler = {
     async execute(interaction, client) {
         try {
             if (!client.riffy) {
-                return replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: 'Music is unavailable — Lavalink is not configured.' });
+                return replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: 'Nhạc hiện không khả dụng — Lavalink chưa được cấu hình.' });
             }
             await handleMusicButton(interaction, client);
         } catch (error) {

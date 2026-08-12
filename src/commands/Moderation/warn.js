@@ -9,18 +9,18 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("warn")
-        .setDescription("Warn a user")
+        .setDescription("Cảnh cáo một người dùng")
         .addUserOption((o) =>
             o
                 .setName("target")
                 .setRequired(true)
-                .setDescription("User to warn"),
+                .setDescription("Người dùng cần cảnh cáo"),
         )
         .addStringOption((o) =>
             o
                 .setName("reason")
                 .setRequired(true)
-                .setDescription("Reason for the warning"),
+                .setDescription("Lý do cảnh cáo"),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     category: "moderation",
@@ -46,7 +46,7 @@ export default {
             throw new TitanBotError(
                 'Missing target user',
                 ErrorTypes.USER_INPUT,
-                'You must specify a user to warn.',
+                'Bạn phải chỉ định người dùng để cảnh cáo.',
                 { subtype: 'invalid_user' },
             );
         }
@@ -55,7 +55,7 @@ export default {
             throw new TitanBotError(
                 'Missing warning reason',
                 ErrorTypes.VALIDATION,
-                'You must provide a reason for the warning.',
+                'Bạn phải cung cấp lý do cho cảnh cáo.',
                 { subtype: 'missing_required' },
             );
         }
@@ -99,8 +99,8 @@ export default {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    `⚠️ **Warned** ${target.tag}`,
-                    `**Reason:** ${reason}\n**Total Warns:** ${totalCount}`,
+                    `⚠️ **Đã cảnh cáo** ${target.tag}`,
+                    `**Lý do:** ${reason}\n**Tổng số cảnh cáo:** ${totalCount}`,
                 ),
             ],
         });

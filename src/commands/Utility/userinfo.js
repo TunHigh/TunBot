@@ -5,11 +5,11 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
     .setName("userinfo")
-    .setDescription("Get detailed information about a user")
+    .setDescription("Xem thông tin chi tiết về người dùng")
     .addUserOption((option) =>
       option
         .setName("target")
-        .setDescription("The user to inspect (defaults to you)"),
+        .setDescription("Người dùng cần xem (mặc định là bạn)"),
     ),
 
   async execute(interaction) {
@@ -29,11 +29,11 @@ export default {
     const createdTimestamp = Math.floor(user.createdAt.getTime() / 1000);
     const joinedTimestamp = member?.joinedAt ? Math.floor(member.joinedAt.getTime() / 1000) : null;
 
-    const embed = createEmbed({ title: `User Info: ${user.username}` })
+    const embed = createEmbed({ title: `Thông Tin Người Dùng: ${user.username}` })
       .setThumbnail(user.displayAvatarURL({ size: 256 }))
       .addFields(
         { name: "ID", value: user.id, inline: true },
-        { name: "Bot", value: user.bot ? "Yes" : "No", inline: true },
+        { name: "Bot", value: user.bot ? "Có" : "Không", inline: true },
         {
           name: "Roles",
           value:
@@ -42,22 +42,22 @@ export default {
                   .map((r) => r.name)
                   .slice(0, 5)
                   .join(",")
-              : "None",
+              : "Không có",
           inline: true,
         },
         {
-          name: "Account Created",
+          name: "Tạo Tài Khoản",
           value: `<t:${createdTimestamp}:R>`,
           inline: false,
         },
         {
-          name: "Joined Server",
-          value: joinedTimestamp ? `<t:${joinedTimestamp}:R>` : "Not in server",
+          name: "Vào Server",
+          value: joinedTimestamp ? `<t:${joinedTimestamp}:R>` : "Không ở trong server",
           inline: false,
         },
         {
-          name: "Highest Role",
-          value: member?.roles?.highest?.name || "None",
+          name: "Role Cao Nhất",
+          value: member?.roles?.highest?.name || "Không có",
           inline: true,
         },
       );

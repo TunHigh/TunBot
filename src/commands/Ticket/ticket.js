@@ -11,19 +11,19 @@ import ticketConfig from './modules/ticket_dashboard.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("ticket")
-        .setDescription("Manages the server's ticket system.")
+        .setDescription("Quản lý hệ thống vé hỗ trợ của máy chủ.")
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
         .addSubcommand((subcommand) =>
             subcommand
                 .setName("setup")
                 .setDescription(
-                    "Sets up the ticket creation panel in a specified channel.",
+                    "Cài đặt bảng tạo vé hỗ trợ trong một kênh được chỉ định.",
                 )
                 .addChannelOption((option) =>
                     option
 .setName("panel_channel")
                         .setDescription(
-                            "The channel where the ticket panel will be sent.",
+                            "Kênh nơi bảng vé hỗ trợ sẽ được gửi đến.",
                         )
                         .addChannelTypes(ChannelType.GuildText)
                         .setRequired(true),
@@ -33,7 +33,7 @@ export default {
                     option
                         .setName("panel_message")
                         .setDescription(
-                            "The main message/description for the ticket panel.",
+                            "Nội dung chính/mô tả cho bảng vé hỗ trợ.",
                         )
                         .setRequired(true),
                 )
@@ -41,7 +41,7 @@ export default {
                     option
                         .setName("button_label")
                         .setDescription(
-                            "The label for the ticket creation button (default: Create Ticket)",
+                            "Nhãn cho nút tạo vé hỗ trợ (mặc định: Tạo Vé Hỗ Trợ)",
                         )
                         .setRequired(false),
                 )
@@ -49,7 +49,7 @@ export default {
                     option
                         .setName("category")
                         .setDescription(
-                            "The category where new tickets will be created (optional).",
+                            "Danh mục nơi các vé hỗ trợ mới sẽ được tạo (tùy chọn).",
                         )
                         .addChannelTypes(ChannelType.GuildCategory)
                         .setRequired(false),
@@ -58,7 +58,7 @@ export default {
                     option
                         .setName("closed_category")
                         .setDescription(
-                            "The category where closed tickets will be moved (optional).",
+                            "Danh mục nơi các vé hỗ trợ đã đóng sẽ được chuyển đến (tùy chọn).",
                         )
                         .addChannelTypes(ChannelType.GuildCategory)
                         .setRequired(false),
@@ -67,14 +67,14 @@ export default {
                     option
                         .setName("staff_role")
                         .setDescription(
-                            "The role that can access tickets (optional).",
+                            "Vai trò có thể truy cập vé hỗ trợ (tùy chọn).",
                         )
                         .setRequired(false),
                 )
                 .addIntegerOption((option) =>
                     option
                         .setName("max_tickets_per_user")
-                        .setDescription("Maximum number of tickets a user can create (default: 3)")
+                        .setDescription("Số vé hỗ trợ tối đa một người dùng có thể tạo (mặc định: 3)")
                         .setMinValue(1)
                         .setMaxValue(10)
                         .setRequired(false),
@@ -82,14 +82,14 @@ export default {
                 .addBooleanOption((option) =>
                     option
                         .setName("dm_on_close")
-                        .setDescription("Send DM to user when their ticket is closed (default: true)")
+                        .setDescription("Gửi tin nhắn riêng cho người dùng khi vé của họ bị đóng (mặc định: bật)")
                         .setRequired(false),
                 ),
         )
         .addSubcommand((subcommand) =>
             subcommand
                 .setName("dashboard")
-                .setDescription("Open the interactive ticket system dashboard"),
+                .setDescription("Mở bảng điều khiển hệ thống vé hỗ trợ"),
         ),
     category: "ticket",
 
@@ -109,7 +109,7 @@ export default {
                 guildId: interaction.guildId,
                 commandName: 'ticket'
             });
-            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission for this action.' });
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền `Manage Channels` cho hành động này.' });
         }
 
         const subcommand = interaction.options.getSubcommand();
@@ -121,7 +121,7 @@ export default {
         if (subcommand === "setup") {
             const existingConfig = await getGuildConfig(client, interaction.guildId);
             if (existingConfig?.ticketPanelChannelId) {
-                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `This server already has a ticket system set up (panel in <#${existingConfig.ticketPanelChannelId}>).\n\nOnly one ticket system is supported per server. Use \`/ticket dashboard\` to edit or update the existing setup, or select **Delete System** from the dashboard to remove it and start fresh.` });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Máy chủ này đã có sẵn hệ thống vé hỗ trợ (bảng tại <#${existingConfig.ticketPanelChannelId}>).\n\nMỗi máy chủ chỉ hỗ trợ một hệ thống vé. Dùng \`/ticket dashboard\` để chỉnh sửa hoặc cập nhật hệ thống hiện tại, hoặc chọn **Xóa Hệ Thống** từ bảng điều khiển để xóa nó và bắt đầu lại từ đầu.` });
             }
 
             const panelChannel =
@@ -129,15 +129,15 @@ export default {
             const categoryChannel = interaction.options.getChannel("category");
             const closedCategoryChannel = interaction.options.getChannel("closed_category");
             const staffRole = interaction.options.getRole("staff_role");
-const panelMessage = interaction.options.getString("panel_message") || "Click the button below to create a support ticket.";
+const panelMessage = interaction.options.getString("panel_message") || "Nhấn vào nút bên dưới để tạo vé hỗ trợ.";
             const buttonLabel =
                 interaction.options.getString("button_label") ||
-"Create Ticket";
+"Tạo Vé Hỗ Trợ";
             const maxTicketsPerUser = interaction.options.getInteger("max_tickets_per_user") || 3;
 const dmOnClose = interaction.options.getBoolean("dm_on_close") !== false;
 
             const setupEmbed = createEmbed({ 
-                title: "Support Tickets", 
+                title: "Vé Hỗ Trợ", 
 description: panelMessage,
                 color: getColor('info')
             });
@@ -183,28 +183,28 @@ description: panelMessage,
                     });
                 }
 
-                let successMessage = `The ticket creation panel has been sent to ${panelChannel}.`;
+                let successMessage = `Bảng tạo vé hỗ trợ đã được gửi đến ${panelChannel}.`;
                 
                 if (categoryChannel) {
-                    successMessage += `New tickets will be created in the **${categoryChannel.name}** category.`;
+                    successMessage += `Vé hỗ trợ mới sẽ được tạo trong danh mục **${categoryChannel.name}**.`;
                 } else {
-                    successMessage += 'New tickets will be created in a new "Tickets" category.';
+                    successMessage += 'Vé hỗ trợ mới sẽ được tạo trong danh mục "Vé Hỗ Trợ" mới.';
                 }
                 
                 if (closedCategoryChannel) {
-                    successMessage += `Closed tickets will be moved to **${closedCategoryChannel.name}**.`;
+                    successMessage += `Vé hỗ trợ đã đóng sẽ được chuyển đến **${closedCategoryChannel.name}**.`;
                 }
                 
                 if (staffRole) {
-                    successMessage += `**${staffRole.name}** role will have access to tickets.`;
+                    successMessage += `Vai trò **${staffRole.name}** sẽ có quyền truy cập vé hỗ trợ.`;
                 }
                 
-                successMessage += `\n\n**Max Tickets Per User:** ${maxTicketsPerUser}\n**DM on Close:** ${dmOnClose ? 'Enabled' : 'Disabled'}`;
+                successMessage += `\n\n**Số Vé Tối Đa Mỗi Người:** ${maxTicketsPerUser}\n**DM Khi Đóng:** ${dmOnClose ? 'Bật' : 'Tắt'}`;
 
                 await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         successEmbed(
-                            "Ticket Panel Set Up",
+                            "Đã Cài Đặt Bảng Vé",
                             successMessage,
                         ),
                     ],
@@ -224,49 +224,49 @@ description: panelMessage,
                 });
 
                 const logEmbed = createEmbed({
-                    title: "Ticket System Setup (Configuration Log)",
-                    description: `The ticket panel was set up in ${panelChannel} by ${interaction.user}.`,
+                    title: "Cài Đặt Hệ Thống Vé Hỗ Trợ (Nhật Ký Cấu Hình)",
+                    description: `Bảng vé hỗ trợ đã được cài đặt trong ${panelChannel} bởi ${interaction.user}.`,
                     color: getColor('warning')
                 })
                     .addFields(
                         {
-                            name: "Panel Channel",
+                            name: "Kênh Bảng Vé",
                             value: panelChannel.toString(),
                             inline: true,
                         },
                         {
-                            name: "Ticket Category",
+                            name: "Danh Mục Vé",
                             value: categoryChannel
                                 ? categoryChannel.toString()
-                                : "None specified.",
+                                : "Chưa chỉ định.",
                             inline: true,
                         },
                         {
-                            name: "Closed Category",
+                            name: "Danh Mục Vé Đã Đóng",
                             value: closedCategoryChannel
                                 ? closedCategoryChannel.toString()
-                                : "None specified.",
+                                : "Chưa chỉ định.",
                             inline: true,
                         },
                         {
-                            name: "Staff Role",
+                            name: "Vai Trò Nhân Viên",
                             value: staffRole
                                 ? staffRole.toString()
-                                : "None specified.",
+                                : "Chưa chỉ định.",
                             inline: true,
                         },
                         {
-                            name: "Max Tickets Per User",
+                            name: "Số Vé Tối Đa Mỗi Người",
                             value: maxTicketsPerUser.toString(),
                             inline: true,
                         },
                         {
-                            name: "DM on Close",
-                            value: dmOnClose ? 'Enabled' : 'Disabled',
+                            name: "DM Khi Đóng",
+                            value: dmOnClose ? 'Bật' : 'Tắt',
                             inline: true,
                         },
                         {
-                            name: "Moderator",
+                            name: "Điều Hành Viên",
                             value: `${interaction.user.tag} (${interaction.user.id})`,
                             inline: false,
                         },
@@ -281,7 +281,7 @@ description: panelMessage,
                     commandName: 'ticket_setup'
                 });
                 if (interaction.deferred || interaction.replied) {
-                    await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not send the ticket panel or save configuration. Check the bot\'s permissions (especially the ability to send messages in the target channel) and database connection.' }).catch(err => {
+                    await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không thể gửi bảng vé hỗ trợ hoặc lưu cấu hình. Hãy kiểm tra quyền của bot (đặc biệt là quyền gửi tin nhắn trong kênh đích) và kết nối cơ sở dữ liệu.' }).catch(err => {
                         logger.error('Failed to send error reply', {
                             error: err.message,
                             guildId: interaction.guildId

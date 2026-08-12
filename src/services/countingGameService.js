@@ -4,8 +4,8 @@ const COUNTING_GAME_KEY_PREFIX = 'countingGame:';
 
 const COUNTING_SYSTEMS = {
   decimal: {
-    label: 'Decimal',
-    description: 'Standard 10-number system using 0-9',
+    label: 'Thập phân',
+    description: 'Hệ thống số thập phân tiêu chuẩn dùng 0-9',
     toString: (n) => n.toString(10),
     parse: (value) => {
       if (!/^[0-9]+$/.test(value)) return null;
@@ -13,8 +13,8 @@ const COUNTING_SYSTEMS = {
     },
   },
   hexadecimal: {
-    label: 'Hexadecimal',
-    description: '16-number system using 0-9 and A-F',
+    label: 'Thập lục phân',
+    description: 'Hệ thống số thập lục phân dùng 0-9 và A-F',
     toString: (n) => n.toString(16).toUpperCase(),
     parse: (value) => {
       if (!/^[0-9A-Fa-f]+$/.test(value)) return null;
@@ -22,8 +22,8 @@ const COUNTING_SYSTEMS = {
     },
   },
   binary: {
-    label: 'Binary',
-    description: '2-number system using 0-1',
+    label: 'Nhị phân',
+    description: 'Hệ thống số nhị phân dùng 0-1',
     toString: (n) => n.toString(2),
     parse: (value) => {
       if (!/^[01]+$/.test(value)) return null;
@@ -31,8 +31,8 @@ const COUNTING_SYSTEMS = {
     },
   },
   base36: {
-    label: 'Base36',
-    description: '36-number system using 0-9 and A-Z',
+    label: 'Cơ số 36',
+    description: 'Hệ thống số cơ số 36 dùng 0-9 và A-Z',
     toString: (n) => n.toString(36).toUpperCase(),
     parse: (value) => {
       if (!/^[0-9A-Za-z]+$/.test(value)) return null;
@@ -40,8 +40,8 @@ const COUNTING_SYSTEMS = {
     },
   },
   base64: {
-    label: 'Base64',
-    description: '64-number system using A-Z, a-z, 0-9, +, /',
+    label: 'Cơ số 64',
+    description: 'Hệ thống số cơ số 64 dùng A-Z, a-z, 0-9, +, /',
     alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
     toString: (n) => {
       if (n === 0) return 'A';
@@ -71,8 +71,8 @@ const COUNTING_SYSTEMS = {
     },
   },
   roman: {
-    label: 'Roman',
-    description: 'Roman numerals like I, II, III, IV, V',
+    label: 'Số La Mã',
+    description: 'Số La Mã như I, II, III, IV, V',
     toString: (n) => {
       const romanNumerals = [
         ['M', 1000], ['CM', 900], ['D', 500], ['CD', 400],
@@ -111,8 +111,8 @@ const COUNTING_SYSTEMS = {
     },
   },
   math: {
-    label: 'Math Expressions',
-    description: 'Use a math expression that equals the next number, like 4*4=16',
+    label: 'Phép toán',
+    description: 'Dùng một phép toán có kết quả bằng số tiếp theo, ví dụ 4*4=16',
     toString: (n) => `${n}`,
     parse: (value) => {
       const expression = value.replace(/\s+/g, '');
@@ -145,8 +145,8 @@ const COUNTING_SYSTEMS = {
     },
   },
   alphabet: {
-    label: 'Alphabet',
-    description: 'Letters A-Z in sequence',
+    label: 'Bảng chữ cái',
+    description: 'Các chữ cái A-Z theo thứ tự',
     toString: (n) => {
       let num = n;
       let result = '';
@@ -306,6 +306,6 @@ export function buildCountingLeaderboard(config, guild) {
     .map(([userId, count], index) => {
       const member = guild?.members?.cache?.get(userId);
       const username = member ? `${member.user.username}#${member.user.discriminator}` : `<@${userId}>`;
-      return `**${index + 1}.** ${username} — ${count} ${count === 1 ? 'count' : 'counts'}`;
+      return `**${index + 1}.** ${username} — ${count} lượt đếm`;
     });
 }

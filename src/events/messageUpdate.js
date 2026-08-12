@@ -16,14 +16,14 @@ export default {
       if (oldMessage.content === newMessage.content) return;
 
       const metaLines = [
-        formatLogLine('Channel', newMessage.channel ? `${newMessage.channel.name} ${newMessage.channel.toString()}` : 'Unknown'),
-        formatLogLine('Message ID', `\`${newMessage.id}\``),
-        formatLogLine('Message author', newMessage.author ? newMessage.author.toString() : 'Unknown'),
-        formatLogLine('Message created', `<t:${Math.floor(newMessage.createdTimestamp / 1000)}:R>`),
+        formatLogLine('Kênh', newMessage.channel ? `${newMessage.channel.name} ${newMessage.channel.toString()}` : 'Không xác định'),
+        formatLogLine('ID Tin Nhắn', `\`${newMessage.id}\``),
+        formatLogLine('Người gửi', newMessage.author ? newMessage.author.toString() : 'Không xác định'),
+        formatLogLine('Tin nhắn tạo lúc', `<t:${Math.floor(newMessage.createdTimestamp / 1000)}:R>`),
       ];
 
-      const oldContent = oldMessage.content || '*(empty message)*';
-      const newContent = newMessage.content || '*(empty message)*';
+      const oldContent = oldMessage.content || '*(tin nhắn trống)*';
+      const newContent = newMessage.content || '*(tin nhắn trống)*';
       const oldContentTruncated = oldContent.length > MAX_LOGGED_EDIT_CONTENT_LENGTH
         ? `${oldContent.substring(0, MAX_LOGGED_EDIT_CONTENT_LENGTH - 3)}...`
         : oldContent;
@@ -36,7 +36,7 @@ export default {
         guildId: newMessage.guild.id,
         eventType: EVENT_TYPES.MESSAGE_EDIT,
         data: {
-          title: 'Message edited',
+          title: 'Tin nhắn đã chỉnh sửa',
           lines: metaLines,
           quoted: true,
           fields: [

@@ -17,22 +17,22 @@ const defaultAccountAgeDays = autoVerifyDefaults.defaultAccountAgeDays ?? 7;
 export default {
     data: new SlashCommandBuilder()
         .setName("autoverify")
-        .setDescription("Configure automatic verification settings")
+        .setDescription("Cấu hình xác minh tự động")
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addSubcommand(subcommand =>
             subcommand
                 .setName("setup")
-                .setDescription("Set up automatic verification")
+                .setDescription("Thiết lập xác minh tự động")
                 .addRoleOption(option =>
                     option
                         .setName("role")
-                        .setDescription("Role to assign to users who meet auto-verify criteria")
+                        .setDescription("Vai trò gán cho người dùng đáp ứng tiêu chí xác minh tự động")
                         .setRequired(true)
                 )
                 .addStringOption(option =>
                     option
                         .setName("criteria")
-                        .setDescription("Criteria for automatic verification")
+                        .setDescription("Tiêu chí cho xác minh tự động")
                         .addChoices(
                             { name: "Account Age", value: "account_age" },
                             { name: "No Criteria", value: "none" }
@@ -42,7 +42,7 @@ export default {
                 .addIntegerOption(option =>
                     option
                         .setName("account_age_days")
-                        .setDescription("Minimum account age in days (required for account age criteria)")
+                        .setDescription("Tuổi tài khoản tối thiểu (days) (bắt buộc cho tiêu chí tuổi tài khoản)")
                         .setMinValue(minAccountAgeDays)
                         .setMaxValue(maxAccountAgeDays)
                         .setRequired(false)
@@ -51,7 +51,7 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("dashboard")
-                .setDescription("Open the auto-verification dashboard for customization")
+                .setDescription("Mở bảng điều khiển xác minh tự động để tùy chỉnh")
         ),
 
     async execute(interaction, config, client) {
@@ -179,7 +179,7 @@ async function handleSetup(interaction, guild, client) {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [successEmbed(
                 "Auto-Verification Configured",
-                `Automatic verification has been configured!\n\n**Role:** ${targetRole}\n**Criteria:** ${criteriaDescription}\n\nUsers who meet these criteria will receive this role when they join the server.`
+                `Xác minh tự động đã được cấu hình!\n\n**Role:** ${targetRole}\n**Tiêu chí:** ${criteriaDescription}\n\nNgười dùng đáp ứng tiêu chí này sẽ nhận role này khi gia nhập server.`
             )]
         });
 

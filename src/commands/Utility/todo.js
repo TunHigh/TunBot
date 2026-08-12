@@ -13,119 +13,119 @@ function generateShareId() {
 export default {
     data: new SlashCommandBuilder()
         .setName("todo")
-        .setDescription("Manage your personal to-do list")
+        .setDescription("Quản lý danh sách công việc cần làm của bạn")
         .addSubcommand(subcommand =>
             subcommand
                 .setName("add")
-                .setDescription("Add a task to your to-do list")
+                .setDescription("Thêm công việc vào danh sách của bạn")
                 .addStringOption(option =>
                     option
                         .setName("task")
-                        .setDescription("The task to add")
+                        .setDescription("Công việc cần thêm")
                         .setRequired(true)
                 )
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName("list")
-                .setDescription("View your to-do list")
+                .setDescription("Xem danh sách công việc của bạn")
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName("complete")
-                .setDescription("Mark a task as complete")
+                .setDescription("Đánh dấu công việc đã hoàn thành")
                 .addIntegerOption(option =>
                     option
                         .setName("number")
-                        .setDescription("The number of the task to complete")
+                        .setDescription("Số thứ tự công việc cần hoàn thành")
                         .setRequired(true)
                 )
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName("remove")
-                .setDescription("Remove a task from your to-do list")
+                .setDescription("Xóa công việc khỏi danh sách của bạn")
                 .addIntegerOption(option =>
                     option
                         .setName("number")
-                        .setDescription("The number of the task to remove")
+                        .setDescription("Số thứ tự công việc cần xóa")
                         .setRequired(true)
                 )
         )
         .addSubcommandGroup(group => 
             group
                 .setName("share")
-                .setDescription("Manage shared to-do lists")
+                .setDescription("Quản lý danh sách dùng chung")
                 .addSubcommand(subcommand =>
                     subcommand
                         .setName("create")
-                        .setDescription("Create a new shared to-do list")
+                        .setDescription("Tạo danh sách dùng chung mới")
                         .addStringOption(option =>
                             option
                                 .setName("name")
-                                .setDescription("Name for the shared list")
+                                .setDescription("Tên cho danh sách dùng chung")
                                 .setRequired(true)
                         )
                 )
                 .addSubcommand(subcommand =>
                     subcommand
                         .setName("add")
-                        .setDescription("Add a member to a shared list")
+                        .setDescription("Thêm thành viên vào danh sách dùng chung")
                         .addStringOption(option =>
                             option
                                 .setName("list_id")
-                                .setDescription("ID of the shared list")
+                                .setDescription("ID của danh sách dùng chung")
                                 .setRequired(true)
                         )
                         .addUserOption(option =>
                             option
                                 .setName("user")
-                                .setDescription("User to add to the list")
+                                .setDescription("Người dùng cần thêm vào danh sách")
                                 .setRequired(true)
                         )
                 )
                 .addSubcommand(subcommand =>
                     subcommand
                         .setName("view")
-                        .setDescription("View a shared to-do list")
+                        .setDescription("Xem danh sách dùng chung")
                         .addStringOption(option =>
                             option
                                 .setName("list_id")
-                                .setDescription("ID of the shared list")
+                                .setDescription("ID của danh sách dùng chung")
                                 .setRequired(true)
                         )
                 )
                 .addSubcommand(subcommand =>
                     subcommand
                         .setName("addtask")
-                        .setDescription("Add a task to a shared to-do list")
+                        .setDescription("Thêm công việc vào danh sách dùng chung")
                         .addStringOption(option =>
                             option
                                 .setName("list_id")
-                                .setDescription("ID of the shared list")
+                                .setDescription("ID của danh sách dùng chung")
                                 .setRequired(true)
                         )
                         .addStringOption(option =>
                             option
                                 .setName("task")
-                                .setDescription("The task to add")
+                                .setDescription("Công việc cần thêm")
                                 .setRequired(true)
                         )
                 )
                 .addSubcommand(subcommand =>
                     subcommand
                         .setName("remove")
-                        .setDescription("Remove a task from a shared to-do list")
+                        .setDescription("Xóa công việc khỏi danh sách dùng chung")
                         .addStringOption(option =>
                             option
                                 .setName("list_id")
-                                .setDescription("ID of the shared list")
+                                .setDescription("ID của danh sách dùng chung")
                                 .setRequired(true)
                         )
                         .addIntegerOption(option =>
                             option
                                 .setName("number")
-                                .setDescription("The number of the task to remove")
+                                .setDescription("Số thứ tự công việc cần xóa")
                                 .setRequired(true)
                         )
                 )
@@ -197,9 +197,9 @@ export default {
                     return await InteractionHelper.safeEditReply(interaction, {
                         embeds: [
                             successEmbed(
-                                "Shared List Created",
-                                `Created shared list "${listName}" with ID: \`${listId}\`\n` +
-                                `Use \`/todo share add list_id:${listId} user:@username\` to add members.`
+                                "Đã Tạo Danh Sách Dùng Chung",
+                                `Đã tạo danh sách dùng chung "${listName}" với ID: \`${listId}\`\n` +
+                                `Dùng \`/todo share add list_id:${listId} user:@username\` để thêm thành viên.`
                             )
                         ]
                     });
@@ -211,11 +211,11 @@ export default {
 
                     const listData = await getOrCreateSharedList(listId);
                     if (!listData) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Shared list not found.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không tìm thấy danh sách dùng chung.' });
                     }
 
                     if (listData.creatorId !== userId) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Only the list creator can add members.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Chỉ người tạo danh sách mới có thể thêm thành viên.' });
                     }
 
                     if (!listData.members.includes(memberToAdd.id)) {
@@ -231,13 +231,13 @@ export default {
 
                         return await InteractionHelper.safeEditReply(interaction, {
                             embeds: [
-                                successEmbed('Member Added', 
-                                    `Added ${memberToAdd.username} to the shared list "${listData.name}"`
+                                successEmbed('Đã Thêm Thành Viên', 
+                                    `Đã thêm ${memberToAdd.username} vào danh sách dùng chung "${listData.name}"`
                                 )
                             ]
                         });
                     } else {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'User is already a member of this list.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Người dùng này đã là thành viên của danh sách.' });
                     }
                 }
 
@@ -246,11 +246,11 @@ export default {
                     const listData = await getOrCreateSharedList(listId);
 
                     if (!listData) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Shared list not found.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không tìm thấy danh sách dùng chung.' });
                     }
 
                     if (!listData.members.includes(userId)) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'You don\'t have access to this list.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Bạn không có quyền truy cập danh sách này.' });
                     }
 
                     if (listData.tasks.length === 0) {
@@ -266,25 +266,25 @@ export default {
                                 embeds: [
                                     successEmbed(
                                         `📋 **${listData.name}**\n\n` +
-                                        `👑 **Owner:** ${ownerName}\n` +
-                                        `👥 **Members:** ${memberList}\n\n` +
-                                        `*This list is currently empty. Use the "Add Task" button to add tasks!*`,
-                                        `Shared List (ID: \`${listId}\`)`
+                                        `👑 **Chủ Sở Hữu:** ${ownerName}\n` +
+                                        `👥 **Thành Viên:** ${memberList}\n\n` +
+                                        `*Danh sách hiện đang trống. Dùng nút "Thêm Công Việc" để thêm công việc nhé!*`,
+                                        `Danh Sách Dùng Chung (ID: \`${listId}\`)`
                                     )
                                 ],
                                 components: [
                                     new ActionRowBuilder().addComponents(
                                         new ButtonBuilder()
                                             .setCustomId(`shared_todo_add_${listId}`)
-                                            .setLabel('Add Task')
+                                            .setLabel('Thêm Công Việc')
                                             .setStyle(ButtonStyle.Primary),
                                         new ButtonBuilder()
                                             .setCustomId(`shared_todo_complete_${listId}`)
-                                            .setLabel('Complete Task')
+                                            .setLabel('Hoàn Thành Công Việc')
                                             .setStyle(ButtonStyle.Success),
                                         new ButtonBuilder()
                                             .setCustomId(`shared_todo_remove_${listId}`)
-                                            .setLabel('Remove Task')
+                                            .setLabel('Xóa Công Việc')
                                             .setStyle(ButtonStyle.Danger)
                                     )
                                 ]
@@ -295,7 +295,7 @@ export default {
                         .map(task => 
                             `${task.completed ? '✅' : '📝'} #${task.id} ${task.text}` +
                             `\`[${new Date(task.createdAt).toLocaleDateString()}]` +
-                            (task.completed ? `• Completed by ${task.completedBy}` : '') + '`'
+                            (task.completed ? `• Hoàn thành bởi ${task.completedBy}` : '') + '`'
                         )
                         .join('\n');
 
@@ -308,27 +308,27 @@ export default {
                     const ownerName = owner ? owner.user.username : `<@${listData.creatorId}>`;
 
                     const fullListDisplay = `📋 **${listData.name}**\n\n` +
-                        `👑 **Owner:** ${ownerName}\n` +
-                        `👥 **Members:** ${memberList}\n\n` +
-                        `**Tasks:**\n${taskList}`;
+                        `👑 **Chủ Sở Hữu:** ${ownerName}\n` +
+                        `👥 **Thành Viên:** ${memberList}\n\n` +
+                        `**Công Việc:**\n${taskList}`;
 
                     return await InteractionHelper.safeEditReply(interaction, {
                         embeds: [
-                            successEmbed(`Shared List (ID: \`${listId}\`)`, fullListDisplay)
+                            successEmbed(`Danh Sách Dùng Chung (ID: \`${listId}\`)`, fullListDisplay)
                         ],
                         components: [
                             new ActionRowBuilder().addComponents(
                                 new ButtonBuilder()
                                     .setCustomId(`shared_todo_add_${listId}`)
-                                    .setLabel('Add Task')
+                                    .setLabel('Thêm Công Việc')
                                     .setStyle(ButtonStyle.Primary),
                                 new ButtonBuilder()
                                     .setCustomId(`shared_todo_complete_${listId}`)
-                                    .setLabel('Complete Task')
+                                    .setLabel('Hoàn Thành Công Việc')
                                     .setStyle(ButtonStyle.Success),
                                 new ButtonBuilder()
                                     .setCustomId(`shared_todo_remove_${listId}`)
-                                    .setLabel('Remove Task')
+                                    .setLabel('Xóa Công Việc')
                                     .setStyle(ButtonStyle.Danger)
                             )
                         ]
@@ -342,11 +342,11 @@ export default {
                     const listData = await getOrCreateSharedList(listId);
 
                     if (!listData) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Shared list not found.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không tìm thấy danh sách dùng chung.' });
                     }
 
                     if (!listData.members.includes(userId)) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'You don\'t have access to this list.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Bạn không có quyền truy cập danh sách này.' });
                     }
 
                     const newTask = {
@@ -362,7 +362,7 @@ export default {
 
                     return await InteractionHelper.safeEditReply(interaction, {
                         embeds: [
-                            successEmbed('Task Added', `Added "${taskText}" to the shared list "${listData.name}"`)
+                            successEmbed('Đã Thêm Công Việc', `Đã thêm "${taskText}" vào danh sách dùng chung "${listData.name}"`)
                         ]
                     });
                 }
@@ -374,16 +374,16 @@ export default {
                     const listData = await getOrCreateSharedList(listId);
 
                     if (!listData) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Shared list not found.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không tìm thấy danh sách dùng chung.' });
                     }
 
                     if (!listData.members.includes(userId)) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'You don\'t have access to this list.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Bạn không có quyền truy cập danh sách này.' });
                     }
 
                     const taskIndex = listData.tasks.findIndex(task => task.id === taskNumber);
                     if (taskIndex === -1) {
-                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Task not found.' });
+                        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không tìm thấy công việc.' });
                     }
 
                     const [removedTask] = listData.tasks.splice(taskIndex, 1);
@@ -391,7 +391,7 @@ export default {
 
                     return await InteractionHelper.safeEditReply(interaction, {
                         embeds: [
-                            successEmbed('Task Removed', `Removed "${removedTask.text}" from the shared list "${listData.name}".`)
+                            successEmbed('Đã Xóa Công Việc', `Đã xóa "${removedTask.text}" khỏi danh sách dùng chung "${listData.name}".`)
                         ]
                     });
                 }
@@ -426,8 +426,8 @@ export default {
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         successEmbed(
-                            "Task Added",
-                            `Added "${taskText}" to your to-do list.`
+                            "Đã Thêm Công Việc",
+                            `Đã thêm "${taskText}" vào danh sách công việc của bạn.`
                         ),
                     ],
                 });
@@ -436,7 +436,7 @@ export default {
             case 'list': {
                 if (userData.tasks.length === 0) {
                     return await InteractionHelper.safeEditReply(interaction, {
-                        embeds: [successEmbed('Your to-do list is empty!', "Your To-Do List")],
+                        embeds: [successEmbed('Danh sách công việc của bạn đang trống!', "Danh Sách Công Việc Của Bạn")],
                     });
                 }
 
@@ -449,7 +449,7 @@ export default {
 
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
-                        successEmbed('Your To-Do List', taskList)
+                        successEmbed('Danh Sách Công Việc Của Bạn', taskList)
                     ],
                 });
             }
@@ -459,11 +459,11 @@ export default {
                 const task = userData.tasks.find(t => t.id === taskNumber);
 
                 if (!task) {
-                    return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Task not found.' });
+                    return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không tìm thấy công việc.' });
                 }
 
                 if (task.completed) {
-                    return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Task #${task.id} is already completed.` });
+                    return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Công việc #${task.id} đã hoàn thành rồi.` });
                 }
 
                 task.completed = true;
@@ -471,7 +471,7 @@ export default {
 
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
-                        successEmbed('Task Completed', `Marked "${task.text}" as complete!`)
+                        successEmbed('Đã Hoàn Thành', `Đã đánh dấu "${task.text}" là hoàn thành!`)
                     ],
                 });
             }
@@ -481,7 +481,7 @@ export default {
                 const taskIndex = userData.tasks.findIndex(t => t.id === taskNumber);
 
                 if (taskIndex === -1) {
-                    return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Task not found.' });
+                    return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không tìm thấy công việc.' });
                 }
 
                 const [removedTask] = userData.tasks.splice(taskIndex, 1);
@@ -489,13 +489,13 @@ export default {
 
                 return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
-                        successEmbed('Task Removed', `Removed "${removedTask.text}" from your to-do list.`)
+                        successEmbed('Đã Xóa Công Việc', `Đã xóa "${removedTask.text}" khỏi danh sách công việc của bạn.`)
                     ],
                 });
             }
 
             default:
-                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Invalid subcommand.' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Lệnh con không hợp lệ.' });
         }
     },
 };

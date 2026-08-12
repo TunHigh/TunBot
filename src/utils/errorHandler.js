@@ -117,54 +117,54 @@ export function categorizeError(error) {
 
 const UserMessages = {
     [ErrorTypes.VALIDATION]: {
-        default: 'Please check your input and try again.',
-        missing_required: "You're missing some required information. Check the command options and try again.",
-        invalid_format: 'The format you provided is incorrect. Check the command usage and try again.'
+        default: 'Vui lòng kiểm tra lại thông tin bạn nhập và thử lại nhé.',
+        missing_required: 'Bạn đang thiếu một số thông tin bắt buộc. Kiểm tra lại các tùy chọn của lệnh và thử lại nhé.',
+        invalid_format: 'Định dạng bạn cung cấp không đúng. Kiểm tra lại cách sử dụng lệnh và thử lại nhé.'
     },
     [ErrorTypes.PERMISSION]: {
-        default: "You don't have permission to do that.",
-        user_permission: "You don't have permission to use this command.",
-        bot_permission: "I don't have the permissions needed to do that in this channel."
+        default: 'Bạn không có quyền thực hiện hành động này.',
+        user_permission: 'Bạn không có quyền sử dụng lệnh này.',
+        bot_permission: 'Mình không có quyền cần thiết để thực hiện điều đó trong kênh này.'
     },
     [ErrorTypes.CONFIGURATION]: {
-        default: 'This feature is not set up yet. Ask a server administrator to configure it.',
-        missing_config: 'This feature has not been configured yet. Ask a server administrator to set it up.',
-        invalid_config: 'The server configuration for this feature is invalid. Ask a server administrator to review it.'
+        default: 'Tính năng này chưa được thiết lập. Hãy nhờ quản trị viên máy chủ cấu hình nhé.',
+        missing_config: 'Tính năng này chưa được cấu hình. Hãy nhờ quản trị viên máy chủ thiết lập nhé.',
+        invalid_config: 'Cấu hình máy chủ cho tính năng này không hợp lệ. Hãy nhờ quản trị viên máy chủ kiểm tra lại.'
     },
     [ErrorTypes.DATABASE]: {
-        default: 'Something went wrong while saving data. Please try again in a moment.',
-        connection_failed: 'I could not reach the database. Please try again later.',
-        timeout: 'That took too long to complete. Please try again.'
+        default: 'Đã xảy ra lỗi khi lưu dữ liệu. Vui lòng thử lại sau vài giây nữa nhé.',
+        connection_failed: 'Mình không thể kết nối đến cơ sở dữ liệu. Vui lòng thử lại sau nhé.',
+        timeout: 'Thao tác này mất quá nhiều thời gian. Vui lòng thử lại nhé.'
     },
     [ErrorTypes.NETWORK]: {
-        default: 'I could not reach an external service. Please try again in a moment.',
-        timeout: 'The request timed out. Please try again.',
-        unreachable: 'The service is unavailable right now. Please try again later.'
+        default: 'Mình không thể kết nối đến dịch vụ bên ngoài. Vui lòng thử lại sau vài giây nữa nhé.',
+        timeout: 'Yêu cầu đã hết thời gian chờ. Vui lòng thử lại nhé.',
+        unreachable: 'Dịch vụ hiện không khả dụng. Vui lòng thử lại sau nhé.'
     },
     [ErrorTypes.DISCORD_API]: {
-        default: 'Discord rejected that request. Please try again in a moment.',
-        rate_limit: "You're doing that too quickly. Wait a moment and try again.",
-        forbidden: "I'm not allowed to do that here. Check my role permissions."
+        default: 'Discord đã từ chối yêu cầu đó. Vui lòng thử lại sau vài giây nữa nhé.',
+        rate_limit: 'Bạn đang thao tác quá nhanh. Chờ một chút rồi thử lại nhé.',
+        forbidden: 'Mình không được phép làm điều đó ở đây. Kiểm tra quyền của vai trò bot nhé.'
     },
     [ErrorTypes.USER_INPUT]: {
-        default: 'There was a problem with your request. Check your input and try again.',
-        invalid_user: 'I could not find that user. Check the mention or ID and try again.',
-        invalid_channel: 'I could not find that channel. Check the mention or ID and try again.'
+        default: 'Có vấn đề với yêu cầu của bạn. Kiểm tra lại thông tin và thử lại nhé.',
+        invalid_user: 'Mình không tìm thấy người dùng đó. Kiểm tra lại mention hoặc ID và thử lại nhé.',
+        invalid_channel: 'Mình không tìm thấy kênh đó. Kiểm tra lại mention hoặc ID và thử lại nhé.'
     },
     [ErrorTypes.RATE_LIMIT]: {
-        default: "You're doing that too quickly. Wait a moment and try again.",
-        command_cooldown: 'This command is on cooldown. Wait before using it again.',
-        global_rate_limit: 'Discord is rate limiting requests. Wait a moment and try again.'
+        default: 'Bạn đang thao tác quá nhanh. Chờ một chút rồi thử lại nhé.',
+        command_cooldown: 'Lệnh này đang trong thời gian chờ. Đợi một chút rồi dùng lại nhé.',
+        global_rate_limit: 'Discord đang giới hạn tốc độ yêu cầu. Chờ một chút rồi thử lại nhé.'
     },
     [ErrorTypes.UNKNOWN]: {
-        default: 'Something went wrong. Please try again in a moment.',
-        unexpected: 'An unexpected error occurred. Please try again later.',
-        warn_failed: 'I could not warn that member. Check my permissions and role hierarchy, then try again.',
-        kick_failed: 'I could not kick that member. Check my permissions and role hierarchy, then try again.',
-        ban_failed: 'I could not ban that member. Check my permissions and role hierarchy, then try again.',
-        unban_failed: 'I could not unban that user. Check my permissions and try again.',
-        timeout_failed: 'I could not timeout that member. Check my permissions and role hierarchy, then try again.',
-        untimeout_failed: 'I could not remove the timeout. Check my permissions and try again.'
+        default: 'Đã xảy ra lỗi. Vui lòng thử lại sau vài giây nữa nhé.',
+        unexpected: 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau nhé.',
+        warn_failed: 'Mình không thể cảnh cáo thành viên đó. Kiểm tra quyền và thứ bậc vai trò của mình, rồi thử lại nhé.',
+        kick_failed: 'Mình không thể kick thành viên đó. Kiểm tra quyền và thứ bậc vai trò của mình, rồi thử lại nhé.',
+        ban_failed: 'Mình không thể ban thành viên đó. Kiểm tra quyền và thứ bậc vai trò của mình, rồi thử lại nhé.',
+        unban_failed: 'Mình không thể bỏ ban người dùng đó. Kiểm tra quyền của mình rồi thử lại nhé.',
+        timeout_failed: 'Mình không thể tạm khóa thành viên đó. Kiểm tra quyền và thứ bậc vai trò của mình, rồi thử lại nhé.',
+        untimeout_failed: 'Mình không thể gỡ tạm khóa. Kiểm tra quyền của mình rồi thử lại nhé.'
     }
 };
 

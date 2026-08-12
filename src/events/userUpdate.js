@@ -52,11 +52,11 @@ export default {
           guildId: guild.id,
           eventType: EVENT_TYPES.MEMBER_NAME_CHANGE,
           data: {
-            description: `${newUser.tag} updated their username`,
+            description: `${newUser.tag} đã cập nhật tên người dùng của họ`,
             userId: newUser.id,
             fields: [
               {
-                name: '👤 User',
+                name: '👤 Người dùng',
                 value: `${newUser.tag} (${newUser.id})`,
                 inline: true
               },

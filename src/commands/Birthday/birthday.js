@@ -13,11 +13,11 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('birthday')
-        .setDescription('Birthday system commands')
+        .setDescription('Lệnh hệ thống sinh nhật')
         .addSubcommand(subcommand =>
             subcommand
                 .setName('set')
-                .setDescription('Set your birthday')
+                .setDescription('Đặt sinh nhật của bạn')
                 .addIntegerOption(option =>
                     option
                         .setName('month')
@@ -38,7 +38,7 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('info')
-                .setDescription('View birthday information')
+                .setDescription('Xem thông tin sinh nhật')
                 .addUserOption(option =>
                     option
                         .setName('user')
@@ -49,22 +49,22 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('list')
-                .setDescription('List all birthdays in the server')
+                .setDescription('Liệt kê tất cả sinh nhật trong server')
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName('remove')
-                .setDescription('Remove your birthday')
+                .setDescription('Xóa sinh nhật của bạn')
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName('next')
-                .setDescription('Show upcoming birthdays')
+                .setDescription('Hiện các sinh nhật sắp tới')
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName('setchannel')
-                .setDescription('Set or disable the channel for birthday announcements. (Manage Server required)')
+                .setDescription('Thiết lập hoặc vô hiệu hóa kênh thông báo sinh nhật. (Cần quyền Manage Server)')
                 .addChannelOption(option =>
                     option
                         .setName('channel')

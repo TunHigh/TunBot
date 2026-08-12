@@ -1,9 +1,9 @@
 export const shopItems = [
     {
         id: 'extra_work',
-        name: 'Extra Work Shift',
+        name: 'Ca Làm Việc Thêm',
         price: 5000,
-        description: 'Allows 1 extra use of the `/work` command.',
+        description: 'Cho phép dùng thêm 1 lần lệnh `/work`.',
         type: 'consumable',
         maxQuantity: 5,
 cooldown: 86400000,
@@ -15,9 +15,9 @@ cooldown: 86400000,
     },
     {
         id: 'bank_upgrade_1',
-        name: 'Bank Upgrade I',
+        name: 'Nâng Cấp Ngân Hàng I',
         price: 15000,
-        description: 'Increases bank capacity and allows more funds to be deposited.',
+        description: 'Tăng sức chứa ngân hàng, cho phép gửi nhiều tiền hơn.',
         type: 'upgrade',
         maxLevel: 5,
         effect: {
@@ -27,9 +27,9 @@ cooldown: 86400000,
     },
     {
         id: 'diamond_pickaxe',
-        name: 'Diamond Pickaxe',
+        name: 'Cúp Kim Cương',
         price: 50000,
-        description: 'Increases yield from `/mine`',
+        description: 'Tăng sản lượng khai thác `/mine`',
         type: 'tool',
         durability: 100,
         effect: {
@@ -39,9 +39,9 @@ cooldown: 86400000,
     },
     {
         id: 'premium_role',
-        name: 'Premium Server Role',
+        name: 'Vai Trò Premium Của Máy Chủ',
         price: 15000,
-        description: 'A special role granting a fancy color and a 10% daily bonus.',
+        description: 'Vai trò đặc biệt với màu nổi bật và thưởng hằng ngày +10%.',
         type: 'role',
 roleId: null,
         effect: {
@@ -51,9 +51,9 @@ roleId: null,
     },
     {
         id: 'lucky_clover',
-        name: 'Lucky Clover',
+        name: 'Cỏ May Mắn',
         price: 10000,
-        description: 'Increases the chance of winning a higher payout on `/gamble` once.',
+        description: 'Tăng cơ hội thắng lớn khi đánh bạc `/gamble` một lần.',
         type: 'consumable',
         maxQuantity: 10,
         effect: {
@@ -64,9 +64,9 @@ roleId: null,
     },
     {
         id: 'fishing_rod',
-        name: '🎣 Fishing Rod',
+        name: '🎣 Cần Câu',
         price: 5000,
-        description: 'Used for fishing commands',
+        description: 'Dùng cho lệnh câu cá',
         type: 'tool',
         durability: 100,
         effect: {
@@ -76,9 +76,9 @@ roleId: null,
     },
     {
         id: 'pickaxe',
-        name: '⛏️ Pickaxe',
+        name: '⛏️ Cúp',
         price: 7500,
-        description: 'Used for mining commands',
+        description: 'Dùng cho lệnh khai thác',
         type: 'tool',
         durability: 100,
         effect: {
@@ -90,7 +90,7 @@ roleId: null,
         id: 'laptop',
         name: '💻 Laptop',
         price: 15000,
-        description: 'Increases work earnings',
+        description: 'Tăng thu nhập khi làm việc',
         type: 'tool',
         durability: 200,
         effect: {
@@ -100,9 +100,9 @@ roleId: null,
     },
     {
         id: 'lucky_charm',
-        name: '🍀 Lucky Charm',
+        name: '🍀 Bùa May Mắn',
         price: 10000,
-        description: 'Increases luck for gambling. Has 3 uses before being consumed.',
+        description: 'Tăng vận may khi đánh bạc. Có 3 lượt dùng trước khi bị tiêu hao.',
         type: 'consumable',
         maxQuantity: 10,
         effect: {
@@ -113,9 +113,9 @@ roleId: null,
     },
     {
         id: 'bank_note',
-        name: '📜 Bank Note',
+        name: '📜 Trái Phiếu Ngân Hàng',
         price: 25000,
-        description: 'Increases bank capacity by 10,000. Can be purchased multiple times.',
+        description: 'Tăng sức chứa ngân hàng thêm 10,000. Có thể mua nhiều lần.',
         type: 'tool',
         durability: null,
         effect: {
@@ -125,9 +125,9 @@ roleId: null,
     },
     {
         id: 'personal_safe',
-        name: '🔒 Personal Safe',
+        name: '🔒 Két Sắt Cá Nhân',
         price: 30000,
-        description: 'Protects your money from theft. Prevents others from robbing you.',
+        description: 'Bảo vệ tiền của bạn khỏi trộm cắp. Ngăn người khác trộm bạn.',
         type: 'tool',
         durability: null,
         effect: {
@@ -153,7 +153,7 @@ export function getItemPrice(itemId) {
 export function validatePurchase(itemId, userData) {
     const item = getItemById(itemId);
     if (!item) {
-        return { valid: false, reason: 'Item not found' };
+        return { valid: false, reason: 'Không tìm thấy vật phẩm' };
     }
 
     const inventory = userData.inventory || {};
@@ -164,7 +164,7 @@ export function validatePurchase(itemId, userData) {
         if (currentQuantity >= item.maxQuantity) {
             return { 
                 valid: false, 
-                reason: `You can only have a maximum of ${item.maxQuantity} ${item.name}s` 
+                reason: `Bạn chỉ có thể sở hữu tối đa ${item.maxQuantity} ${item.name}` 
             };
         }
     }
@@ -174,7 +174,7 @@ export function validatePurchase(itemId, userData) {
         if (upgrades[itemId]) {
             return { 
                 valid: false, 
-                reason: `You've already purchased ${item.name}` 
+                reason: `Bạn đã mua ${item.name} rồi` 
             };
         }
     }
@@ -185,7 +185,7 @@ export function validatePurchase(itemId, userData) {
         if (itemId !== 'bank_note' && currentQuantity > 0) {
             return { 
                 valid: false, 
-                reason: `You already have a ${item.name}` 
+                reason: `Bạn đã có ${item.name} rồi` 
             };
         }
     }
@@ -194,7 +194,7 @@ export function validatePurchase(itemId, userData) {
         if (userData.roles?.includes(item.roleId)) {
             return { 
                 valid: false, 
-                reason: `You already have the ${item.name} role` 
+                reason: `Bạn đã có vai trò ${item.name} rồi` 
             };
         }
     }

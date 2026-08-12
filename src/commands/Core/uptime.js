@@ -6,7 +6,7 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
     .setName("uptime")
-    .setDescription("Check how long the bot has been online"),
+    .setDescription("Xem bot đã hoạt động trong bao lâu"),
 
   async execute(interaction) {
     try {
@@ -20,11 +20,11 @@ export default {
       let minutes = Math.floor(totalSeconds / 60);
       let seconds = Math.floor(totalSeconds % 60);
 
-      const uptimeStr = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      const uptimeStr = `${days} ngày ${hours} giờ ${minutes} phút ${seconds} giây`;
 
       await InteractionHelper.safeEditReply(interaction, {
         embeds: [createEmbed({ 
-          title: "System Uptime", 
+          title: "Thời Gian Hoạt Động", 
           description: `\`\`\`${uptimeStr}\`\`\`` 
         })],
       });
@@ -33,7 +33,7 @@ export default {
       
       try {
         return await InteractionHelper.safeEditReply(interaction, {
-          embeds: [createEmbed({ title: 'System Error', description: 'Could not compute uptime.', color: 'error' })],
+          embeds: [createEmbed({ title: 'Lỗi Hệ Thống', description: 'Không thể tính thời gian hoạt động.', color: 'error' })],
           flags: MessageFlags.Ephemeral,
         });
       } catch (replyError) {

@@ -21,19 +21,19 @@ const GIVEAWAY_MAX_WINNERS = botConfig.giveaways?.maximumWinners ?? 10;
 export default {
     data: new SlashCommandBuilder()
         .setName("gcreate")
-        .setDescription("Starts a new giveaway in a specified channel.")
+        .setDescription("Bắt đầu một quà tặng mới trong kênh đã chỉ định.")
         .addStringOption((option) =>
             option
                 .setName("duration")
                 .setDescription(
-                    "How long the giveaway should last (e.g., 1h, 30m, 5d).",
+                    "Thời gian quà tặng kéo dài (ví dụ: 1h, 30m, 5d).",
                 )
                 .setRequired(true),
         )
         .addIntegerOption((option) =>
             option
                 .setName("winners")
-                .setDescription("The number of winners to pick.")
+                .setDescription("Số người thắng được chọn.")
                 .setMinValue(GIVEAWAY_MIN_WINNERS)
                 .setMaxValue(GIVEAWAY_MAX_WINNERS)
                 .setRequired(true),
@@ -41,13 +41,13 @@ export default {
         .addStringOption((option) =>
             option
                 .setName("prize")
-                .setDescription("The prize being given away.")
+                .setDescription("Phần thưởng của quà tặng.")
                 .setRequired(true),
         )
         .addChannelOption((option) =>
             option
                 .setName("channel")
-                .setDescription("The channel to send the giveaway to (defaults to current channel).")
+                .setDescription("Kênh gửi quà tặng (mặc định là kênh hiện tại).")
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(false),
         )
@@ -61,7 +61,7 @@ export default {
             throw new TitanBotError(
                 'Giveaway command used outside guild',
                 ErrorTypes.VALIDATION,
-                'This command can only be used in a server.',
+                'Lệnh này chỉ có thể dùng trong máy chủ.',
                 { userId: interaction.user.id }
             );
         }
@@ -70,7 +70,7 @@ export default {
             throw new TitanBotError(
                 'User lacks ManageGuild permission',
                 ErrorTypes.PERMISSION,
-                "You need the 'Manage Server' permission to start a giveaway.",
+                "Bạn cần quyền 'Manage Server' để bắt đầu quà tặng.",
                 { userId: interaction.user.id, guildId: interaction.guildId }
             );
         }
@@ -90,7 +90,7 @@ export default {
             throw new TitanBotError(
                 'Target channel is not text-based',
                 ErrorTypes.VALIDATION,
-                'The channel must be a text channel.',
+                'Kênh phải là kênh văn bản.',
                 { channelId: targetChannel.id, channelType: targetChannel.type }
             );
         }
@@ -116,7 +116,7 @@ export default {
         const row = createGiveawayButtons(false);
 
         const giveawayMessage = await targetChannel.send({
-            content: "🎉 **NEW GIVEAWAY** 🎉",
+            content: "🎉 **QUÀ TẶNG MỚI** 🎉",
             embeds: [embed],
             components: [row],
         });
@@ -143,22 +143,22 @@ export default {
                     userId: interaction.user.id,
                     fields: [
                         {
-                            name: 'Prize',
+                            name: 'Phần thưởng',
                             value: prizeName,
                             inline: true
                         },
                         {
-                            name: 'Winners',
+                            name: 'Người thắng',
                             value: winnerCount.toString(),
                             inline: true
                         },
                         {
-                            name: 'Duration',
+                            name: 'Thời gian',
                             value: durationString,
                             inline: true
                         },
                         {
-                            name: 'Channel',
+                            name: 'Kênh',
                             value: targetChannel.toString(),
                             inline: true
                         }
@@ -174,8 +174,8 @@ export default {
         await InteractionHelper.safeReply(interaction, {
             embeds: [
                 successEmbed(
-                    `Giveaway Started! 🎉`,
-                    `A new giveaway for **${prizeName}** has been started in ${targetChannel} and will end in **${durationString}**.`,
+                    `Quà tặng đã bắt đầu! 🎉`,
+                    `Quà tặng **${prizeName}** đã bắt đầu tại ${targetChannel} và sẽ kết thúc sau **${durationString}**.`,
                 ),
             ],
             flags: MessageFlags.Ephemeral,

@@ -5,7 +5,7 @@ import { logger } from '../../utils/logger.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("firstmsg")
-        .setDescription("Get a link to the first message in this channel")
+        .setDescription("Lấy liên kết đến tin nhắn đầu tiên trong kênh này")
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages),
     category: "Utility",
@@ -36,7 +36,7 @@ export default {
                 guildId: interaction.guildId
             });
             return await InteractionHelper.safeEditReply(interaction, {
-                embeds: [successEmbed('First Message', "No messages found in this channel!")],
+                embeds: [successEmbed('Tin Nhắn Đầu Tiên', "Không tìm thấy tin nhắn nào trong kênh này!")],
             });
         }
 
@@ -45,8 +45,8 @@ export default {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    "First Message in #" + interaction.channel.name,
-                    `Message Link: ${messageLink}`
+                    "Tin Nhắn Đầu Tiên Trong #" + interaction.channel.name,
+                    `Liên Kết Tin Nhắn: ${messageLink}`
                 ),
             ],
         });

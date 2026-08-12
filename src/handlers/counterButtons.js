@@ -19,25 +19,25 @@ export const counterDeleteActionHandler = {
       const [action, counterId, ownerId] = args;
 
       if (!interaction.inGuild()) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This action can only be used in a server.' }).catch(logger.error);
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Thao tác này chỉ có thể dùng trong máy chủ.' }).catch(logger.error);
         return;
       }
 
       if (!action || !counterId) {
-        await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Counter delete action data is missing.' }).catch(logger.error);
+        await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Thiếu dữ liệu cho thao tác xóa counter.' }).catch(logger.error);
         return;
       }
 
       if (ownerId && interaction.user.id !== ownerId) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Only the user who initiated this deletion can use these buttons.' }).catch(logger.error);
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Chỉ người khởi tạo thao tác xóa này mới có thể dùng các nút này.' }).catch(logger.error);
         return;
       }
 
       if (action === 'cancel') {
         await interaction.editReply({
           embeds: [createEmbed({
-            title: '❌ Cancelled',
-            description: 'Counter deletion cancelled.',
+            title: '❌ Đã Hủy',
+            description: 'Đã hủy xóa counter.',
             color: 'error'
           })],
           components: []
@@ -46,7 +46,7 @@ export const counterDeleteActionHandler = {
       }
 
       if (action !== 'confirm') {
-        await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Unknown counter delete action.' }).catch(logger.error);
+        await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Thao tác xóa counter không xác định.' }).catch(logger.error);
         return;
       }
 

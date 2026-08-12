@@ -229,7 +229,7 @@ export function setupPlayerHandler(client) {
         if (guildData.playerChannelId) {
             const channel = client.channels.cache.get(guildData.playerChannelId);
             if (channel) {
-                channel.send(`Failed to play **${track?.info?.title || 'track'}**. Skipping...`).catch(() => null);
+                channel.send(`Không thể phát **${track?.info?.title || 'bài hát'}**. Đang bỏ qua...`).catch(() => null);
             }
         }
     });

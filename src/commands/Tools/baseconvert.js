@@ -6,10 +6,10 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { getColor } from '../../config/bot.js';
 
 const BASE_ALPHABETS = {
-    'BIN': { base: 2, prefix: '0b', name: 'Binary', alphabet: '01' },
-    'OCT': { base: 8, prefix: '0o', name: 'Octal', alphabet: '0-7' },
-    'DEC': { base: 10, prefix: '', name: 'Decimal', alphabet: '0-9' },
-    'HEX': { base: 16, prefix: '0x', name: 'Hexadecimal', alphabet: '0-9A-F' },
+    'BIN': { base: 2, prefix: '0b', name: 'Nhị phân', alphabet: '01' },
+    'OCT': { base: 8, prefix: '0o', name: 'Bát phân', alphabet: '0-7' },
+    'DEC': { base: 10, prefix: '', name: 'Thập phân', alphabet: '0-9' },
+    'HEX': { base: 16, prefix: '0x', name: 'Thập lục phân', alphabet: '0-9A-F' },
     'B64': { base: 64, prefix: 'b64:', name: 'Base64', alphabet: 'A-Za-z0-9+/=' },
     'B36': { base: 36, prefix: '', name: 'Base36', alphabet: '0-9A-Z' },
     'B58': { base: 58, prefix: '', name: 'Base58', alphabet: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz' },
@@ -97,19 +97,19 @@ function formatBigIntToBase(value, baseKey) {
 export default {
     data: new SlashCommandBuilder()
         .setName('baseconvert')
-        .setDescription('Convert numbers between different bases')
+        .setDescription('Chuyển đổi số giữa các hệ cơ số khác nhau')
         .addStringOption(option =>
             option.setName('number')
-                .setDescription('The number to convert')
+                .setDescription('Số cần chuyển đổi')
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('from')
-                .setDescription('Source base/format')
+                .setDescription('Hệ cơ số/định dạng nguồn')
                 .setRequired(true)
                 .addChoices(...BASE_NAMES))
         .addStringOption(option =>
             option.setName('to')
-                .setDescription('Target base/format (default: all)')
+                .setDescription('Hệ cơ số/định dạng đích (mặc định: tất cả)')
                 .setRequired(false)
                 .addChoices(...BASE_NAMES)),
 
@@ -137,7 +137,7 @@ export default {
         if (!cleanNumber) {
             return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'You must provide a number to convert.\n\n**Example:** `/baseconvert number:1010 from:BIN to:DEC`',
+                message: 'Bạn phải cung cấp một số để chuyển đổi.\n\n**Ví dụ:** `/baseconvert number:1010 from:BIN to:DEC`',
             });
         }
 
@@ -147,18 +147,18 @@ export default {
         if (!regex.test(cleanNumber)) {
             let examples = '';
             if (fromBase === 'BIN') {
-                examples = '\n\n**Valid:** 101, 1010, 11111 | **Invalid:** 5 (digit 5 not allowed)';
+                examples = '\n\n**Hợp lệ:** 101, 1010, 11111 | **Không hợp lệ:** 5 (chữ số 5 không được phép)';
             } else if (fromBase === 'OCT') {
-                examples = '\n\n**Valid:** 77, 123, 755 | **Invalid:** 8 (only 0-7 allowed)';
+                examples = '\n\n**Hợp lệ:** 77, 123, 755 | **Không hợp lệ:** 8 (chỉ cho phép 0-7)';
             } else if (fromBase === 'DEC') {
-                examples = '\n\n**Valid:** 42, 123, 999 | **Invalid:** 12.34 (no decimals)';
+                examples = '\n\n**Hợp lệ:** 42, 123, 999 | **Không hợp lệ:** 12.34 (không có số thập phân)';
             } else if (fromBase === 'HEX') {
-                examples = '\n\n**Valid:** FF, A1B2, DEADBEEF | **Invalid:** G (only 0-9, A-F)';
+                examples = '\n\n**Hợp lệ:** FF, A1B2, DEADBEEF | **Không hợp lệ:** G (chỉ 0-9, A-F)';
             }
             logger.warn(`Invalid base conversion input: ${cleanNumber} for base ${fromBase}`);
             return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: `You provided: \`${cleanNumber}\`\n\nValid characters: \`${alphabet}\`${examples}`,
+                message: `Bạn đã cung cấp: \`${cleanNumber}\`\n\nKý tự hợp lệ: \`${alphabet}\`${examples}`,
             });
         }
 
@@ -173,7 +173,7 @@ export default {
             logger.error('Base conversion parse error:', error);
             return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'The number is too large to process.\n\nTry with a smaller number.',
+                message: 'Số quá lớn để xử lý.\n\nHãy thử với một số nhỏ hơn.',
             });
         }
 
@@ -185,10 +185,10 @@ export default {
                 result = formatBigIntToBase(decimalValue, toBase);
 
                 const embed = successEmbed(
-                    '🔄 Base Conversion Result',
-                    `**From ${fromName} (${fromBase}):** \`${fromPrefix}${cleanNumber}\`\n` +
-                    `**To ${toName} (${toBase}):** \`${toPrefix}${result}\`\n` +
-                    `**Decimal:** \`${decimalValue.toLocaleString()}\``
+                    '🔄 Kết Quả Chuyển Đổi Cơ Số',
+                    `**Từ ${fromName} (${fromBase}):** \`${fromPrefix}${cleanNumber}\`\n` +
+                    `**Đến ${toName} (${toBase}):** \`${toPrefix}${result}\`\n` +
+                    `**Thập phân:** \`${decimalValue.toLocaleString()}\``
                 );
                 embed.setColor(getColor('success'));
 
@@ -198,13 +198,13 @@ export default {
                 logger.error(`Base conversion error to ${toName}:`, error);
                 await replyUserError(interaction, {
                     type: ErrorTypes.VALIDATION,
-                    message: 'The result would be too large or incompatible.\n\nTry with a smaller number or different target base.',
+                    message: 'Kết quả sẽ quá lớn hoặc không tương thích.\n\nHãy thử với một số nhỏ hơn hoặc chọn hệ cơ số đích khác.',
                 });
             }
 
         } else {
-            let description = `**Input (${fromName}):** \`${fromPrefix}${cleanNumber}\`\n`;
-            description += `**Decimal:** \`${decimalValue.toLocaleString()}\`\n\n`;
+            let description = `**Đầu vào (${fromName}):** \`${fromPrefix}${cleanNumber}\`\n`;
+            description += `**Thập phân:** \`${decimalValue.toLocaleString()}\`\n\n`;
 
             for (const [baseKey, { prefix, name }] of Object.entries(BASE_ALPHABETS)) {
                 if (baseKey === fromBase) continue;
@@ -214,12 +214,12 @@ export default {
 
                     description += `**${name} (${baseKey}):** \`${prefix}${value}\`\n`;
                 } catch (error) {
-                    description += `**${name} (${baseKey}):** *Too large to convert*\n`;
+                    description += `**${name} (${baseKey}):** *Quá lớn để chuyển đổi*\n`;
                 }
             }
 
             const embed = successEmbed(
-                '🔄 Base Conversion Results',
+                '🔄 Kết Quả Chuyển Đổi Cơ Số',
                 description
             );
             embed.setColor(getColor('primary'));

@@ -29,7 +29,7 @@ function parseValue(key, rawValue) {
         }
         const id = extractId(value);
         if (!id) {
-            throw new Error('Please provide a valid mention or ID.');
+            throw new Error('Vui lòng cung cấp mention hoặc ID hợp lệ.');
         }
         return id;
     }
@@ -41,12 +41,12 @@ function parseValue(key, rawValue) {
         if (['no', 'false', 'disabled', 'disable'].includes(value.toLowerCase())) {
             return false;
         }
-        throw new Error('Please enter either yes or no.');
+        throw new Error('Vui lòng nhập yes hoặc no.');
     }
 
     if (key === 'prefix') {
         if (value.length < 1 || value.length > 10 || /\s/.test(value)) {
-            throw new Error('Prefix must be 1-10 characters with no spaces.');
+            throw new Error('Tiền tố phải dài 1-10 ký tự và không chứa khoảng trắng.');
         }
         return value;
     }
@@ -58,7 +58,7 @@ function resolveModalValue(key, interaction) {
     if (key === 'logChannelId') {
         const channelId = interaction.fields.getField('log_channel')?.values?.[0];
         if (!channelId) {
-            throw new Error('Please select a log channel.');
+            throw new Error('Vui lòng chọn kênh log.');
         }
         return channelId;
     }
@@ -66,7 +66,7 @@ function resolveModalValue(key, interaction) {
     if (key === 'modRole') {
         const roleId = interaction.fields.getField('mod_role')?.values?.[0];
         if (!roleId) {
-            throw new Error('Please select a moderator role.');
+            throw new Error('Vui lòng chọn role Moderator.');
         }
         return roleId;
     }
@@ -78,15 +78,15 @@ function resolveModalValue(key, interaction) {
 function buildSuccessMessage(key, value, guild) {
     if (key === 'logChannelId') {
         const channel = guild?.channels?.cache?.get(value);
-        return `Log channel set to ${channel ?? `<#${value}>`}.`;
+        return `Kênh log đã được đặt thành ${channel ?? `<#${value}>`}.`;
     }
 
     if (key === 'modRole') {
         const role = guild?.roles?.cache?.get(value);
-        return `Moderator role set to ${role ?? `<@&${value}>`}.`;
+        return `Role Moderator đã được đặt thành ${role ?? `<@&${value}>`}.`;
     }
 
-    return `The setting \`${key}\` has been updated successfully.`;
+    return `Cài đặt \`${key}\` đã được cập nhật thành công.`;
 }
 
 export default {
@@ -99,12 +99,12 @@ export default {
             await ConfigService.updateSetting(interaction.client, guildId, key, value, interaction.user.id);
 
             await interaction.reply({
-                embeds: [successEmbed('Configuration Updated', buildSuccessMessage(key, value, interaction.guild))],
+                embeds: [successEmbed('Cấu hình đã cập nhật', buildSuccessMessage(key, value, interaction.guild))],
                 flags: MessageFlags.Ephemeral,
             });
         } catch (error) {
             logger.error('Config modal handler error:', error);
-            await replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: error.message || 'Please try again.' });
+            await replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: error.message || 'Vui lòng thử lại.' });
         }
     },
 };

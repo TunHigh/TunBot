@@ -42,28 +42,28 @@ export function messageHasPanelMarker(message, { buttonCustomId, selectCustomId 
     return false;
 }
 
-export function formatPanelStatusField(panelStatus, { repostHint = 'Repost Panel' } = {}) {
-    if (!panelStatus) return '`Unknown`';
+export function formatPanelStatusField(panelStatus, { repostHint = 'Đăng lại bảng điều khiển' } = {}) {
+    if (!panelStatus) return '`Không xác định`';
 
     if (panelStatus.exists) {
         return panelStatus.message?.url
-            ? `✅ Active — [view panel](${panelStatus.message.url})`
-            : '✅ Active';
+            ? `✅ Đang hoạt động — [xem bảng điều khiển](${panelStatus.message.url})`
+            : '✅ Đang hoạt động';
     }
 
     if (panelStatus.reason === 'channel_missing') {
-        return '⚠️ Panel channel missing or deleted';
+        return '⚠️ Kênh bảng điều khiển bị thiếu hoặc đã bị xóa';
     }
 
     if (panelStatus.reason === 'panel_deleted') {
-        return `⚠️ Panel message was deleted — use **${repostHint}** below`;
+        return `⚠️ Tin nhắn bảng điều khiển đã bị xóa — dùng **${repostHint}** bên dưới`;
     }
 
     if (panelStatus.reason === 'no_channel') {
-        return '⚠️ No panel channel configured';
+        return '⚠️ Chưa có kênh bảng điều khiển được cấu hình';
     }
 
-    return '`Unknown`';
+    return '`Không xác định`';
 }
 
 export async function getBotPanelStatus(client, guild, {

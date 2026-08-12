@@ -133,32 +133,32 @@ export function checkCooldown(userData, action) {
 }
 
 function formatCooldown(ms) {
-    if (ms < 1000) return 'now';
+    if (ms < 1000) return 'ngay bây giờ';
     
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
     
-    if (days > 0) return `${days}d ${hours % 24}h`;
-    if (hours > 0) return `${hours}h ${minutes % 60}m`;
-    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-    return `${seconds}s`;
+    if (days > 0) return `${days} ngày ${hours % 24} giờ`;
+    if (hours > 0) return `${hours} giờ ${minutes % 60} phút`;
+    if (minutes > 0) return `${minutes} phút ${seconds % 60} giây`;
+    return `${seconds} giây`;
 }
 
 export function getWorkReward() {
     const amount = Math.floor(Math.random() * (WORK_MAX - WORK_MIN + 1)) + WORK_MIN;
     const jobs = [
-        'worked at a fast food restaurant',
-        'worked as a programmer',
-        'worked as a construction worker',
-        'worked as a doctor',
-        'worked as a streamer',
-        'worked as a YouTuber',
-        'worked as a teacher',
-        'worked as a cashier',
-        'worked as a delivery driver',
-        'worked as a freelancer'
+        'làm việc tại một cửa hàng đồ ăn nhanh',
+        'làm lập trình viên',
+        'làm công nhân xây dựng',
+        'làm bác sĩ',
+        'làm streamer',
+        'làm YouTuber',
+        'làm giáo viên',
+        'làm thu ngân',
+        'làm tài xế giao hàng',
+        'làm freelancer'
     ];
     
     const job = jobs[Math.floor(Math.random() * jobs.length)];
@@ -166,7 +166,7 @@ export function getWorkReward() {
     return {
         amount,
         job,
-        message: `You ${job} and earned ${formatCurrency(amount)}!`
+        message: `Bạn đã ${job} và kiếm được ${formatCurrency(amount)}!`
     };
 }
 
@@ -175,32 +175,32 @@ export function getCrimeOutcome() {
         {
             success: true,
             amount: Math.floor(Math.random() * 200) + 50,
-            message: 'You successfully robbed a bank and got away with {amount}!' 
+            message: 'Bạn trộm ngân hàng thành công và thoát được với {amount}!' 
         },
         {
             success: true,
             amount: Math.floor(Math.random() * 100) + 20,
-            message: 'You pickpocketed someone and stole {amount}!' 
+            message: 'Bạn móc túi ai đó và lấy được {amount}!' 
         },
         {
             success: true,
             amount: Math.floor(Math.random() * 150) + 30,
-            message: 'You hacked into a bank account and transferred {amount} to yourself!' 
+            message: 'Bạn hack vào tài khoản ngân hàng và chuyển {amount} vào tài khoản của mình!' 
         },
         {
             success: false,
             fine: Math.floor(Math.random() * 100) + 50,
-            message: 'You got caught and had to pay a fine of {fine}!' 
+            message: 'Bạn bị bắt và phải nộp phạt {fine}!' 
         },
         {
             success: false,
             fine: Math.floor(Math.random() * 150) + 50,
-            message: 'The police caught you! You paid {fine} to get out of jail.' 
+            message: 'Cảnh sát đã bắt được bạn! Bạn phải trả {fine} để ra khỏi tù.' 
         },
         {
             success: false,
             fine: 0,
-            message: 'Your attempt failed, but you managed to escape!' 
+            message: 'Nỗ lực của bạn thất bại, nhưng bạn vẫn thoát được!' 
         }
     ];
     
@@ -212,7 +212,7 @@ export function getRobOutcome(targetBalance) {
         return {
             success: false,
             amount: 0,
-            message: 'The target has no money to steal!'
+            message: 'Mục tiêu không có tiền để trộm!'
         };
     }
     
@@ -227,7 +227,7 @@ Math.floor(Math.random() * (targetBalance * 0.3)) + 1,
         return {
             success: true,
             amount,
-            message: `You successfully robbed them and got away with {amount}!`
+            message: `Bạn trộm thành công và lấy được {amount}!`
         };
     } else {
         const fine = Math.floor(Math.random() * 200) + 100;
@@ -236,7 +236,7 @@ Math.floor(Math.random() * (targetBalance * 0.3)) + 1,
             success: false,
             amount: 0,
             fine,
-            message: `You got caught! You had to pay a fine of {fine}.`
+            message: `Bạn bị bắt! Bạn phải nộp phạt {fine}.`
         };
     }
 }
@@ -251,7 +251,7 @@ export const addMoney = wrapServiceBoundary(async function addMoney(client, guil
         throw createError(
             'Invalid amount',
             ErrorTypes.VALIDATION,
-            'Amount must be a positive number.',
+            'Số tiền phải là một số dương.',
             { guildId, userId, amount, operation: 'addMoney' }
         );
     }
@@ -260,7 +260,7 @@ export const addMoney = wrapServiceBoundary(async function addMoney(client, guil
         throw createError(
             'Invalid money type',
             ErrorTypes.VALIDATION,
-            'Type must be "wallet" or "bank".',
+            'Loại phải là "wallet" hoặc "bank".',
             { guildId, userId, type, operation: 'addMoney' }
         );
     }
@@ -273,7 +273,7 @@ export const addMoney = wrapServiceBoundary(async function addMoney(client, guil
             throw createError(
                 'Bank capacity exceeded',
                 ErrorTypes.VALIDATION,
-                `Bank capacity exceeded. Current: ${userData.bank || 0}, Max: ${maxBank}.`,
+                `Vượt quá sức chứa ngân hàng. Hiện tại: ${userData.bank || 0}, Tối đa: ${maxBank}.`,
                 { guildId, userId, current: userData.bank || 0, max: maxBank, operation: 'addMoney' }
             );
         }
@@ -291,7 +291,7 @@ export const addMoney = wrapServiceBoundary(async function addMoney(client, guil
 }, {
     service: 'economy',
     operation: 'addMoney',
-    userMessage: 'Failed to add money. Please try again.',
+    userMessage: 'Không thể thêm tiền. Vui lòng thử lại.',
 });
 
 export const removeMoney = wrapServiceBoundary(async function removeMoney(client, guildId, userId, amount, type = 'wallet') {
@@ -300,7 +300,7 @@ export const removeMoney = wrapServiceBoundary(async function removeMoney(client
         throw createError(
             'Invalid amount',
             ErrorTypes.VALIDATION,
-            'Amount must be a positive number.',
+            'Số tiền phải là một số dương.',
             { guildId, userId, amount, operation: 'removeMoney' }
         );
     }
@@ -309,7 +309,7 @@ export const removeMoney = wrapServiceBoundary(async function removeMoney(client
         throw createError(
             'Invalid money type',
             ErrorTypes.VALIDATION,
-            'Type must be "wallet" or "bank".',
+            'Loại phải là "wallet" hoặc "bank".',
             { guildId, userId, type, operation: 'removeMoney' }
         );
     }
@@ -321,7 +321,7 @@ export const removeMoney = wrapServiceBoundary(async function removeMoney(client
             throw createError(
                 'Insufficient bank funds',
                 ErrorTypes.VALIDATION,
-                `Insufficient funds in bank. You have ${userData.bank || 0}, need ${validAmount}.`,
+                `Không đủ tiền trong ngân hàng. Bạn có ${userData.bank || 0}, cần ${validAmount}.`,
                 { guildId, userId, current: userData.bank || 0, required: validAmount, operation: 'removeMoney' }
             );
         }
@@ -331,7 +331,7 @@ export const removeMoney = wrapServiceBoundary(async function removeMoney(client
             throw createError(
                 'Insufficient wallet funds',
                 ErrorTypes.VALIDATION,
-                `Insufficient funds in wallet. You have ${userData.wallet || 0}, need ${validAmount}.`,
+                `Không đủ tiền mặt. Bạn có ${userData.wallet || 0}, cần ${validAmount}.`,
                 { guildId, userId, current: userData.wallet || 0, required: validAmount, operation: 'removeMoney' }
             );
         }
@@ -346,25 +346,25 @@ export const removeMoney = wrapServiceBoundary(async function removeMoney(client
 }, {
     service: 'economy',
     operation: 'removeMoney',
-    userMessage: 'Failed to remove money. Please try again.',
+    userMessage: 'Không thể trừ tiền. Vui lòng thử lại.',
 });
 
 export function getShopInventory() {
     return [
         {
             id: 'fishing_rod',
-            name: 'Fishing Rod',
+            name: 'Cần Câu Cá',
             emoji: '🎣',
             price: 500,
-            description: 'Catch fish to sell for profit!',
+            description: 'Câu cá để bán kiếm lời!',
             type: 'tool'
         },
         {
             id: 'hunting_rifle',
-            name: 'Hunting Rifle',
+            name: 'Súng Săn',
             emoji: '🔫',
             price: 1000,
-            description: 'Hunt animals for meat and fur!',
+            description: 'Săn thú lấy thịt và lông!',
             type: 'tool'
         },
         {
@@ -372,26 +372,26 @@ export function getShopInventory() {
             name: 'Laptop',
             emoji: '💻',
             price: 2000,
-            description: 'Work as a programmer for higher pay!',
+            description: 'Làm lập trình viên để nhận lương cao hơn!',
             type: 'tool',
             workMultiplier: 1.5
         },
         {
             id: 'bank_loan',
-            name: 'Bank Loan',
+            name: 'Khoản Vay Ngân Hàng',
             emoji: '🏦',
             price: 5000,
-            description: 'Increases your bank capacity by 50,000!',
+            description: 'Tăng sức chứa ngân hàng của bạn thêm 50,000!',
             type: 'upgrade',
             effect: 'bank_capacity',
             value: 50000
         },
         {
             id: 'lottery_ticket',
-            name: 'Lottery Ticket',
+            name: 'Vé Số',
             emoji: '🎫',
             price: 100,
-            description: 'A chance to win big!',
+            description: 'Cơ hội trúng thưởng lớn!',
             type: 'consumable',
             use: 'gamble'
         }

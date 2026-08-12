@@ -6,7 +6,7 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
     .setName("serverinfo")
-    .setDescription("Get detailed information about the server"),
+    .setDescription("Xem thông tin chi tiết về server"),
 
   async execute(interaction) {
     const deferSuccess = await InteractionHelper.safeDefer(interaction);
@@ -24,13 +24,13 @@ export default {
 
     const createdTimestamp = Math.floor(guild.createdAt.getTime() / 1000);
 
-    const embed = createEmbed({ title: `Server Info: ${guild.name}`, description: `Server ID: ${guild.id}` })
+    const embed = createEmbed({ title: `Thông Tin Server: ${guild.name}`, description: `ID Server: ${guild.id}` })
       .setThumbnail(guild.iconURL({ size: 256 }))
       .addFields(
-        { name: "Owner", value: owner.user.tag, inline: true },
-        { name: "Members", value: `${guild.memberCount}`, inline: true },
+        { name: "Chủ Sở Hữu", value: owner.user.tag, inline: true },
+        { name: "Thành Viên", value: `${guild.memberCount}`, inline: true },
         {
-          name: "Channels",
+          name: "Kênh",
           value: `${guild.channels.cache.size}`,
           inline: true,
         },
@@ -41,7 +41,7 @@ export default {
           inline: true,
         },
         {
-          name: "Creation Date",
+          name: "Ngày Tạo",
           value: `<t:${createdTimestamp}:R>`,
           inline: true,
         },

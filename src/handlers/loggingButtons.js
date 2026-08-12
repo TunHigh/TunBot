@@ -34,9 +34,9 @@ import {
 const LOGGING_CATEGORIES = [...new Set(Object.values(EVENT_TYPES).map((eventType) => eventType.split('.')[0]))];
 
 const DESTINATION_LABELS = {
-  audit: 'Audit Log',
-  applications: 'Applications',
-  reports: 'Reports',
+  audit: 'Nhật Ký Kiểm Duyệt',
+  applications: 'Đơn Tuyển',
+  reports: 'Báo Cáo',
 };
 
 export default {
@@ -52,7 +52,7 @@ export default {
     try {
       if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
         return interaction.reply({
-          content: '❌ You need **Manage Server** permissions to use this.',
+          content: '❌ Bạn cần quyền **Quản Lý Máy Chủ** để dùng tính năng này.',
           ephemeral: true,
         });
       }
@@ -109,7 +109,7 @@ async function handleBackToMain(interaction) {
 async function handleToggle(interaction) {
   const eventType = interaction.customId.replace('log_dash_toggle:', '');
   if (!eventType) {
-    return interaction.reply({ content: '❌ Invalid event type.', ephemeral: true });
+    return interaction.reply({ content: '❌ Loại sự kiện không hợp lệ.', ephemeral: true });
   }
 
   const status = await getLoggingStatus(interaction.client, interaction.guildId);
@@ -139,7 +139,7 @@ async function handleToggle(interaction) {
 async function handleAddFilterModal(interaction) {
   const filterType = interaction.customId.replace('log_dash_add_filter:', '');
   if (filterType !== 'user' && filterType !== 'channel') {
-    return interaction.reply({ content: '❌ Invalid filter type.', ephemeral: true });
+    return interaction.reply({ content: '❌ Loại bộ lọc không hợp lệ.', ephemeral: true });
   }
 
   const modalCustomId = `log_dash_filter_modal:add:${filterType}`;
@@ -148,35 +148,35 @@ async function handleAddFilterModal(interaction) {
   if (filterType === 'user') {
     const userSelect = new UserSelectMenuBuilder()
       .setCustomId('ignore_user')
-      .setPlaceholder('Select a user to ignore…')
+      .setPlaceholder('Chọn một người dùng cần bỏ qua…')
       .setMinValues(1)
       .setMaxValues(1);
 
     const userLabel = new LabelBuilder()
-      .setLabel('User to Ignore')
-      .setDescription('Choose a user whose actions should not be logged')
+      .setLabel('Người Dùng Cần Bỏ Qua')
+      .setDescription('Chọn người dùng có hành động không nên được ghi log')
       .setUserSelectMenuComponent(userSelect);
 
     modal = new ModalBuilder()
       .setCustomId(modalCustomId)
-      .setTitle('Add User Filter')
+      .setTitle('Thêm Bộ Lọc Người Dùng')
       .addLabelComponents(userLabel);
   } else {
     const channelSelect = new ChannelSelectMenuBuilder()
       .setCustomId('ignore_channel')
-      .setPlaceholder('Select a channel to ignore…')
+      .setPlaceholder('Chọn một kênh cần bỏ qua…')
       .setMinValues(1)
       .setMaxValues(1)
       .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.GuildVoice);
 
     const channelLabel = new LabelBuilder()
-      .setLabel('Channel to Ignore')
-      .setDescription('Choose a channel whose events should not be logged')
+      .setLabel('Kênh Cần Bỏ Qua')
+      .setDescription('Chọn kênh có sự kiện không nên được ghi log')
       .setChannelSelectMenuComponent(channelSelect);
 
     modal = new ModalBuilder()
       .setCustomId(modalCustomId)
-      .setTitle('Add Channel Filter')
+      .setTitle('Thêm Bộ Lọc Kênh')
       .addLabelComponents(channelLabel);
   }
 
@@ -198,14 +198,14 @@ async function handleAddFilterModal(interaction) {
     if (!id) {
       return replyUserError(modalSubmission, {
         type: ErrorTypes.VALIDATION,
-        message: `Please select a ${filterType} to ignore.`,
+        message: `Vui lòng chọn ${filterType === 'user' ? 'một người dùng' : 'một kênh'} để bỏ qua.`,
       });
     }
 
     await updateIgnoreList(interaction.client, interaction.guildId, { action: 'add', type: filterType, id });
 
     await modalSubmission.reply({
-      embeds: [successEmbed('Filter Added', `${filterType === 'user' ? 'User' : 'Channel'} \`${id}\` will be ignored in audit logs.`)],
+      embeds: [successEmbed('Đã Thêm Bộ Lọc', `${filterType === 'user' ? 'Người dùng' : 'Kênh'} \`${id}\` sẽ được bỏ qua trong nhật ký kiểm duyệt.`)],
       flags: MessageFlags.Ephemeral,
     });
 
@@ -228,8 +228,8 @@ async function handleRemoveFilterModal(interaction) {
   for (const userId of ignore.users || []) {
     options.push(
       new StringSelectMenuOptionBuilder()
-        .setLabel(`User ${userId}`)
-        .setDescription('Remove this user from the ignore list')
+        .setLabel(`Người dùng ${userId}`)
+        .setDescription('Xóa người dùng này khỏi danh sách bỏ qua')
         .setValue(`user:${userId}`),
     );
   }
@@ -237,8 +237,8 @@ async function handleRemoveFilterModal(interaction) {
   for (const channelId of ignore.channels || []) {
     options.push(
       new StringSelectMenuOptionBuilder()
-        .setLabel(`Channel ${channelId}`)
-        .setDescription('Remove this channel from the ignore list')
+        .setLabel(`Kênh ${channelId}`)
+        .setDescription('Xóa kênh này khỏi danh sách bỏ qua')
         .setValue(`channel:${channelId}`),
     );
   }
@@ -246,7 +246,7 @@ async function handleRemoveFilterModal(interaction) {
   if (options.length === 0) {
     return replyUserError(interaction, {
       type: ErrorTypes.USER_INPUT,
-      message: 'There are no ignore filters to remove.',
+      message: 'Không có bộ lọc bỏ qua nào để xóa.',
     });
   }
 
@@ -254,19 +254,19 @@ async function handleRemoveFilterModal(interaction) {
 
   const filterSelect = new StringSelectMenuBuilder()
     .setCustomId('filter_entry')
-    .setPlaceholder('Select a filter to remove…')
+    .setPlaceholder('Chọn một bộ lọc cần xóa…')
     .setMinValues(1)
     .setMaxValues(1)
     .addOptions(options.slice(0, 25));
 
   const filterLabel = new LabelBuilder()
-    .setLabel('Filter to Remove')
-    .setDescription('Choose a user or channel to un-ignore')
+    .setLabel('Bộ Lọc Cần Xóa')
+    .setDescription('Chọn một người dùng hoặc kênh để bỏ bỏ qua')
     .setStringSelectMenuComponent(filterSelect);
 
   const modal = new ModalBuilder()
     .setCustomId(modalCustomId)
-    .setTitle('Remove Ignore Filter')
+    .setTitle('Xóa Bộ Lọc Bỏ Qua')
     .addLabelComponents(filterLabel);
 
   await interaction.showModal(modal);
@@ -281,7 +281,7 @@ async function handleRemoveFilterModal(interaction) {
     if (!entry) {
       return replyUserError(modalSubmission, {
         type: ErrorTypes.VALIDATION,
-        message: 'Please select a filter to remove.',
+        message: 'Vui lòng chọn một bộ lọc cần xóa.',
       });
     }
 
@@ -289,7 +289,7 @@ async function handleRemoveFilterModal(interaction) {
     await updateIgnoreList(interaction.client, interaction.guildId, { action: 'remove', type, id });
 
     await modalSubmission.reply({
-      embeds: [successEmbed('Filter Removed', `Removed ${type} \`${id}\` from the ignore list.`)],
+      embeds: [successEmbed('Đã Xóa Bộ Lọc', `Đã xóa ${type === 'user' ? 'người dùng' : 'kênh'} \`${id}\` khỏi danh sách bỏ qua.`)],
       flags: MessageFlags.Ephemeral,
     });
 
@@ -310,20 +310,20 @@ async function showChannelModal(interaction, destination) {
 
   const channelSelect = new ChannelSelectMenuBuilder()
     .setCustomId('log_channel')
-    .setPlaceholder('Select a text channel…')
+    .setPlaceholder('Chọn một kênh văn bản…')
     .setMinValues(1)
     .setMaxValues(1)
     .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
     .setRequired(true);
 
   const channelLabel = new LabelBuilder()
-    .setLabel(`${label} Channel`)
-    .setDescription(`Channel where ${label.toLowerCase()} logs will be sent`)
+    .setLabel(`${label}`)
+    .setDescription(`Các log ${label.toLowerCase()} sẽ được gửi đến kênh này`)
     .setChannelSelectMenuComponent(channelSelect);
 
   const modal = new ModalBuilder()
     .setCustomId(modalCustomId)
-    .setTitle(`Set ${label} Channel`)
+    .setTitle(`Đặt Kênh ${label}`)
     .addLabelComponents(channelLabel);
 
   await interaction.showModal(modal);
@@ -340,7 +340,7 @@ async function showChannelModal(interaction, destination) {
 
     if (!channel) {
       return modalSubmission.reply({
-        content: '❌ That channel could not be found.',
+        content: '❌ Không tìm thấy kênh đó.',
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -348,7 +348,7 @@ async function showChannelModal(interaction, destination) {
     const botPerms = channel.permissionsFor(interaction.guild.members.me);
     if (!botPerms?.has(['ViewChannel', 'SendMessages', 'EmbedLinks'])) {
       return modalSubmission.reply({
-        content: '❌ I need View Channel, Send Messages, and Embed Links in that channel.',
+        content: '❌ Mình cần quyền Xem Kênh, Gửi Tin Nhắn và Nhúng Liên Kết trong kênh đó.',
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -356,7 +356,7 @@ async function showChannelModal(interaction, destination) {
     await setLogChannel(interaction.client, interaction.guildId, destination, channel.id);
 
     await modalSubmission.reply({
-      embeds: [successEmbed('Channel Updated', `**${label}** logs will be sent to ${channel}.`)],
+      embeds: [successEmbed('Đã Cập Nhật Kênh', `Log của **${label}** sẽ được gửi tới ${channel}.`)],
       flags: MessageFlags.Ephemeral,
     });
 
@@ -376,7 +376,7 @@ async function showChannelModal(interaction, destination) {
 export async function handleLoggingMenuSelect(interaction) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
     return interaction.reply({
-      content: '❌ You need **Manage Server** permissions to use this.',
+      content: '❌ Bạn cần quyền **Quản Lý Máy Chủ** để dùng tính năng này.',
       ephemeral: true,
     });
   }
@@ -409,5 +409,5 @@ export async function handleLoggingMenuSelect(interaction) {
     return interaction.update({ embeds: [embed], components, content: null });
   }
 
-  return interaction.reply({ content: '❌ Unknown option.', ephemeral: true });
+  return interaction.reply({ content: '❌ Tùy chọn không xác định.', ephemeral: true });
 }

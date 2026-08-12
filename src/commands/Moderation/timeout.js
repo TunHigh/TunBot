@@ -6,35 +6,35 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { ModerationService } from '../../services/moderation/moderationService.js';
 
 const durationChoices = [
-    { name: "5 minutes", value: 5 },
-    { name: "10 minutes", value: 10 },
-    { name: "30 minutes", value: 30 },
-    { name: "1 hour", value: 60 },
-    { name: "6 hours", value: 360 },
-    { name: "1 day", value: 1440 },
-    { name: "1 week", value: 10080 },
+    { name: "5 phút", value: 5 },
+    { name: "10 phút", value: 10 },
+    { name: "30 phút", value: 30 },
+    { name: "1 giờ", value: 60 },
+    { name: "6 giờ", value: 360 },
+    { name: "1 ngày", value: 1440 },
+    { name: "1 tuần", value: 10080 },
 ];
 
 export default {
     data: new SlashCommandBuilder()
         .setName("timeout")
-        .setDescription("Timeout a user for a specific duration.")
+        .setDescription("Khóa tạm thời một người dùng trong khoảng thời gian cụ thể.")
         .addUserOption((option) =>
             option
                 .setName("target")
-                .setDescription("User to timeout")
+                .setDescription("Người dùng cần khóa tạm thời")
                 .setRequired(true),
         )
         .addIntegerOption(
             (option) =>
                 option
                     .setName("duration")
-                    .setDescription("Duration of the timeout")
+                    .setDescription("Thời lượng khóa tạm thời")
                     .setRequired(true)
                     .addChoices(...durationChoices),
         )
         .addStringOption((option) =>
-            option.setName("reason").setDescription("Reason for the timeout"),
+            option.setName("reason").setDescription("Lý do khóa tạm thời"),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     category: "moderation",
@@ -53,13 +53,13 @@ export default {
         const targetUser = interaction.options.getUser("target");
         const member = interaction.options.getMember("target");
         const durationMinutes = interaction.options.getInteger("duration");
-        const reason = interaction.options.getString("reason") || "No reason provided";
+        const reason = interaction.options.getString("reason") || "Không có lý do";
 
         if (!targetUser) {
             throw new TitanBotError(
                 'Missing target user',
                 ErrorTypes.USER_INPUT,
-                'You must specify a user to timeout.',
+                'Bạn phải chỉ định người dùng để khóa tạm thời.',
                 { subtype: 'invalid_user' },
             );
         }
@@ -68,14 +68,14 @@ export default {
             throw new TitanBotError(
                 "Cannot timeout self",
                 ErrorTypes.VALIDATION,
-                "You cannot timeout yourself.",
+                "Bạn không thể khóa tạm thời chính mình.",
             );
         }
         if (targetUser.id === client.user.id) {
             throw new TitanBotError(
                 "Cannot timeout bot",
                 ErrorTypes.VALIDATION,
-                "You cannot timeout the bot.",
+                "Bạn không thể khóa tạm thời bot.",
             );
         }
         if (!member) {
@@ -97,13 +97,13 @@ export default {
 
         const durationDisplay =
             durationChoices.find((c) => c.value === durationMinutes)
-                ?.name || `${durationMinutes} minutes`;
+                ?.name || `${durationMinutes} phút`;
 
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    `⏳ **Timed out** ${targetUser.tag} for ${durationDisplay}.`,
-                    `**Reason:** ${reason}\n**Case ID:** #${result.caseId}`,
+                    `⏳ **Đã khóa tạm thời** ${targetUser.tag} trong ${durationDisplay}.`,
+                    `**Lý do:** ${reason}\n**Mã vụ việc:** #${result.caseId}`,
                 ),
             ],
         });

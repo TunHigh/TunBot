@@ -5,11 +5,11 @@ import { getColor } from '../../../config/bot.js';
 import { logTicketFeedback } from '../../../utils/ticket/ticketLogging.js';
 
 const STAR_LABELS = {
-    '1': '⭐ 1 — Poor',
-    '2': '⭐ 2 — Below Average',
-    '3': '⭐ 3 — Average',
-    '4': '⭐ 4 — Good',
-    '5': '⭐ 5 — Excellent',
+    '1': '⭐ 1 — Kém',
+    '2': '⭐ 2 — Dưới trung bình',
+    '3': '⭐ 3 — Trung bình',
+    '4': '⭐ 4 — Tốt',
+    '5': '⭐ 5 — Xuất sắc',
 };
 
 export default {
@@ -23,8 +23,8 @@ export default {
             await interaction.update({
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('⚠️ Invalid Feedback Link')
-                        .setDescription('This feedback link appears to be malformed.')
+                        .setTitle('⚠️ Liên kết phản hồi không hợp lệ')
+                        .setDescription('Liên kết phản hồi này có vẻ bị lỗi.')
                         .setColor(getColor('error')),
                 ],
                 components: [],
@@ -43,8 +43,8 @@ export default {
             await interaction.update({
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('⚠️ Ticket Not Found')
-                        .setDescription('Could not find the ticket associated with this survey.')
+                        .setTitle('⚠️ Không tìm thấy Ticket')
+                        .setDescription('Không thể tìm thấy ticket liên quan đến khảo sát này.')
                         .setColor(getColor('error')),
                 ],
                 components: [],
@@ -56,8 +56,8 @@ export default {
             await interaction.reply({
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('❌ Not Allowed')
-                        .setDescription('Only the ticket creator can submit feedback for this ticket.')
+                        .setTitle('❌ Không được phép')
+                        .setDescription('Chỉ người tạo ticket mới có thể gửi phản hồi cho ticket này.')
                         .setColor(getColor('error')),
                 ],
                 ephemeral: true,
@@ -69,8 +69,8 @@ export default {
             await interaction.update({
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('✅ Already Submitted')
-                        .setDescription(`You already rated this ticket **${STAR_LABELS[String(ticketData.feedback.rating)]}**.\nThank you for your feedback!`)
+                        .setTitle('✅ Đã gửi phản hồi')
+                        .setDescription(`Bạn đã đánh giá ticket này **${STAR_LABELS[String(ticketData.feedback.rating)]}**.\nCảm ơn phản hồi của bạn!`)
                         .setColor(getColor('success')),
                 ],
                 components: [],
@@ -79,7 +79,7 @@ export default {
         }
 
         const rating = parseInt(interaction.values[0], 10);
-        const ratingLabel = STAR_LABELS[String(rating)] ?? `${rating} stars`;
+        const ratingLabel = STAR_LABELS[String(rating)] ?? `${rating} sao`;
 
         try {
             ticketData.feedback = {
@@ -105,10 +105,10 @@ export default {
         }
 
         const thankYouEmbed = new EmbedBuilder()
-            .setTitle('✅ Thanks for your feedback!')
-            .setDescription(`You rated your support experience **${ratingLabel}**.\n\nYour feedback has been recorded and helps us improve!`)
+            .setTitle('✅ Cảm ơn phản hồi của bạn!')
+            .setDescription(`Bạn đã đánh giá trải nghiệm hỗ trợ **${ratingLabel}**.\n\nPhản hồi của bạn đã được ghi nhận và giúp chúng tôi cải thiện dịch vụ!`)
             .setColor(getColor('success'))
-            .setFooter({ text: 'Thank you for using our support system.' })
+            .setFooter({ text: 'Cảm ơn bạn đã sử dụng hệ thống hỗ trợ của chúng tôi.' })
             .setTimestamp();
 
         await interaction.update({

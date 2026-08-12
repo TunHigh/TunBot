@@ -9,12 +9,12 @@ import { closeTicket } from '../../services/ticket.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("close")
-        .setDescription("Closes the current ticket.")
+        .setDescription("Đóng vé hỗ trợ hiện tại.")
         .setDMPermission(false)
         .addStringOption((option) =>
             option
                 .setName("reason")
-                .setDescription("The reason for closing the ticket.")
+                .setDescription("Lý do đóng vé hỗ trợ.")
                 .setRequired(false),
         ),
 
@@ -26,24 +26,24 @@ export default {
 
         const permissionContext = await getTicketPermissionContext({ client, interaction });
         if (!permissionContext.ticketData) {
-            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'This command can only be used in a valid ticket channel.' });
+            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Lệnh này chỉ có thể dùng trong một kênh vé hỗ trợ hợp lệ.' });
         }
 
         if (!permissionContext.canCloseTicket) {
-            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission, the configured `Ticket Staff Role`, or be the ticket creator to close this ticket.' });
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền `Manage Channels`, `Ticket Staff Role` đã cấu hình, hoặc là người tạo vé để đóng vé này.' });
         }
 
         const reason =
             interaction.options?.getString("reason") ||
-            "Closed via command without a specific reason.";
+            "Đóng qua lệnh mà không có lý do cụ thể.";
 
         await closeTicket(interaction.channel, interaction.user, reason);
 
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    "Ticket Closed!",
-                    "This ticket has been closed successfully.",
+                    "Đã Đóng Vé!",
+                    "Vé này đã được đóng thành công.",
                 ),
             ],
         });

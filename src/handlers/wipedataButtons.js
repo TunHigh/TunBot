@@ -114,13 +114,13 @@ const wipedataConfirmHandler = {
       }
 
       const successMessage =
-        `✅ **Your data has been successfully wiped!**\n\n` +
-        `**Records Deleted:** ${deletedCount}\n\n` +
-        `Your account has been reset to default values. You can now start fresh!\n\n` +
-        `*All your economy balance, levels, items, and personal data have been removed.*`;
+        `✅ **Dữ liệu của bạn đã được xóa thành công!**\n\n` +
+        `**Bản ghi đã xóa:** ${deletedCount}\n\n` +
+        `Tài khoản của bạn đã được đặt lại về giá trị mặc định. Bạn có thể bắt đầu lại từ đầu!\n\n` +
+        `*Toàn bộ số dư kinh tế, cấp độ, vật phẩm và dữ liệu cá nhân của bạn đã được xóa.*`;
 
       await interaction.editReply({
-        embeds: [successEmbed('Data Wipe Complete', successMessage)],
+        embeds: [successEmbed('Đã Xóa Dữ Liệu', successMessage)],
         components: []
       });
 
@@ -132,7 +132,7 @@ const wipedataConfirmHandler = {
     } catch (error) {
       logger.error('Wipedata confirm button handler error:', error);
       
-      await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while wiping your data. Please try again later or contact support.' });
+      await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi xóa dữ liệu của bạn. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.' });
     }
   }
 };
@@ -144,8 +144,8 @@ const wipedataCancelHandler = {
       await interaction.update({
         embeds: [
           createEmbed({
-            title: '❌ Data Wipe Cancelled',
-            description: 'Your data has been preserved. Your account remains unchanged.',
+            title: '❌ Đã Hủy Xóa Dữ Liệu',
+            description: 'Dữ liệu của bạn vẫn được giữ nguyên. Tài khoản của bạn không bị thay đổi.',
             color: 'info'
           })
         ],
@@ -157,7 +157,7 @@ const wipedataCancelHandler = {
       logger.error('Wipedata cancel button handler error:', error);
       
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not cancel data wipe.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không thể hủy xóa dữ liệu.' });
       }
     }
   }

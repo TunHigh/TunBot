@@ -8,26 +8,26 @@ import botConfig from '../config/bot.js';
 
 export const COUNTER_TYPE_CONFIG = {
   members: {
-    label: 'Members + Bots',
-    baseName: 'Members & Bots',
+    label: 'Thành viên + Bot',
+    baseName: 'Thành viên & Bot',
     emoji: '👥'
   },
   members_only: {
-    label: 'Members Only',
-    baseName: 'Members',
+    label: 'Chỉ thành viên',
+    baseName: 'Thành viên',
     emoji: '👤'
   },
   bots: {
-    label: 'Bots Only',
-    baseName: 'Bots',
+    label: 'Chỉ Bot',
+    baseName: 'Bot',
     emoji: '🤖'
   }
 };
 
 function getCounterConfig(type) {
   return COUNTER_TYPE_CONFIG[type] || {
-    label: 'Unknown',
-    baseName: 'Counter',
+    label: 'Không xác định',
+    baseName: 'Bộ đếm',
     emoji: '❓'
   };
 }
@@ -190,11 +190,11 @@ export async function updateCounter(client, guild, counter) {
             guildId: guild.id,
             eventType: EVENT_TYPES.COUNTER_UPDATE,
             data: {
-              title: 'Counter Updated',
+              title: 'Bộ Đếm Đã Cập Nhật',
               lines: [
-                formatLogLine('Type', getCounterTypeLabel(type)),
-                formatLogLine('Count', count.toString()),
-                formatLogLine('Channel', channel.toString()),
+                formatLogLine('Loại', getCounterTypeLabel(type)),
+                formatLogLine('Số lượng', count.toString()),
+                formatLogLine('Kênh', channel.toString()),
               ],
               channelId: channel.id,
             },

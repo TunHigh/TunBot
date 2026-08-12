@@ -3,8 +3,8 @@
 import { logger } from './logger.js';
 
 const DEFAULT_TEMPLATES = {
-    welcome: 'Welcome {user} to {server}!',
-    goodbye: '{user.tag} has left the server.'
+    welcome: 'Chào mừng {user} đến với {server}!',
+    goodbye: '{user.tag} đã rời khỏi máy chủ.'
 };
 
 function replaceAll(message, token, value) {
@@ -39,17 +39,17 @@ export function formatWelcomeMessage(message, data) {
     }
 
     const tokens = {
-        '{user}': user?.toString?.() || 'User',
-        '{user.mention}': user?.toString?.() || 'User',
-        '{user.tag}': user?.tag || 'Unknown#0000',
-        '{user.username}': user?.username || 'Unknown',
-        '{username}': user?.username || 'Unknown',
+        '{user}': user?.toString?.() || 'Người dùng',
+        '{user.mention}': user?.toString?.() || 'Người dùng',
+        '{user.tag}': user?.tag || 'Không xác định#0000',
+        '{user.username}': user?.username || 'Không xác định',
+        '{username}': user?.username || 'Không xác định',
         '{user.discriminator}': user?.discriminator || '0000',
-        '{user.id}': user?.id || 'unknown',
-        '{server}': guild?.name || 'Server',
-        '{server.name}': guild?.name || 'Server',
-        '{guild.name}': guild?.name || 'Server',
-        '{guild.id}': guild?.id || 'unknown',
+        '{user.id}': user?.id || 'không rõ',
+        '{server}': guild?.name || 'Máy chủ',
+        '{server.name}': guild?.name || 'Máy chủ',
+        '{guild.name}': guild?.name || 'Máy chủ',
+        '{guild.id}': guild?.id || 'không rõ',
         '{guild.memberCount}': guild?.memberCount?.toString?.() || '0',
         '{memberCount}': guild?.memberCount?.toString?.() || '0',
         '{membercount}': guild?.memberCount?.toString?.() || '0'

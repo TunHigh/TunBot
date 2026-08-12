@@ -24,7 +24,7 @@ class EconomyService {
       throw createError(
         "Invalid balance state",
         ErrorTypes.VALIDATION,
-        "Operation would create an invalid account balance.",
+        "Thao tác sẽ tạo ra số dư tài khoản không hợp lệ.",
         { value, ...context }
       );
     }
@@ -39,7 +39,7 @@ class EconomyService {
       throw createError(
         "Failed to load economy data",
         ErrorTypes.DATABASE,
-        "Failed to load your economy data. Please try again later.",
+        "Không thể tải dữ liệu kinh tế của bạn. Vui lòng thử lại sau.",
         { userId, guildId }
       );
     }
@@ -56,7 +56,7 @@ class EconomyService {
       throw createError(
         "Daily cooldown active",
         ErrorTypes.RATE_LIMIT,
-        `You need to wait before claiming daily again. Try again in **${this.formatDuration(remaining)}**.`,
+        `Bạn cần đợi thêm trước khi nhận thưởng hằng ngày lần nữa. Thử lại sau **${this.formatDuration(remaining)}** nhé.`,
         { remaining, cooldownType: 'daily' }
       );
     }
@@ -93,7 +93,7 @@ class EconomyService {
       throw createError(
         "Failed to save daily claim",
         ErrorTypes.DATABASE,
-        "Failed to process your daily. Please try again.",
+        "Không thể xử lý phần thưởng hằng ngày của bạn. Vui lòng thử lại.",
         { userId, guildId }
       );
     }
@@ -111,7 +111,7 @@ class EconomyService {
       throw createError(
         "Invalid transfer amount",
         ErrorTypes.VALIDATION,
-        "Amount must be greater than zero.",
+        "Số tiền phải lớn hơn 0.",
         { amount, senderId }
       );
     }
@@ -120,7 +120,7 @@ class EconomyService {
       throw createError(
         "Cannot pay self",
         ErrorTypes.VALIDATION,
-        "You cannot pay yourself.",
+        "Bạn không thể trả tiền cho chính mình.",
         { senderId, receiverId }
       );
     }
@@ -140,7 +140,7 @@ class EconomyService {
       throw createError(
         "Failed to load economy data",
         ErrorTypes.DATABASE,
-        "Failed to load economy data. Please try again later.",
+        "Không thể tải dữ liệu kinh tế. Vui lòng thử lại sau.",
         { senderId, receiverId, guildId }
       );
     }
@@ -154,7 +154,7 @@ class EconomyService {
       throw createError(
         "Insufficient funds",
         ErrorTypes.VALIDATION,
-        `You only have **$${senderData.wallet.toLocaleString()}** in cash.`,
+        `Bạn chỉ còn **$${senderData.wallet.toLocaleString()}** tiền mặt.`,
         { required: amount, available: senderData.wallet, senderId }
       );
     }
@@ -220,7 +220,7 @@ class EconomyService {
       throw createError(
         "Failed to save transfer",
         ErrorTypes.DATABASE,
-        "Failed to process transfer. Please try again.",
+        "Không thể xử lý giao dịch chuyển tiền. Vui lòng thử lại.",
         { senderId, receiverId, amount }
       );
     }
@@ -231,7 +231,7 @@ class EconomyService {
       throw createError(
         "Invalid amount",
         ErrorTypes.VALIDATION,
-        "Amount must be positive",
+        "Số tiền phải là số dương",
         { amount, userId, source }
       );
     }
@@ -265,7 +265,7 @@ class EconomyService {
       throw createError(
         "Invalid amount",
         ErrorTypes.VALIDATION,
-        "Amount must be positive",
+        "Số tiền phải là số dương",
         { amount, userId, reason }
       );
     }
@@ -279,7 +279,7 @@ class EconomyService {
       throw createError(
         "Insufficient funds",
         ErrorTypes.VALIDATION,
-        `You only have **$${balanceBefore.toLocaleString()}**.`,
+        `Bạn chỉ còn **$${balanceBefore.toLocaleString()}**.`,
         { required: amount, available: balanceBefore, reason }
       );
     }
@@ -312,7 +312,7 @@ class EconomyService {
       throw createError(
         "Insufficient cash",
         ErrorTypes.VALIDATION,
-        `You only have **$${userData.wallet.toLocaleString()}** in cash.`,
+        `Bạn chỉ còn **$${userData.wallet.toLocaleString()}** tiền mặt.`,
         { required: amount, available: userData.wallet }
       );
     }
@@ -322,7 +322,7 @@ class EconomyService {
       throw createError(
         "Bank capacity exceeded",
         ErrorTypes.VALIDATION,
-        `Your bank can only hold **$${maxBank.toLocaleString()}**. You would exceed capacity by **$${(currentBank + amount - maxBank).toLocaleString()}**.`,
+        `Ngân hàng của bạn chỉ có thể chứa **$${maxBank.toLocaleString()}**. Bạn sẽ vượt quá sức chứa **$${(currentBank + amount - maxBank).toLocaleString()}**.`,
         { capacity: maxBank, current: currentBank, requested: amount }
       );
     }
@@ -360,7 +360,7 @@ class EconomyService {
       throw createError(
         "Insufficient bank balance",
         ErrorTypes.VALIDATION,
-        `You only have **$${bank.toLocaleString()}** in your bank.`,
+        `Bạn chỉ còn **$${bank.toLocaleString()}** trong ngân hàng.`,
         { required: amount, available: bank }
       );
     }
@@ -407,7 +407,7 @@ class EconomyService {
       throw createError(
         "Invalid amount - not an integer",
         ErrorTypes.VALIDATION,
-        "Amount must be a whole number",
+        "Số tiền phải là số nguyên",
         context
       );
     }
@@ -416,7 +416,7 @@ class EconomyService {
       throw createError(
         "Invalid amount - not positive",
         ErrorTypes.VALIDATION,
-        "Amount must be positive",
+        "Số tiền phải là số dương",
         context
       );
     }
@@ -426,7 +426,7 @@ class EconomyService {
       throw createError(
         "Amount too large",
         ErrorTypes.VALIDATION,
-        "The amount is too large to process",
+        "Số tiền quá lớn để xử lý",
         context
       );
     }
@@ -439,12 +439,12 @@ class EconomyService {
     const seconds = totalSeconds % 60;
 
     if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`;
+      return `${hours} giờ ${minutes} phút ${seconds} giây`;
     }
     if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
+      return `${minutes} phút ${seconds} giây`;
     }
-    return `${seconds}s`;
+    return `${seconds} giây`;
   }
 
   static formatCooldownDisplay(ms) {
@@ -457,7 +457,7 @@ wrapServiceClassMethods(EconomyService, (methodName) => ({
   service: 'EconomyService',
   operation: methodName,
   message: `Economy service operation failed: ${methodName}`,
-  userMessage: 'An economy operation failed. Please try again in a moment.'
+  userMessage: 'Thao tác kinh tế gặp lỗi. Vui lòng thử lại sau ít phút nữa.'
 }));
 
 export default EconomyService;

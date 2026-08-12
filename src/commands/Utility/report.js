@@ -8,22 +8,22 @@ import reportSetchannel from './modules/report_setchannel.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('report')
-        .setDescription('Report a user to server staff, or configure where reports are sent.')
+        .setDescription('Báo cáo người dùng cho quản trị viên server, hoặc cấu hình nơi nhận báo cáo.')
         .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('file')
-                .setDescription('Report a user to the server moderation team.')
+                .setDescription('Báo cáo người dùng cho đội ngũ quản trị server.')
                 .addUserOption(option =>
                     option
                         .setName('user')
-                        .setDescription('The user you want to report.')
+                        .setDescription('Người dùng bạn muốn báo cáo.')
                         .setRequired(true),
                 )
                 .addStringOption(option =>
                     option
                         .setName('reason')
-                        .setDescription('The reason for the report (be detailed).')
+                        .setDescription('Lý do báo cáo (hãy mô tả chi tiết).')
                         .setRequired(true)
                         .setMaxLength(500),
                 ),
@@ -31,11 +31,11 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('setchannel')
-                .setDescription('Set the channel where user reports are sent. (Manage Server required)')
+                .setDescription('Đặt kênh nhận báo cáo người dùng. (Cần quyền Quản Lý Server)')
                 .addChannelOption(option =>
                     option
                         .setName('channel')
-                        .setDescription('The text channel to receive reports.')
+                        .setDescription('Kênh văn bản sẽ nhận báo cáo.')
                         .addChannelTypes(ChannelType.GuildText)
                         .setRequired(true),
                 ),
@@ -53,6 +53,6 @@ export default {
             return await reportSetchannel.execute(interaction, config, client);
         }
 
-        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Unknown subcommand.' });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Lệnh con không xác định.' });
     },
 };

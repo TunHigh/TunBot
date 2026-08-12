@@ -14,11 +14,11 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("greroll")
-        .setDescription("Rerolls the winner(s) for an ended giveaway.")
+        .setDescription("Xoay vòng quay thưởng lại cho quà tặng đã kết thúc.")
         .addStringOption((option) =>
             option
                 .setName("messageid")
-                .setDescription("The message ID of the ended giveaway.")
+                .setDescription("ID tin nhắn của quà tặng đã kết thúc.")
                 .setRequired(true),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -28,7 +28,7 @@ export default {
             throw new TitanBotError(
                 'Giveaway command used outside guild',
                 ErrorTypes.VALIDATION,
-                'This command can only be used in a server.',
+                'Lệnh này chỉ có thể dùng trong máy chủ.',
                 { userId: interaction.user.id }
             );
         }
@@ -37,7 +37,7 @@ export default {
             throw new TitanBotError(
                 'User lacks ManageGuild permission',
                 ErrorTypes.PERMISSION,
-                "You need the 'Manage Server' permission to reroll a giveaway.",
+                "Bạn cần quyền 'Manage Server' để xoay vòng quay thưởng lại quà tặng.",
                 { userId: interaction.user.id, guildId: interaction.guildId }
             );
         }
@@ -86,7 +86,7 @@ export default {
             throw new TitanBotError(
                 `Insufficient participants for reroll: ${participants.length} < ${giveaway.winnerCount}`,
                 ErrorTypes.VALIDATION,
-                "Not enough entries to pick the required number of winners.",
+                "Không đủ lượt tham gia để chọn số người thắng yêu cầu.",
                 { participantsCount: participants.length, winnersNeeded: giveaway.winnerCount }
             );
         }
@@ -123,8 +123,8 @@ export default {
             return InteractionHelper.safeReply(interaction, {
                 embeds: [
                     successEmbed(
-                        "Reroll Complete",
-                        "The new winners have been selected and saved to the database. Could not find channel to announce.",
+                        "Hoàn thành xoay vòng",
+                        "Các người thắng mới đã được chọn và lưu vào cơ sở dữ liệu. Không tìm thấy kênh để thông báo.",
                     ),
                 ],
                 flags: MessageFlags.Ephemeral,
@@ -201,8 +201,8 @@ export default {
             return InteractionHelper.safeReply(interaction, {
                 embeds: [
                     successEmbed(
-                        "Reroll Complete",
-                        `The new winners have been announced in ${channel}. (Original message not found).`,
+                        "Hoàn thành xoay vòng",
+                        `Các người thắng mới đã được thông báo tại ${channel}. (Tin nhắn gốc không tìm thấy).`,
                     ),
                 ],
                 flags: MessageFlags.Ephemeral,
@@ -237,7 +237,7 @@ export default {
             });
         } else {
             const newPingMsg = await channel.send({
-                content: `🔄 **REROLL WINNERS** 🔄 CONGRATULATIONS ${winnerMentions}! You are the new winner(s) for the **${giveaway.prize}** giveaway! Please contact the host <@${giveaway.hostId}> to claim your prize.`,
+                content: `🔄 **Xoay vòng quay thưởng** 🔄 CHÚC MỪNG ${winnerMentions}! Bạn là người thắng mới cho quà tặng **${giveaway.prize}**! Vui lòng liên hệ người tổ chức <@${giveaway.hostId}> để nhận phần thưởng.`,
             });
             updatedGiveaway.winnerPingMessageId = newPingMsg.id;
         }
@@ -279,8 +279,8 @@ export default {
         return InteractionHelper.safeReply(interaction, {
             embeds: [
                 successEmbed(
-                    "Reroll Successful ✅",
-                    `Successfully rerolled the giveaway for **${giveaway.prize}** in ${channel}. Selected ${newWinners.length} new winner(s).`,
+                    "Hoàn thành xoay vòng ✅",
+                    `Đã xoay vòng lại quà tặng **${giveaway.prize}** tại ${channel}. Chọn ${newWinners.length} người thắng mới.`,
                 ),
             ],
             flags: MessageFlags.Ephemeral,

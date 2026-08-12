@@ -84,7 +84,11 @@ function isImportantFooter(footerText) {
   }
 
   const normalized = footerText.toLowerCase();
-  return /\b(close|closes|closed|expire|expires|available in|page\s+\d+|dashboard closes|ticket id)\b/.test(normalized);
+  const englishImportant = /\b(close|closes|closed|expire|expires|available in|page\s+\d+|dashboard closes|ticket id)\b/.test(normalized);
+  const vietnameseImportant =
+    /(?:^|[\s(>\-–—])(?:đóng|đóng cửa|sắp đóng|hết hạn|khả dụng trong|khả dụng|có sẵn trong|mã vé|id vé|bảng điều khiển đóng|bảng điều khiển)(?=[\s:.)\-,–—]|$)/.test(normalized) ||
+    /\btrang\s+\d+/.test(normalized);
+  return englishImportant || vietnameseImportant;
 }
 
 const originalSetDescription = EmbedBuilder.prototype.setDescription;
@@ -227,23 +231,23 @@ export function createEmbed({
 }
 
 const NOTIFICATION_DEFAULT_TITLES = {
-  success: 'Success',
-  error: 'Error',
-  info: 'Information',
-  warning: 'Warning',
-  primary: 'Notice',
+  success: 'Thành công',
+  error: 'Lỗi',
+  info: 'Thông báo',
+  warning: 'Cảnh báo',
+  primary: 'Thông báo',
 };
 
 export const USER_ERROR_TITLES = {
-  validation: 'Invalid Input',
-  permission: 'Permission Denied',
-  configuration: 'Configuration Error',
-  database: 'Database Error',
-  network: 'Network Error',
-  discord_api: 'Discord API Error',
-  user_input: 'Input Error',
-  rate_limit: 'Too Fast',
-  unknown: 'Something Went Wrong',
+  validation: 'Đầu vào không hợp lệ',
+  permission: 'Không có quyền truy cập',
+  configuration: 'Lỗi cấu hình',
+  database: 'Lỗi cơ sở dữ liệu',
+  network: 'Lỗi mạng',
+  discord_api: 'Lỗi API Discord',
+  user_input: 'Lỗi đầu vào',
+  rate_limit: 'Thao tác quá nhanh',
+  unknown: 'Đã xảy ra lỗi',
 };
 
 const USER_ERROR_COLORS = {
@@ -386,7 +390,7 @@ export function formatList(items, ordered = false) {
 }
 
 export function formatDuration(ms) {
-  if (ms < 0) return '0s';
+  if (ms < 0) return '0 giây';
 
   const seconds = Math.floor(ms / 1000) % 60;
   const minutes = Math.floor(ms / (1000 * 60)) % 60;
@@ -394,12 +398,12 @@ export function formatDuration(ms) {
   const days = Math.floor(ms / (1000 * 60 * 60 * 24));
 
   const parts = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-  if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+  if (days > 0) parts.push(`${days} ngày`);
+  if (hours > 0) parts.push(`${hours} giờ`);
+  if (minutes > 0) parts.push(`${minutes} phút`);
+  if (seconds > 0 || parts.length === 0) parts.push(`${seconds} giây`);
 
-  return parts.join('');
+  return parts.join(' ');
 }
 
 export function formatProgressBar(current, max, size = 10) {

@@ -79,7 +79,7 @@ export default {
               throw createError(
                 `No command matching ${interaction.commandName} was found.`,
                 ErrorTypes.CONFIGURATION,
-                'Sorry, that command does not exist.',
+                'Xin lỗi, lệnh đó không tồn tại.',
                 withTraceContext({ commandName: interaction.commandName }, interactionTraceContext)
               );
             }
@@ -126,7 +126,7 @@ export default {
               throw createError(
                 `Risky command cooldown active for ${interaction.commandName}`,
                 ErrorTypes.RATE_LIMIT,
-                `This command is on cooldown. Please wait ${formattedCooldown} before trying again.`,
+                `Lệnh này đang hồi chiêu. Vui lòng chờ ${formattedCooldown} rồi thử lại nhé.`,
                 withTraceContext({
                   commandName: interaction.commandName,
                   subtype: 'command_cooldown',
@@ -146,7 +146,7 @@ export default {
                 throw createError(
                   `Command ${accessKey} is disabled in this guild`,
                   ErrorTypes.CONFIGURATION,
-                  'This command has been disabled for this server.',
+                  'Lệnh này đã bị tắt trên server này.',
                   withTraceContext({ commandName: accessKey, guildId: interaction.guild.id }, interactionTraceContext)
                 );
               }
@@ -199,7 +199,7 @@ export default {
               
               await interaction.respond(
                 filtered.slice(0, 25).map(role => ({
-                  name: `${role.name}${role.enabled === false ? ' (disabled)' : ''}`,
+                  name: `${role.name}${role.enabled === false ? ' (đã tắt)' : ''}`,
                   value: role.name
                 }))
               );
@@ -223,7 +223,7 @@ export default {
               
               await interaction.respond(
                 filtered.slice(0, 25).map(role => ({
-                  name: `${role.name}${role.enabled === false ? ' (disabled)' : ''}`,
+                  name: `${role.name}${role.enabled === false ? ' (đã tắt)' : ''}`,
                   value: role.name
                 }))
               );
@@ -282,7 +282,7 @@ export default {
                     const msg = await channel.messages.fetch(panel.messageId).catch(() => null);
                     if (!msg) return null;
                     
-                    const title = msg?.embeds?.[0]?.title ?? 'Untitled Panel';
+                    const title = msg?.embeds?.[0]?.title ?? 'Panel chưa đặt tên';
                     const channelName = channel?.name ?? 'unknown';
                     
                     return {
@@ -327,7 +327,7 @@ export default {
               throw createError(
                 `No button handler found for ${buttonType}`,
                 ErrorTypes.CONFIGURATION,
-                'This button is not available.',
+                'Nút này không khả dụng.',
                 withTraceContext({ buttonType }, interactionTraceContext)
               );
             }
@@ -345,7 +345,7 @@ export default {
             throw createError(
               `No button handler found for ${customId}`,
               ErrorTypes.CONFIGURATION,
-              'This button is not available.',
+              'Nút này không khả dụng.',
               withTraceContext({ customId }, interactionTraceContext)
             );
           }
@@ -371,7 +371,7 @@ export default {
             throw createError(
               `No select menu handler found for ${customId}`,
               ErrorTypes.CONFIGURATION,
-              'This select menu is not available.',
+              'Menu chọn này không khả dụng.',
               withTraceContext({ customId }, interactionTraceContext)
             );
           }
@@ -424,7 +424,7 @@ export default {
             throw createError(
               `No modal handler found for ${customId}`,
               ErrorTypes.CONFIGURATION,
-              'This form is not available.',
+              'Biểu mẫu này không khả dụng.',
               withTraceContext({ customId }, interactionTraceContext)
             );
           }

@@ -27,17 +27,17 @@ const MAX_FIELDS = 25;
 const IDLE_TIMEOUT = 900_000; 
 
 const COLOR_PRESETS = [
-    { label: 'Primary (Blue)',        value: '#336699', emoji: '' },
-    { label: 'Success (Green)',       value: '#57F287', emoji: '' },
-    { label: 'Error (Red)',           value: '#ED4245', emoji: '' },
-    { label: 'Warning (Yellow)',      value: '#FEE75C', emoji: '' },
-    { label: 'Info (Bright Blue)',    value: '#3498DB', emoji: '' },
+    { label: 'Chính (Xanh dương)',    value: '#336699', emoji: '' },
+    { label: 'Thành công (Xanh lá)',  value: '#57F287', emoji: '' },
+    { label: 'Lỗi (Đỏ)',              value: '#ED4245', emoji: '' },
+    { label: 'Cảnh báo (Vàng)',       value: '#FEE75C', emoji: '' },
+    { label: 'Thông tin (Xanh sáng)', value: '#3498DB', emoji: '' },
     { label: 'Blurple (Discord)',     value: '#5865F2', emoji: '' },
-    { label: 'Fuchsia',              value: '#EB459E', emoji: '' },
-    { label: 'Gold',                  value: '#F1C40F', emoji: '' },
-    { label: 'White',                 value: '#FFFFFF', emoji: '' },
-    { label: 'Dark',                  value: '#202225', emoji: '' },
-    { label: 'Custom Hex...',         value: '__custom__', emoji: '' },
+    { label: 'Hồng đậm (Fuchsia)',   value: '#EB459E', emoji: '' },
+    { label: 'Vàng (Gold)',           value: '#F1C40F', emoji: '' },
+    { label: 'Trắng',                 value: '#FFFFFF', emoji: '' },
+    { label: 'Tối',                   value: '#202225', emoji: '' },
+    { label: 'Mã Hex Tùy Chỉnh...',   value: '__custom__', emoji: '' },
 ];
 
 function isValidUrl(str) {
@@ -98,7 +98,7 @@ function buildPreviewEmbed(state) {
         state.fields.length === 0 &&
         !state.author?.name
     ) {
-        embed.setDescription('*(Empty — use the menu below to add content)*');
+        embed.setDescription('*(Trống — dùng menu bên dưới để thêm nội dung)*');
     }
 
     return embed;
@@ -109,44 +109,44 @@ function buildDashboardEmbed(state) {
         str.length > n ? str.substring(0, n) + '…' : str;
 
     const lines = [
-        `**Title** › ${state.title ?`\`${trunc(state.title, 40)}\`` : '`Not set`'}`,
-        `**Description** › ${state.description ?`${state.description.length} character(s)`: '`Not set`'}`,
-        `**Color** › ${state.color ?`\`${state.color}\`` : '`Default`'}`,
-        `**Author** › ${state.author?.name ?`\`${trunc(state.author.name, 30)}\`` : '`Not set`'}`,
-        `**Footer** › ${state.footer?.text ?`\`${trunc(state.footer.text, 30)}\`` : '`Not set`'}`,
-        `**Thumbnail** › ${state.thumbnail ? '✅ Set' : '`Not set`'}`,
-        `**Image** › ${state.image ? '✅ Set' : '`Not set`'}`,
-        `**Timestamp** › ${state.timestamp ? '✅ Enabled' : '`Disabled`'}`,
-        `**Fields** › ${state.fields.length} / ${MAX_FIELDS}`,
+        `**Tiêu đề** › ${state.title ?`\`${trunc(state.title, 40)}\`` : '`Chưa đặt`'}`,
+        `**Mô tả** › ${state.description ?`${state.description.length} ký tự`: '`Chưa đặt`'}`,
+        `**Màu sắc** › ${state.color ?`\`${state.color}\`` : '`Mặc định`'}`,
+        `**Tác giả** › ${state.author?.name ?`\`${trunc(state.author.name, 30)}\`` : '`Chưa đặt`'}`,
+        `**Chân trang** › ${state.footer?.text ?`\`${trunc(state.footer.text, 30)}\`` : '`Chưa đặt`'}`,
+        `**Ảnh thu nhỏ** › ${state.thumbnail ? '✅ Đã đặt' : '`Chưa đặt`'}`,
+        `**Ảnh lớn** › ${state.image ? '✅ Đã đặt' : '`Chưa đặt`'}`,
+        `**Thời gian** › ${state.timestamp ? '✅ Bật' : '`Tắt`'}`,
+        `**Trường** › ${state.fields.length} / ${MAX_FIELDS}`,
     ];
 
     return new EmbedBuilder()
-        .setTitle('Embed Builder — Control Panel')
+        .setTitle('Trình Tạo Embed — Bảng Điều Khiển')
         .setDescription(lines.join('\n'))
         .setColor(getColor('info'))
-        .setFooter({ text: 'The preview above updates live · Closes after 5 min of inactivity' });
+        .setFooter({ text: 'Bản xem trước cập nhật trực tiếp · Tự đóng sau 5 phút không hoạt động' });
 }
 
 function buildMainMenu(state) {
     const primaryRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('eb_main_edit_content')
-            .setLabel('Edit Content')
+            .setLabel('Sửa Nội Dung')
             .setStyle(ButtonStyle.Primary)
             .setEmoji('✏️'),
         new ButtonBuilder()
             .setCustomId('eb_main_set_color')
-            .setLabel('Set Color')
+            .setLabel('Chọn Màu')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('🎨'),
         new ButtonBuilder()
             .setCustomId('eb_main_set_images')
-            .setLabel('Set Images')
+            .setLabel('Đặt Hình Ảnh')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('🖼️'),
         new ButtonBuilder()
             .setCustomId('eb_main_post_embed')
-            .setLabel('Post Embed')
+            .setLabel('Đăng Embed')
             .setStyle(ButtonStyle.Success)
             .setEmoji('📤'),
     );
@@ -154,24 +154,24 @@ function buildMainMenu(state) {
     const secondaryRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('eb_main_add_field')
-            .setLabel(`Add Field (${state.fields.length}/${MAX_FIELDS})`)
+            .setLabel(`Thêm Trường (${state.fields.length}/${MAX_FIELDS})`)
             .setStyle(ButtonStyle.Primary)
             .setEmoji('➕'),
         new ButtonBuilder()
             .setCustomId('eb_main_edit_field')
-            .setLabel('Edit Field')
+            .setLabel('Sửa Trường')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('📝')
             .setDisabled(state.fields.length === 0),
         new ButtonBuilder()
             .setCustomId('eb_main_remove_field')
-            .setLabel('Remove Field')
+            .setLabel('Xóa Trường')
             .setStyle(ButtonStyle.Danger)
             .setEmoji('➖')
             .setDisabled(state.fields.length === 0),
         new ButtonBuilder()
             .setCustomId('eb_main_toggle_timestamp')
-            .setLabel(state.timestamp ? 'Disable Timestamp' : 'Enable Timestamp')
+            .setLabel(state.timestamp ? 'Tắt Thời Gian' : 'Bật Thời Gian')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('🕐'),
     );
@@ -179,18 +179,18 @@ function buildMainMenu(state) {
     const tertiaryRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('eb_main_reorder_fields')
-            .setLabel('Reorder Fields')
+            .setLabel('Sắp Xếp Lại Trường')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('↕️')
             .setDisabled(state.fields.length < 2),
         new ButtonBuilder()
             .setCustomId('eb_main_json_export')
-            .setLabel('JSON / Raw Data')
+            .setLabel('JSON / Dữ Liệu Thô')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('📋'),
         new ButtonBuilder()
             .setCustomId('eb_main_reset_all')
-            .setLabel('Reset Everything')
+            .setLabel('Đặt Lại Tất Cả')
             .setStyle(ButtonStyle.Danger)
             .setEmoji('🗑️'),
     );
@@ -208,27 +208,27 @@ async function refreshDashboard(interaction, state) {
 async function handleEditContent(selectInteraction, rootInteraction, state) {
     const modal = new ModalBuilder()
         .setCustomId('eb_content')
-        .setTitle('Edit Content')
+        .setTitle('Sửa Nội Dung')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('eb_title')
-                    .setLabel('Title (max 256 characters)')
+                    .setLabel('Tiêu đề (tối đa 256 ký tự)')
                     .setStyle(TextInputStyle.Short)
                     .setValue(state.title || '')
                     .setMaxLength(256)
                     .setRequired(false)
-                    .setPlaceholder('My Embed Title'),
+                    .setPlaceholder('Tiêu đề Embed của tôi'),
             ),
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('eb_description')
-                    .setLabel('Description (max 4000 characters)')
+                    .setLabel('Mô tả (tối đa 4000 ký tự)')
                     .setStyle(TextInputStyle.Paragraph)
                     .setValue(state.description ? state.description.substring(0, 4000) : '')
                     .setMaxLength(4000)
                     .setRequired(false)
-                    .setPlaceholder('Write your embed description here...'),
+                    .setPlaceholder('Viết mô tả embed tại đây...'),
             ),
         );
 
@@ -257,23 +257,23 @@ async function handleSetColor(selectInteraction, rootInteraction, state) {
 
     const colorSelect = new StringSelectMenuBuilder()
         .setCustomId('eb_color_pick')
-        .setPlaceholder('Choose a color...')
+        .setPlaceholder('Chọn một màu...')
         .addOptions(
             COLOR_PRESETS.map(c =>
                 new StringSelectMenuOptionBuilder()
                     .setLabel(c.label)
                     .setValue(c.value)
                     .setEmoji(c.emoji)
-                    .setDescription(c.value !== '__custom__' ? c.value : 'Enter your own #RRGGBB value'),
+                    .setDescription(c.value !== '__custom__' ? c.value : 'Nhập giá trị #RRGGBB của riêng bạn'),
             ),
         );
 
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('Set Color')
+                .setTitle('Chọn Màu')
                 .setDescription(
-                    'Select a preset color or choose **Custom Hex** to enter your own `#RRGGBB` value.',
+                    'Chọn một màu có sẵn hoặc chọn **Custom Hex** để nhập giá trị `#RRGGBB` của riêng bạn.',
                 )
                 .setColor(getColor('info')),
         ],
@@ -296,12 +296,12 @@ async function handleSetColor(selectInteraction, rootInteraction, state) {
         if (picked === '__custom__') {
             const hexModal = new ModalBuilder()
                 .setCustomId('eb_custom_hex')
-                .setTitle('Custom Color')
+                .setTitle('Màu Tùy Chỉnh')
                 .addComponents(
                     new ActionRowBuilder().addComponents(
                         new TextInputBuilder()
                             .setCustomId('hex_value')
-                            .setLabel('Hex Color Code')
+                            .setLabel('Mã Màu Hex')
                             .setStyle(TextInputStyle.Short)
                             .setPlaceholder('#5865F2')
                             .setMaxLength(7)
@@ -327,7 +327,7 @@ async function handleSetColor(selectInteraction, rootInteraction, state) {
             if (!isValidHex(hex)) {
                 await replyUserError(hexSubmit, {
                     type: ErrorTypes.USER_INPUT,
-                    message: `\`${hex}\` is not a valid hex color. Use the format \`#RRGGBB\` (e.g. \`#5865F2\`).`,
+                    message: `\`${hex}\` không phải là mã màu hex hợp lệ. Dùng định dạng \`#RRGGBB\` (vd: \`#5865F2\`).`,
                 });
                 return;
             }
@@ -349,22 +349,22 @@ async function handleSetColor(selectInteraction, rootInteraction, state) {
 async function handleSetAuthor(selectInteraction, rootInteraction, state) {
     const modal = new ModalBuilder()
         .setCustomId('eb_author')
-        .setTitle('Set Author')
+        .setTitle('Đặt Tác Giả')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('author_name')
-                    .setLabel('Author Name (leave blank to remove)')
+                    .setLabel('Tên tác giả (để trống để xóa)')
                     .setStyle(TextInputStyle.Short)
                     .setValue(state.author?.name || '')
                     .setMaxLength(256)
                     .setRequired(false)
-                    .setPlaceholder('Your Name'),
+                    .setPlaceholder('Tên của bạn'),
             ),
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('author_icon')
-                    .setLabel('Author Icon URL (optional)')
+                    .setLabel('URL Icon tác giả (tùy chọn)')
                     .setStyle(TextInputStyle.Short)
                     .setValue(state.author?.iconUrl || '')
                     .setRequired(false)
@@ -373,7 +373,7 @@ async function handleSetAuthor(selectInteraction, rootInteraction, state) {
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('author_url')
-                    .setLabel('Author Link URL (optional)')
+                    .setLabel('URL liên kết tác giả (tùy chọn)')
                     .setStyle(TextInputStyle.Short)
                     .setValue(state.author?.url || '')
                     .setRequired(false)
@@ -400,14 +400,14 @@ async function handleSetAuthor(selectInteraction, rootInteraction, state) {
     if (iconUrl && !isValidUrl(iconUrl)) {
         await replyUserError(submitted, {
             type: ErrorTypes.USER_INPUT,
-            message: 'Author icon URL must be a valid `https://` URL.',
+            message: 'URL icon tác giả phải là URL `https://` hợp lệ.',
         });
         return;
     }
     if (url && !isValidUrl(url)) {
         await replyUserError(submitted, {
             type: ErrorTypes.USER_INPUT,
-            message: 'Author link URL must be a valid `https://` URL.',
+            message: 'URL liên kết tác giả phải là URL `https://` hợp lệ.',
         });
         return;
     }
@@ -421,22 +421,22 @@ async function handleSetAuthor(selectInteraction, rootInteraction, state) {
 async function handleSetFooter(selectInteraction, rootInteraction, state) {
     const modal = new ModalBuilder()
         .setCustomId('eb_footer')
-        .setTitle('Set Footer')
+        .setTitle('Đặt Chân Trang')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('footer_text')
-                    .setLabel('Footer Text (leave blank to remove)')
+                    .setLabel('Chữ chân trang (để trống để xóa)')
                     .setStyle(TextInputStyle.Short)
                     .setValue(state.footer?.text || '')
                     .setMaxLength(2048)
                     .setRequired(false)
-                    .setPlaceholder('Built with TitanBot'),
+                    .setPlaceholder('Được tạo bằng TitanBot'),
             ),
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('footer_icon')
-                    .setLabel('Footer Icon URL (optional)')
+                    .setLabel('URL icon chân trang (tùy chọn)')
                     .setStyle(TextInputStyle.Short)
                     .setValue(state.footer?.iconUrl || '')
                     .setRequired(false)
@@ -462,7 +462,7 @@ async function handleSetFooter(selectInteraction, rootInteraction, state) {
     if (iconUrl && !isValidUrl(iconUrl)) {
         await replyUserError(submitted, {
             type: ErrorTypes.USER_INPUT,
-            message: 'Footer icon URL must be a valid `https://` URL.',
+            message: 'URL icon chân trang phải là URL `https://` hợp lệ.',
         });
         return;
     }
@@ -478,26 +478,26 @@ async function handleSetImages(selectInteraction, rootInteraction, state) {
 
     const imageSelect = new StringSelectMenuBuilder()
         .setCustomId('eb_image_pick')
-        .setPlaceholder('What would you like to change?')
+        .setPlaceholder('Bạn muốn thay đổi gì?')
         .addOptions(
             new StringSelectMenuOptionBuilder()
-                .setLabel('Set Thumbnail')
-                .setDescription('Small image displayed in the top-right corner')
+                .setLabel('Đặt Ảnh Thu Nhỏ')
+                .setDescription('Ảnh nhỏ hiển thị ở góc trên bên phải')
                 .setValue('set_thumbnail')
                 .setEmoji('🖼️'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Set Large Image')
-                .setDescription('Full-width banner image at the bottom')
+                .setLabel('Đặt Ảnh Lớn')
+                .setDescription('Ảnh banner toàn chiều rộng ở phía dưới')
                 .setValue('set_image')
                 .setEmoji('📸'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Clear Thumbnail')
-                .setDescription('Remove the current thumbnail')
+                .setLabel('Xóa Ảnh Thu Nhỏ')
+                .setDescription('Xóa ảnh thu nhỏ hiện tại')
                 .setValue('clear_thumbnail')
                 .setEmoji('🗑️'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Clear Large Image')
-                .setDescription('Remove the current large image')
+                .setLabel('Xóa Ảnh Lớn')
+                .setDescription('Xóa ảnh lớn hiện tại')
                 .setValue('clear_image')
                 .setEmoji('🗑️'),
         );
@@ -505,11 +505,11 @@ async function handleSetImages(selectInteraction, rootInteraction, state) {
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('Set Images')
-                .setDescription('Choose which image to set or remove.')
+                .setTitle('Đặt Hình Ảnh')
+                .setDescription('Chọn hình ảnh muốn đặt hoặc xóa.')
                 .addFields(
-                    { name: 'Thumbnail',    value: state.thumbnail ? `[View](${state.thumbnail})` : '`Not set`', inline: true },
-                    { name: 'Large Image',  value: state.image     ? `[View](${state.image})`     : '`Not set`', inline: true },
+                    { name: 'Ảnh Thu Nhỏ',    value: state.thumbnail ? `[Xem](${state.thumbnail})` : '`Chưa đặt`', inline: true },
+                    { name: 'Ảnh Lớn',        value: state.image     ? `[Xem](${state.image})`     : '`Chưa đặt`', inline: true },
                 )
                 .setColor(getColor('info')),
         ],
@@ -546,12 +546,12 @@ async function handleSetImages(selectInteraction, rootInteraction, state) {
 
         const urlModal = new ModalBuilder()
             .setCustomId('eb_image_url')
-            .setTitle(isThumb ? 'Set Thumbnail' : 'Set Large Image')
+            .setTitle(isThumb ? 'Đặt Ảnh Thu Nhỏ' : 'Đặt Ảnh Lớn')
             .addComponents(
                 new ActionRowBuilder().addComponents(
                     new TextInputBuilder()
                         .setCustomId('image_url')
-                        .setLabel('Image URL')
+                        .setLabel('URL Hình Ảnh')
                         .setStyle(TextInputStyle.Short)
                         .setValue(isThumb ? (state.thumbnail || '') : (state.image || ''))
                         .setRequired(true)
@@ -576,7 +576,7 @@ async function handleSetImages(selectInteraction, rootInteraction, state) {
         if (!isValidUrl(url)) {
             await replyUserError(submitted, {
                 type: ErrorTypes.USER_INPUT,
-                message: 'Image URL must be a valid `https://` link to a publicly accessible image.',
+                message: 'URL hình ảnh phải là liên kết `https://` hợp lệ đến một hình ảnh truy cập công khai.',
             });
             return;
         }
@@ -597,47 +597,47 @@ async function handleAddField(selectInteraction, rootInteraction, state) {
         await selectInteraction.deferUpdate();
         await replyUserError(selectInteraction, {
             type: ErrorTypes.VALIDATION,
-            message: `Embeds can have a maximum of ${MAX_FIELDS} fields.`,
+            message: `Embed chỉ có thể chứa tối đa ${MAX_FIELDS} trường.`,
         });
         return;
     }
 
     const modal = new ModalBuilder()
         .setCustomId('eb_add_field')
-        .setTitle('Add Field');
+        .setTitle('Thêm Trường');
 
     const fieldNameLabel = new LabelBuilder()
-        .setLabel('Field Name (max 256 characters)')
+        .setLabel('Tên trường (tối đa 256 ký tự)')
         .setTextInputComponent(
             new TextInputBuilder()
                 .setCustomId('field_name')
                 .setStyle(TextInputStyle.Short)
                 .setMaxLength(256)
                 .setRequired(true)
-                .setPlaceholder('Field Title'),
+                .setPlaceholder('Tiêu đề trường'),
         );
 
     const fieldValueLabel = new LabelBuilder()
-        .setLabel('Field Value (max 1024 characters)')
+        .setLabel('Nội dung trường (tối đa 1024 ký tự)')
         .setTextInputComponent(
             new TextInputBuilder()
                 .setCustomId('field_value')
                 .setStyle(TextInputStyle.Paragraph)
                 .setMaxLength(1024)
                 .setRequired(true)
-                .setPlaceholder('Field content goes here...'),
+                .setPlaceholder('Nhập nội dung trường tại đây...'),
         );
 
     const inlineRadio = new RadioGroupBuilder()
         .setCustomId('field_inline')
         .setRequired(false)
         .addOptions([
-            { label: 'No — full width', value: 'no' },
-            { label: 'Yes — side-by-side', value: 'yes' },
+            { label: 'Không — rộng cả dòng', value: 'no' },
+            { label: 'Có — nằm cạnh nhau', value: 'yes' },
         ]);
 
     const inlineLabel = new LabelBuilder()
-        .setLabel('Display inline?')
+        .setLabel('Hiển thị ngang?')
         .setRadioGroupComponent(inlineRadio);
 
     modal.addLabelComponents(fieldNameLabel, fieldValueLabel, inlineLabel);
@@ -669,13 +669,13 @@ async function handleEditField(selectInteraction, rootInteraction, state) {
 
     const pickSelect = new StringSelectMenuBuilder()
         .setCustomId('eb_edit_field_pick')
-        .setPlaceholder('Select a field to edit...')
+        .setPlaceholder('Chọn một trường để sửa...')
         .addOptions(
             state.fields.slice(0, 25).map((f, i) =>
                 new StringSelectMenuOptionBuilder()
                     .setLabel(`${i + 1}. ${f.name.substring(0, 50)}`)
                     .setDescription(
-                        `${f.value.substring(0, 80)}${f.value.length > 80 ? '…' : ''} · ${f.inline ? 'Inline' : 'Block'}`,
+                        `${f.value.substring(0, 80)}${f.value.length > 80 ? '…' : ''} · ${f.inline ? 'Ngang' : 'Dọc'}`,
                     )
                     .setValue(String(i))
                     .setEmoji('📝'),
@@ -685,8 +685,8 @@ async function handleEditField(selectInteraction, rootInteraction, state) {
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('Edit Field')
-                .setDescription('Select the field you want to modify.')
+                .setTitle('Sửa Trường')
+                .setDescription('Chọn trường bạn muốn sửa.')
                 .setColor(getColor('info')),
         ],
         components: [new ActionRowBuilder().addComponents(pickSelect)],
@@ -709,10 +709,10 @@ async function handleEditField(selectInteraction, rootInteraction, state) {
 
         const modal = new ModalBuilder()
             .setCustomId('eb_edit_field_modal')
-            .setTitle(`Edit Field ${idx + 1}`);
+            .setTitle(`Sửa Trường ${idx + 1}`);
 
         const editNameLabel = new LabelBuilder()
-            .setLabel('Field Name')
+            .setLabel('Tên trường')
             .setTextInputComponent(
                 new TextInputBuilder()
                     .setCustomId('field_name')
@@ -723,7 +723,7 @@ async function handleEditField(selectInteraction, rootInteraction, state) {
             );
 
         const editValueLabel = new LabelBuilder()
-            .setLabel('Field Value')
+            .setLabel('Nội dung trường')
             .setTextInputComponent(
                 new TextInputBuilder()
                     .setCustomId('field_value')
@@ -737,19 +737,19 @@ async function handleEditField(selectInteraction, rootInteraction, state) {
             .setCustomId('field_inline')
             .setRequired(false)
             .addOptions([
-                { label: 'No — full width', value: 'no' },
-                { label: 'Yes — side-by-side', value: 'yes' },
+                { label: 'Không — rộng cả dòng', value: 'no' },
+                { label: 'Có — nằm cạnh nhau', value: 'yes' },
             ]);
         
         if (field.inline) {
             editInlineRadio.setOptions([
-                { label: 'No — full width', value: 'no' },
-                { label: 'Yes — side-by-side', value: 'yes', default: true },
+                { label: 'Không — rộng cả dòng', value: 'no' },
+                { label: 'Có — nằm cạnh nhau', value: 'yes', default: true },
             ]);
         }
 
         const editInlineLabel = new LabelBuilder()
-            .setLabel('Display inline?')
+            .setLabel('Hiển thị ngang?')
             .setRadioGroupComponent(editInlineRadio);
 
         modal.addLabelComponents(editNameLabel, editValueLabel, editInlineLabel);
@@ -786,7 +786,7 @@ async function handleRemoveField(selectInteraction, rootInteraction, state) {
 
     const pickSelect = new StringSelectMenuBuilder()
         .setCustomId('eb_remove_field_pick')
-        .setPlaceholder('Select a field to remove...')
+        .setPlaceholder('Chọn một trường để xóa...')
         .addOptions(
             state.fields.slice(0, 25).map((f, i) =>
                 new StringSelectMenuOptionBuilder()
@@ -802,8 +802,8 @@ async function handleRemoveField(selectInteraction, rootInteraction, state) {
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('Remove Field')
-                .setDescription('Select the field you want to delete.')
+                .setTitle('Xóa Trường')
+                .setDescription('Chọn trường bạn muốn xóa.')
                 .setColor(getColor('warning')),
         ],
         components: [new ActionRowBuilder().addComponents(pickSelect)],
@@ -831,7 +831,7 @@ async function handleReorderFields(selectInteraction, rootInteraction, state) {
 
     const pickSelect = new StringSelectMenuBuilder()
         .setCustomId('eb_reorder_pick')
-        .setPlaceholder('Select a field to move...')
+        .setPlaceholder('Chọn một trường để di chuyển...')
         .addOptions(
             state.fields.slice(0, 25).map((f, i) =>
                 new StringSelectMenuOptionBuilder()
@@ -847,8 +847,8 @@ async function handleReorderFields(selectInteraction, rootInteraction, state) {
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('Reorder Fields')
-                .setDescription('Select a field, then use the arrows to move it up or down.')
+                .setTitle('Sắp Xếp Lại Trường')
+                .setDescription('Chọn một trường, sau đó dùng mũi tên để di chuyển lên hoặc xuống.')
                 .setColor(getColor('info')),
         ],
         components: [new ActionRowBuilder().addComponents(pickSelect)],
@@ -869,29 +869,29 @@ async function handleReorderFields(selectInteraction, rootInteraction, state) {
 
         const upBtn = new ButtonBuilder()
             .setCustomId('eb_reorder_up')
-            .setLabel('Move Up')
+            .setLabel('Di Chuyển Lên')
             .setStyle(ButtonStyle.Primary)
             .setEmoji('⬆️')
             .setDisabled(sourceIdx === 0);
 
         const downBtn = new ButtonBuilder()
             .setCustomId('eb_reorder_down')
-            .setLabel('Move Down')
+            .setLabel('Di Chuyển Xuống')
             .setStyle(ButtonStyle.Primary)
             .setEmoji('⬇️')
             .setDisabled(sourceIdx === state.fields.length - 1);
 
         const cancelBtn = new ButtonBuilder()
             .setCustomId('eb_reorder_cancel')
-            .setLabel('Cancel')
+            .setLabel('Hủy')
             .setStyle(ButtonStyle.Secondary);
 
         await pickInter.followUp({
             embeds: [
                 new EmbedBuilder()
-                    .setTitle('Move Field')
+                    .setTitle('Di Chuyển Trường')
                     .setDescription(
-                        `Moving **${state.fields[sourceIdx].name}** — currently at position **${sourceIdx + 1}** of **${state.fields.length}**.`,
+                        `Đang di chuyển **${state.fields[sourceIdx].name}** — hiện ở vị trí **${sourceIdx + 1}** trên **${state.fields.length}**.`,
                     )
                     .setColor(getColor('info')),
             ],
@@ -936,7 +936,7 @@ async function handlePostEmbed(selectInteraction, rootInteraction, state, guild)
         await selectInteraction.deferUpdate();
         await replyUserError(selectInteraction, {
             type: ErrorTypes.VALIDATION,
-            message: 'Add at least a title, description, or field before posting.',
+            message: 'Hãy thêm ít nhất tiêu đề, mô tả hoặc một trường trước khi đăng.',
         });
         return;
     }
@@ -945,14 +945,14 @@ async function handlePostEmbed(selectInteraction, rootInteraction, state, guild)
 
     const chanSelect = new ChannelSelectMenuBuilder()
         .setCustomId('eb_post_channel')
-        .setPlaceholder('Select a channel...')
+        .setPlaceholder('Chọn một kênh...')
         .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement);
 
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('Post Embed')
-                .setDescription('Select the channel where this embed will be sent.')
+                .setTitle('Đăng Embed')
+                .setDescription('Chọn kênh để gửi embed này.')
                 .setColor(getColor('info')),
         ],
         components: [new ActionRowBuilder().addComponents(chanSelect)],
@@ -974,7 +974,7 @@ async function handlePostEmbed(selectInteraction, rootInteraction, state, guild)
         if (!channel) {
             await replyUserError(chanInter, {
                 type: ErrorTypes.USER_INPUT,
-                message: 'Could not resolve the selected channel.',
+                message: 'Không thể xác định kênh đã chọn.',
             });
             return;
         }
@@ -983,21 +983,21 @@ async function handlePostEmbed(selectInteraction, rootInteraction, state, guild)
         if (!perms?.has([PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
             await replyUserError(chanInter, {
                 type: ErrorTypes.PERMISSION,
-                message: `I need **Send Messages** and **Embed Links** permissions in ${channel} to post there.`,
+                message: `Tôi cần quyền **Gửi Tin Nhắn** và **Nhúng Liên Kết** trong ${channel} để đăng tại đó.`,
             });
             return;
         }
 
         const finalEmbed = buildPreviewEmbed(state);
 
-        if (finalEmbed.data.description === '*(Empty — use the menu below to add content)*') {
+        if (finalEmbed.data.description === '*(Trống — dùng menu bên dưới để thêm nội dung)*') {
             finalEmbed.setDescription(null);
         }
 
         await channel.send({ embeds: [finalEmbed] });
 
         await chanInter.followUp({
-            embeds: [successEmbed('Embed Sent', `Your embed has been posted to ${channel}.`)],
+            embeds: [successEmbed('Đã Gửi Embed', `Embed của bạn đã được đăng lên ${channel}.`)],
             flags: MessageFlags.Ephemeral,
         });
     });
@@ -1024,7 +1024,7 @@ async function handleJsonExport(selectInteraction, rootInteraction, state) {
             embeds: [
                 new EmbedBuilder()
                     .setTitle('Embed JSON')
-                    .setDescription('The JSON is too long to display inline — see the attached file.')
+                    .setDescription('JSON quá dài để hiển thị trực tiếp — xem tệp đính kèm.')
                     .setColor(getColor('info')),
             ],
             files: [
@@ -1042,7 +1042,7 @@ export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
         .setName('embedbuilder')
-        .setDescription('Build and post a fully custom embed with live preview')
+        .setDescription('Tạo và đăng embed tùy chỉnh hoàn toàn với bản xem trước trực tiếp')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
     async execute(interaction) {
@@ -1130,8 +1130,8 @@ export default {
                     logger.error('Error in embedbuilder collector:', error);
                     const msg =
                         error instanceof TitanBotError
-                            ? error.userMessage || 'An error occurred.'
-                            : 'An unexpected error occurred.';
+                            ? error.userMessage || 'Đã xảy ra lỗi.'
+                            : 'Đã xảy ra lỗi bất ngờ.';
                     if (!ci.replied && !ci.deferred) await ci.deferUpdate().catch(() => {});
                     await replyUserError(ci, {
                         type: ErrorTypes.UNKNOWN,
@@ -1151,7 +1151,7 @@ export default {
             throw new TitanBotError(
                 `embedbuilder failed: ${error.message}`,
                 ErrorTypes.UNKNOWN,
-                'Failed to open the embed builder.',
+                'Không thể mở trình tạo embed.',
             );
         }
     },

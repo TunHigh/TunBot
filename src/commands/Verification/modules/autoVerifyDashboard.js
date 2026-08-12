@@ -45,19 +45,19 @@ function buildDashboardEmbed(cfg, guild, conflictSummary = '') {
 
     const embed = new EmbedBuilder()
         .setTitle('🤖 Auto-Verification Dashboard')
-        .setDescription(`Manage auto-verification settings for **${guild.name}**.\nSelect an option below to modify a setting.`)
+        .setDescription(`Quản lý cài đặt xác minh tự động cho **${guild.name}**.\nChọn một tùy chọn bên dưới để sửa cài đặt.`)
         .setColor(getColor('info'))
         .addFields(
-            { name: 'System Status', value: autoVerify?.enabled ? 'Enabled' : 'Disabled', inline: true },
-            { name: 'Target Role', value: autoVerifyRole ? autoVerifyRole.toString() : '`Not set`', inline: true },
-            { name: 'Criteria', value: criteriaDescription, inline: true },
-            { name: 'Account Age', value: autoVerify?.accountAgeDays ? `\`${autoVerify.accountAgeDays}\` days` : '`N/A`', inline: true },
+            { name: 'Trạng thái hệ thống', value: autoVerify?.enabled ? 'Enabled' : 'Disabled', inline: true },
+            { name: 'Vai trò đích', value: autoVerifyRole ? autoVerifyRole.toString() : '`Not set`', inline: true },
+            { name: 'Tiêu chí', value: criteriaDescription, inline: true },
+            { name: 'Tuổi tài khoản', value: autoVerify?.accountAgeDays ? `\`${autoVerify.accountAgeDays}\` days` : '`N/A`', inline: true },
             { name: '\u200B', value: '\u200B', inline: true },
             { name: '\u200B', value: '\u200B', inline: true },
         );
 
     if (conflictSummary) {
-        embed.addFields({ name: 'Setup Conflicts', value: conflictSummary, inline: false });
+        embed.addFields({ name: 'Các lỗi khi thiết lập', value: conflictSummary, inline: false });
     }
 
     return embed
@@ -71,13 +71,13 @@ function buildSelectMenu(guildId) {
         .setPlaceholder('Select a setting to configure...')
         .addOptions(
             new StringSelectMenuOptionBuilder()
-                .setLabel('Change Role')
-                .setDescription('Select the role to assign automatically')
+                .setLabel('Thay đổi Role')
+                .setDescription('Chọn role gán tự động')
                 .setValue('role')
                 .setEmoji('🏷️'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Edit Account Age Days')
-                .setDescription('Set minimum account age in days')
+                .setLabel('Đặt tuổi tài khoản days')
+                .setDescription('Đặt tuổi tài khoản tối thiểu (days)')
                 .setValue('account_age')
                 .setEmoji('📅'),
         );
@@ -88,13 +88,13 @@ function buildButtonRow(cfg, guildId, disabled = false) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(`autoverify_cfg_criteria_${guildId}`)
-            .setLabel('Change Criteria')
+            .setLabel('Thay đổi Tiêu chí')
             .setStyle(ButtonStyle.Primary)
             .setEmoji('🎯')
             .setDisabled(disabled),
         new ButtonBuilder()
             .setCustomId(`autoverify_cfg_toggle_${guildId}`)
-            .setLabel('Auto-Verification')
+            .setLabel('Xác minh tự động')
             .setStyle(autoVerifyOn ? ButtonStyle.Success : ButtonStyle.Danger)
             .setEmoji('🤖')
             .setDisabled(disabled),
@@ -150,17 +150,17 @@ export default {
                 const autoRoleConfigured = Boolean(guildConfig.autoRole) || (Array.isArray(welcomeConfig.roleIds) && welcomeConfig.roleIds.length > 0);
                 
                 const blockingMessage = [];
-                if (verificationEnabled) blockingMessage.push('Verification system is enabled');
-                if (autoRoleConfigured) blockingMessage.push('AutoRole is configured');
+                if (verificationEnabled) blockingMessage.push('Hệ thống xác minh đã bật');
+                if (autoRoleConfigured) blockingMessage.push('AutoRole đã được cấu hình');
 
                 const blockingText = blockingMessage.length > 0 
-                    ? `\n\n⚠️ **To enable AutoVerify, you must first disable:**\n${blockingMessage.map(msg =>`• ${msg}`).join('\n')}`
+                    ? `\n\n⚠️ **Để bật AutoVerify, bạn phải vô hiệu hóa trước:**\n${blockingMessage.map(msg =>`• ${msg}`).join('\n')}`
                     : '';
 
                 return await InteractionHelper.safeReply(interaction, {
                     embeds: [
                         new EmbedBuilder()
-                            .setTitle('🤖 Auto-Verification Dashboard')
+.setTitle('🤖 Bảng điều khiển xác minh tự động')
                             .setDescription(`Auto-verification is not yet configured.${blockingText}\n\nUse \`/autoverify setup\` to configure it.`)
                             .setColor(getColor('warning'))
                             .setFooter({ text: 'Dashboard closes after 10 minutes of inactivity' })
@@ -313,8 +313,8 @@ async function handleCriteria(selectInteraction, rootInteraction, guildConfig, g
     }
     
     const criteriaEmbed = new EmbedBuilder()
-        .setTitle('Select Verification Criteria')
-        .setDescription('Choose the criteria for automatic verification')
+.setTitle('Chọn Tiêu chí xác minh tự động')
+.setDescription('Chọn tiêu chí cho xác minh tự động')
         .setColor(getColor('info'));
 
     const criteriaMenu = new StringSelectMenuBuilder()
@@ -323,11 +323,11 @@ async function handleCriteria(selectInteraction, rootInteraction, guildConfig, g
         .addOptions(
             new StringSelectMenuOptionBuilder()
                 .setLabel(`Account Age (older than ${defaultAccountAgeDays} days)`)
-                .setDescription('Users with older accounts will be auto-verified')
+                .setDescription('Người dùng có tài khoản cũ sẽ được xác minh tự động')
                 .setValue('account_age'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('No Criteria (verify everyone)')
-                .setDescription('All users gain the role immediately')
+                .setDescription('Tất cả người dùng nhận role ngay lập tức')
                 .setValue('none'),
         );
 
@@ -381,7 +381,7 @@ async function handleCriteria(selectInteraction, rootInteraction, guildConfig, g
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No criteria selected. The setting was not changed.',
+                message: 'Không có tiêu chí được chọn. Cài đặt không thay đổi.',
             }).catch(() => {});
         }
     });
@@ -398,8 +398,8 @@ async function handleRole(selectInteraction, rootInteraction, guildConfig, guild
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('Auto-Verification Role')
-                .setDescription('Select the role to assign to auto-verified users.')
+.setTitle('Vai trò xác minh tự động')
+.setDescription('Chọn role gán cho người dùng xác minh tự động.')
                 .setColor(getColor('info')),
         ],
         components: [new ActionRowBuilder().addComponents(roleSelect)],
@@ -421,7 +421,7 @@ async function handleRole(selectInteraction, rootInteraction, guildConfig, guild
         if (role.id === rootInteraction.guild.id || role.managed) {
             await replyUserError(roleInteraction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'Please choose a normal assignable role (not @everyone or a bot-managed role).',
+                message: 'Vui lòng chọn một role assignable bình thường (không phải @everyone hoặc role do bot quản lý).',
             });
             return;
         }
@@ -430,7 +430,7 @@ async function handleRole(selectInteraction, rootInteraction, guildConfig, guild
         if (role.position >= botMember.roles.highest.position) {
             await replyUserError(roleInteraction, {
                 type: ErrorTypes.PERMISSION,
-                message: 'The selected role must be below my highest role in the server role hierarchy.',
+                message: 'Role đã chọn phải nằm dưới role cao nhất của tôi trong phân cấp role server.',
             });
             return;
         }
@@ -439,7 +439,7 @@ async function handleRole(selectInteraction, rootInteraction, guildConfig, guild
         await setGuildConfig(client, guildId, guildConfig);
 
         await roleInteraction.followUp({
-            embeds: [successEmbed('Role Updated', `Auto-verification role set to ${role}.`)],
+            embeds: [successEmbed('Vai trò đã cập nhật', `Vai trò xác minh tự động đã đặt là ${role}.`)],
             flags: MessageFlags.Ephemeral,
         });
 
@@ -450,7 +450,7 @@ async function handleRole(selectInteraction, rootInteraction, guildConfig, guild
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No role was selected. The setting was not changed.',
+                message: 'Không có role nào được chọn. Cài đặt không thay đổi.',
             }).catch(() => {});
         }
     });
@@ -459,12 +459,12 @@ async function handleRole(selectInteraction, rootInteraction, guildConfig, guild
 async function handleAccountAge(selectInteraction, rootInteraction, guildConfig, guildId, client) {
     const modal = new ModalBuilder()
         .setCustomId('autoverify_account_age_modal')
-        .setTitle('Set Account Age Requirement')
+        .setTitle('Đặt yêu cầu tuổi tài khoản')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('age_input')
-                    .setLabel('Minimum Account Age (days)')
+                    .setLabel('Tuổi tài khoản tối thiểu (days)')
                     .setStyle(TextInputStyle.Short)
                     .setPlaceholder(`Between ${minAccountAgeDays} and ${maxAccountAgeDays}`)
                     .setValue((guildConfig.verification.autoVerify.accountAgeDays || defaultAccountAgeDays).toString())
@@ -488,7 +488,7 @@ async function handleAccountAge(selectInteraction, rootInteraction, guildConfig,
     const days = parseInt(inputValue, 10);
 
     if (isNaN(days) || days < minAccountAgeDays || days > maxAccountAgeDays) {
-        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: `Please enter a number between ${minAccountAgeDays} and ${maxAccountAgeDays}.` });
+        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: `Vui lòng nhập một số giữa ${minAccountAgeDays} và ${maxAccountAgeDays}.` });
         return;
     }
 
@@ -496,7 +496,7 @@ async function handleAccountAge(selectInteraction, rootInteraction, guildConfig,
     await setGuildConfig(client, guildId, guildConfig);
 
     await submitted.reply({
-        embeds: [successEmbed('Account Age Updated', `Minimum account age requirement set to **${days} days**.`)],
+        embeds: [successEmbed('Tuổi tài khoản đã cập nhật', `Yêu cầu tuổi tài khoản tối thiểu đã đặt thành **${days} days**.`)],
         flags: MessageFlags.Ephemeral,
     });
 

@@ -7,11 +7,11 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('deposit')
-        .setDescription('Deposit money from your wallet into your bank')
+        .setDescription('Gửi tiền từ ví tiền vào ngân hàng')
         .addStringOption(option =>
             option
                 .setName('amount')
-                .setDescription('Amount to deposit (number or "all")')
+                .setDescription('Số tiền muốn gửi (số hoặc "all")')
                 .setRequired(true)
         ),
 
@@ -46,7 +46,7 @@ export default {
                     throw createError(
                         "Invalid deposit amount",
                         ErrorTypes.VALIDATION,
-                        `Please enter a valid number or 'all'. You entered: \`${amountInput}\``,
+                        `Vui lòng nhập một số hợp lệ hoặc 'all'. Bạn đã nhập: \`${amountInput}\``,
                         { amountInput, userId }
                     );
                 }
@@ -56,7 +56,7 @@ export default {
                 throw createError(
                     "Zero deposit amount",
                     ErrorTypes.VALIDATION,
-                    "You have no cash to deposit.",
+                    "Bạn không có tiền mặt để gửi.",
                     { userId, walletBalance: userData.wallet }
                 );
             }
@@ -67,7 +67,7 @@ export default {
                     embeds: [
                         buildUserErrorEmbed(
                             'validation',
-                            `You tried to deposit more than you have. Depositing your remaining cash: **$${depositAmount.toLocaleString()}**`
+                            `Bạn muốn gửi nhiều hơn số tiền đang có. Đang gửi toàn bộ tiền mặt còn lại: **$${depositAmount.toLocaleString()}**`
                         )
                     ],
                     flags: MessageFlags.Ephemeral,
@@ -80,7 +80,7 @@ export default {
                 throw createError(
                     "Bank is full",
                     ErrorTypes.VALIDATION,
-                    `Your bank is currently full (Max Capacity: $${maxBank.toLocaleString()}). Purchase a **Bank Upgrade** to increase your limit.`,
+                    `Ngân hàng của bạn đã đầy (Sức chứa tối đa: $${maxBank.toLocaleString()}). Mua **Nâng cấp ngân hàng** để tăng hạn mức nhé.`,
                     { maxBank, currentBank: userData.bank, userId }
                 );
             }
@@ -94,7 +94,7 @@ export default {
                         embeds: [
                             buildUserErrorEmbed(
                                 'validation',
-                                `You only had space for **$${depositAmount.toLocaleString()}** in your bank account (Max: $${maxBank.toLocaleString()}). The rest remains in your cash.`
+                                `Ngân hàng của bạn chỉ còn chỗ cho **$${depositAmount.toLocaleString()}** (Tối đa: $${maxBank.toLocaleString()}). Số còn lại vẫn nằm trong tiền mặt của bạn.`
                             )
                         ],
                         flags: MessageFlags.Ephemeral,
@@ -106,7 +106,7 @@ export default {
                 throw createError(
                     "No space or cash for deposit",
                     ErrorTypes.VALIDATION,
-                    "The amount you tried to deposit was either 0 or exceeded your bank capacity after checking your cash balance.",
+                    "Số tiền bạn muốn gửi bằng 0 hoặc vượt quá sức chứa của ngân hàng sau khi kiểm tra số dư tiền mặt.",
                     { depositAmount, availableSpace, walletBalance: userData.wallet }
                 );
             }
@@ -117,17 +117,17 @@ export default {
             await setEconomyData(client, guildId, userId, userData);
 
             const embed = successEmbed(
-                'Deposit Successful',
-                `You successfully deposited **$${depositAmount.toLocaleString()}** into your bank.`
+                'Gửi Tiền Thành Công',
+                `Bạn đã gửi **$${depositAmount.toLocaleString()}** vào ngân hàng thành công.`
             )
                 .addFields(
                     {
-                        name: "New Cash Balance",
+                        name: "Số dư tiền mặt mới",
                         value: `$${userData.wallet.toLocaleString()}`,
                         inline: true,
                     },
                     {
-                        name: "New Bank Balance",
+                        name: "Số dư ngân hàng mới",
                         value: `$${userData.bank.toLocaleString()} / $${maxBank.toLocaleString()}`,
                         inline: true,
                     },

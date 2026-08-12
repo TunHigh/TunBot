@@ -120,7 +120,7 @@ export async function resolveUserAuthor(client, userId) {
     };
   } catch {
     return {
-      name: `User ${userId}`,
+      name: `Người dùng ${userId}`,
     };
   }
 }
@@ -178,17 +178,17 @@ const MAX_DISPLAYED_ROLE_PERMISSIONS = 5;
 export function buildRoleAuditFields(role, { includeMemberCount = false } = {}) {
   const fields = [
     {
-      name: 'Role Name',
+      name: 'Tên vai trò',
       value: role.name,
       inline: true
     },
     {
-      name: 'Color',
+      name: 'Màu sắc',
       value: role.hexColor || '#000000',
       inline: true
     },
     {
-      name: 'Role ID',
+      name: 'ID vai trò',
       value: role.id,
       inline: true
     }
@@ -198,9 +198,9 @@ export function buildRoleAuditFields(role, { includeMemberCount = false } = {}) 
   if (permissions.length > 0) {
     const displayPerms = permissions.slice(0, MAX_DISPLAYED_ROLE_PERMISSIONS).join(',');
     fields.push({
-      name: 'Permissions',
+      name: 'Quyền hạn',
       value: permissions.length > MAX_DISPLAYED_ROLE_PERMISSIONS
-        ? `${displayPerms}... (+${permissions.length - MAX_DISPLAYED_ROLE_PERMISSIONS} more)`
+        ? `${displayPerms}... (+${permissions.length - MAX_DISPLAYED_ROLE_PERMISSIONS} nữa)`
         : displayPerms,
       inline: false
     });
@@ -208,17 +208,17 @@ export function buildRoleAuditFields(role, { includeMemberCount = false } = {}) 
 
   fields.push(
     {
-      name: 'Hoisted',
-      value: role.hoist ? 'Yes' : 'No',
+      name: 'Hiển thị riêng',
+      value: role.hoist ? 'Có' : 'Không',
       inline: true
     },
     {
-      name: 'Managed',
-      value: role.managed ? 'Yes (Bot role)' : 'No',
+      name: 'Được quản lý',
+      value: role.managed ? 'Có (vai trò bot)' : 'Không',
       inline: true
     },
     {
-      name: 'Position',
+      name: 'Vị trí',
       value: role.position.toString(),
       inline: true
     }
@@ -226,7 +226,7 @@ export function buildRoleAuditFields(role, { includeMemberCount = false } = {}) 
 
   if (includeMemberCount) {
     fields.push({
-      name: 'Members with Role',
+      name: 'Thành viên có vai trò',
       value: role.members.size.toString(),
       inline: true
     });

@@ -28,23 +28,23 @@ function buildModerationLogData(event) {
   const targetIdMatch = event.target?.match(/\((\d+)\)/);
   const targetId = targetIdMatch?.[1];
   const executorIdMatch = event.executor?.match(/\((\d+)\)/);
-  const executorTag = event.executor?.split(' (')[0] || 'Moderator';
+  const executorTag = event.executor?.split(' (')[0] || 'Điều hành viên';
 
   const lines = [];
   if (event.target) {
-    lines.push(formatLogLine('User', event.target));
+    lines.push(formatLogLine('Người dùng', event.target));
   }
   if (event.reason) {
     const reason = event.reason.length > 900
       ? `${event.reason.substring(0, 897)}...`
       : event.reason;
-    lines.push(formatLogLine('Reason', reason));
+    lines.push(formatLogLine('Lý do', reason));
   }
   if (event.duration) {
-    lines.push(formatLogLine('Duration', event.duration));
+    lines.push(formatLogLine('Thời lượng', event.duration));
   }
   if (event.caseId) {
-    lines.push(formatLogLine('Case', `\`${event.caseId}\``));
+    lines.push(formatLogLine('Vụ việc', `\`${event.caseId}\``));
   }
 
   const meta = [];

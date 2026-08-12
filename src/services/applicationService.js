@@ -30,7 +30,7 @@ class ApplicationService {
             throw createError(
                 'Missing required fields for application submission',
                 ErrorTypes.VALIDATION,
-                'Invalid application data. Please try again.',
+                'Dữ liệu đơn xin không hợp lệ. Vui lòng thử lại.',
                 { data }
             );
         }
@@ -39,7 +39,7 @@ class ApplicationService {
             throw createError(
                 'Application must have answers',
                 ErrorTypes.VALIDATION,
-                'You must answer all application questions.',
+                'Bạn phải trả lời tất cả câu hỏi trong đơn xin.',
                 { data }
             );
         }
@@ -52,7 +52,7 @@ class ApplicationService {
                 throw createError(
                     'Invalid answer format',
                     ErrorTypes.VALIDATION,
-                    'All questions must have answers.',
+                    'Tất cả câu hỏi đều phải có câu trả lời.',
                     { answer }
                 );
             }
@@ -61,7 +61,7 @@ class ApplicationService {
                 throw createError(
                     'Answer too long',
                     ErrorTypes.VALIDATION,
-                    'Each answer must be less than 1000 characters.',
+                    'Mỗi câu trả lời phải có ít hơn 1000 ký tự.',
                     { length: sanitizedAnswer.length }
                 );
             }
@@ -70,7 +70,7 @@ class ApplicationService {
                 throw createError(
                     'Answer too short',
                     ErrorTypes.VALIDATION,
-                    'Please provide meaningful answers (at least 10 characters).',
+                    'Vui lòng cung cấp câu trả lời có ý nghĩa (tối thiểu 10 ký tự).',
                     { length: sanitizedAnswer.length }
                 );
             }
@@ -89,7 +89,7 @@ class ApplicationService {
             throw createError(
                 'Application submission on cooldown',
                 ErrorTypes.RATE_LIMIT,
-                `Please wait ${Math.ceil(remainingTime / 60)} minute(s) before submitting another application.`,
+                `Vui lòng đợi ${Math.ceil(remainingTime / 60)} phút trước khi gửi đơn xin mới.`,
                 { remainingTime, userId }
             );
         }
@@ -110,7 +110,7 @@ class ApplicationService {
             throw createError(
                 'User lacks permission to manage applications',
                 ErrorTypes.PERMISSION,
-                'You do not have permission to manage applications.',
+                'Bạn không có quyền quản lý đơn xin.',
                 { userId: member.id, guildId }
             );
         }
@@ -130,7 +130,7 @@ class ApplicationService {
                 throw createError(
                     'Applications are disabled',
                     ErrorTypes.CONFIGURATION,
-                    'Applications are currently disabled in this server.',
+                    'Đơn xin hiện đang bị tắt trên máy chủ này.',
                     { guildId: data.guildId }
                 );
             }
@@ -142,7 +142,7 @@ class ApplicationService {
                 throw createError(
                     'User already has pending application',
                     ErrorTypes.VALIDATION,
-                    'You already have a pending application. Please wait for it to be reviewed.',
+                    'Bạn đã có một đơn xin đang chờ duyệt. Vui lòng đợi nó được xem xét.',
                     { userId: data.userId, pendingAppId: pendingApp.id }
                 );
             }
@@ -185,7 +185,7 @@ class ApplicationService {
                 throw createError(
                     'Invalid review action',
                     ErrorTypes.VALIDATION,
-                    'Review action must be either approve or deny.',
+                    'Thao tác duyệt phải là chấp thuận hoặc từ chối.',
                     { action }
                 );
             }
@@ -195,7 +195,7 @@ class ApplicationService {
                 throw createError(
                     'Application not found',
                     ErrorTypes.CONFIGURATION,
-                    'The application you are trying to review does not exist.',
+                    'Đơn xin bạn đang cố duyệt không tồn tại.',
                     { applicationId, guildId }
                 );
             }
@@ -204,13 +204,13 @@ class ApplicationService {
                 throw createError(
                     'Application already processed',
                     ErrorTypes.VALIDATION,
-                    'This application has already been reviewed.',
+                    'Đơn xin này đã được duyệt trước đó rồi.',
                     { applicationId, status: application.status }
                 );
             }
 
             const status = action === 'approve' ? 'approved' : 'denied';
-            const sanitizedReason = reason ? reason.trim().substring(0, 500) : 'No reason provided.';
+            const sanitizedReason = reason ? reason.trim().substring(0, 500) : 'Không có lý do.';
 
             const updatedApplication = await updateApplication(client, guildId, applicationId, {
                 status,
@@ -260,7 +260,7 @@ class ApplicationService {
             throw createError(
                 'Failed to retrieve applications',
                 ErrorTypes.DATABASE,
-                'An error occurred while retrieving applications.',
+                'Đã xảy ra lỗi khi tải danh sách đơn xin.',
                 { guildId, filters }
             );
         }
@@ -273,7 +273,7 @@ class ApplicationService {
                 throw createError(
                     'Invalid log channel ID',
                     ErrorTypes.VALIDATION,
-                    'Invalid channel ID provided.',
+                    'ID kênh không hợp lệ.',
                     { logChannelId: updates.logChannelId }
                 );
             }
@@ -282,7 +282,7 @@ class ApplicationService {
                 throw createError(
                     'Invalid manager roles format',
                     ErrorTypes.VALIDATION,
-                    'Manager roles must be an array.',
+                    'Danh sách vai trò quản lý phải là một mảng.',
                     { managerRoles: updates.managerRoles }
                 );
             }
@@ -292,7 +292,7 @@ class ApplicationService {
                     throw createError(
                         'Invalid questions format',
                         ErrorTypes.VALIDATION,
-                        'Questions must be a non-empty array.',
+                        'Câu hỏi phải là một mảng không rỗng.',
                         { questions: updates.questions }
                     );
                 }
@@ -333,7 +333,7 @@ class ApplicationService {
                     throw createError(
                         'Missing role ID',
                         ErrorTypes.VALIDATION,
-                        'You must specify a role to add.',
+                        'Bạn phải chỉ định một vai trò để thêm.',
                         { action }
                     );
                 }
@@ -342,14 +342,14 @@ class ApplicationService {
                     throw createError(
                         'Role already configured',
                         ErrorTypes.VALIDATION,
-                        'This role is already configured for applications.',
+                        'Vai trò này đã được cấu hình cho đơn xin rồi.',
                         { roleId }
                     );
                 }
 
                 currentRoles.push({
                     roleId,
-                    name: name ? name.trim().substring(0, 50) : 'Application Role'
+                    name: name ? name.trim().substring(0, 50) : 'Vai Trò Đơn Xin'
                 });
 
                 await saveApplicationRoles(client, guildId, currentRoles);
@@ -364,7 +364,7 @@ class ApplicationService {
                     throw createError(
                         'Missing role ID',
                         ErrorTypes.VALIDATION,
-                        'You must specify a role to remove.',
+                        'Bạn phải chỉ định một vai trò để xóa.',
                         { action }
                     );
                 }
@@ -374,7 +374,7 @@ class ApplicationService {
                     throw createError(
                         'Role not configured',
                         ErrorTypes.VALIDATION,
-                        'This role is not configured for applications.',
+                        'Vai trò này chưa được cấu hình cho đơn xin.',
                         { roleId }
                     );
                 }
@@ -421,7 +421,7 @@ class ApplicationService {
             throw createError(
                 'Failed to retrieve your applications',
                 ErrorTypes.DATABASE,
-                'An error occurred while retrieving your applications.',
+                'Đã xảy ra lỗi khi tải danh sách đơn xin của bạn.',
                 { guildId, userId }
             );
         }
@@ -435,7 +435,7 @@ class ApplicationService {
                 throw createError(
                     'Application not found',
                     ErrorTypes.CONFIGURATION,
-                    'The application you are looking for does not exist.',
+                    'Đơn xin bạn đang tìm không tồn tại.',
                     { applicationId, guildId }
                 );
             }

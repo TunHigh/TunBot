@@ -9,17 +9,17 @@ import EconomyService from '../../services/economyService.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('pay')
-        .setDescription('Pay another user some of your cash')
+        .setDescription('Chuyển tiền mặt cho người dùng khác')
         .addUserOption(option =>
             option
                 .setName('user')
-                .setDescription('User to pay')
+                .setDescription('Người cần chuyển tiền')
                 .setRequired(true)
         )
         .addIntegerOption(option =>
             option
                 .setName('amount')
-                .setDescription('Amount to pay')
+                .setDescription('Số tiền muốn chuyển')
                 .setRequired(true)
                 .setMinValue(1)
         ),
@@ -44,7 +44,7 @@ export default {
                 throw createError(
                     "Cannot pay bot",
                     ErrorTypes.VALIDATION,
-                    "You cannot pay a bot.",
+                    "Bạn không thể chuyển tiền cho bot.",
                     { receiverId: receiver.id, isBot: true }
                 );
             }
@@ -53,7 +53,7 @@ export default {
                 throw createError(
                     "Cannot pay self",
                     ErrorTypes.VALIDATION,
-                    "You cannot pay yourself.",
+                    "Bạn không thể chuyển tiền cho chính mình.",
                     { senderId, receiverId: receiver.id }
                 );
             }
@@ -62,7 +62,7 @@ export default {
                 throw createError(
                     "Invalid payment amount",
                     ErrorTypes.VALIDATION,
-                    "Amount must be greater than zero.",
+                    "Số tiền phải lớn hơn 0.",
                     { amount, senderId }
                 );
             }
@@ -85,7 +85,7 @@ export default {
                 throw createError(
                     "Failed to load receiver economy data",
                     ErrorTypes.DATABASE,
-                    "Failed to load the receiver's economy data. Please try again later.",
+                    "Không tải được dữ liệu kinh tế của người nhận. Vui lòng thử lại sau nhé.",
                     { userId: receiver.id, guildId }
                 );
             }
@@ -102,23 +102,23 @@ export default {
             const updatedReceiverData = await getEconomyData(client, guildId, receiver.id);
 
             const embed = successEmbed(
-                'Payment Successful',
-                `You successfully paid **${receiver.username}** the amount of **$${amount.toLocaleString()}**!`
+                'Chuyển Tiền Thành Công',
+                `Bạn đã chuyển **$${amount.toLocaleString()}** cho **${receiver.username}** thành công!`
             )
                 .addFields(
                     {
-                        name: "Payment Amount",
+                        name: "Số tiền chuyển",
                         value: `$${amount.toLocaleString()}`,
                         inline: true,
                     },
                     {
-                        name: "Your New Balance",
+                        name: "Số dư mới của bạn",
                         value: `$${updatedSenderData.wallet.toLocaleString()}`,
                         inline: true,
                     },
                 )
                 .setFooter({
-                    text: `Paid to ${receiver.tag}`,
+                    text: `Đã chuyển cho ${receiver.tag}`,
                     iconURL: receiver.displayAvatarURL(),
                 });
 
@@ -134,10 +134,10 @@ export default {
 
             try {
                 const receiverEmbed = createEmbed({ 
-                    title: "Incoming Payment!", 
-                    description: `${interaction.user.username} paid you **$${amount.toLocaleString()}**.` 
+                    title: "Bạn Nhận Được Tiền!", 
+                    description: `${interaction.user.username} đã chuyển cho bạn **$${amount.toLocaleString()}**.` 
                 }).addFields({
-                    name: "Your New Cash",
+                    name: "Số tiền mặt mới của bạn",
                     value: `$${updatedReceiverData.wallet.toLocaleString()}`,
                     inline: true,
                 });

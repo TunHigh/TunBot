@@ -31,17 +31,17 @@ export default {
 
                 const formatData = { user, guild, member };
                 const goodbyeMessage = formatWelcomeMessage(
-                    welcomeConfig.leaveMessage || welcomeConfig.leaveEmbed?.description || botConfig.welcome?.defaultGoodbyeMessage || '{user} has left the server.',
+                    welcomeConfig.leaveMessage || welcomeConfig.leaveEmbed?.description || botConfig.welcome?.defaultGoodbyeMessage || '{user} đã rời khỏi server.',
                     formatData
                 );
 
                 const embedTitle = formatWelcomeMessage(
-                    welcomeConfig.leaveEmbed?.title || '👋 Goodbye',
+                    welcomeConfig.leaveEmbed?.title || '👋 Tạm biệt',
                     formatData
                 );
                 const embedFooter = welcomeConfig.leaveEmbed?.footer
                     ? formatWelcomeMessage(welcomeConfig.leaveEmbed.footer, formatData)
-                    : `Goodbye from ${guild.name}!`;
+                    : `Tạm biệt ${guild.name}!`;
 
                 const canEmbed = permissions.has(PermissionFlagsBits.EmbedLinks);
 
@@ -57,8 +57,8 @@ export default {
                         .setColor(welcomeConfig.leaveEmbed?.color || getColor('error'))
                         .setThumbnail(user.displayAvatarURL())
                         .addFields(
-                            { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
-                            { name: 'Member Count', value: guild.memberCount.toString(), inline: true }
+                            { name: 'Người dùng', value: `${user.tag} (${user.id})`, inline: true },
+                            { name: 'Số thành viên', value: guild.memberCount.toString(), inline: true }
                         )
                         .setTimestamp()
                         .setFooter({ text: embedFooter });
@@ -84,12 +84,12 @@ export default {
                 guildId: guild.id,
                 eventType: EVENT_TYPES.MEMBER_LEAVE,
                 data: {
-                    title: 'User left',
+                    title: 'Người dùng đã rời đi',
                     lines: [
-                        `**User:** ${user.toString()} (${user.tag})`,
+                        `**Người dùng:** ${user.toString()} (${user.tag})`,
                         `**ID:** \`${user.id}\``,
-                        `**Joined:** <t:${Math.floor((member.joinedTimestamp || Date.now()) / 1000)}:R>`,
-                        `**Members:** ${guild.memberCount}`,
+                        `**Tham gia lúc:** <t:${Math.floor((member.joinedTimestamp || Date.now()) / 1000)}:R>`,
+                        `**Thành viên:** ${guild.memberCount}`,
                     ],
                     quoted: false,
                     thumbnail: user.displayAvatarURL({ dynamic: true }),

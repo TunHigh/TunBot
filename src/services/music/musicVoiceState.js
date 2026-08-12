@@ -32,7 +32,7 @@ export async function handleMusicVoiceState(client, oldState, newState) {
         if (guildData.playerChannelId) {
             const channel = client.channels.cache.get(guildData.playerChannelId);
             if (channel) {
-                channel.send({ embeds: [successEmbed('Paused', 'Voice channel is empty. Music paused until someone joins.')] }).catch(() => null);
+                channel.send({ embeds: [successEmbed('Đã Tạm Dừng', 'Kênh thoại trống. Đã tạm dừng nhạc cho đến khi có người vào.')] }).catch(() => null);
             }
         }
         return;
@@ -44,7 +44,7 @@ export async function handleMusicVoiceState(client, oldState, newState) {
         if (guildData.playerChannelId) {
             const channel = client.channels.cache.get(guildData.playerChannelId);
             if (channel) {
-                channel.send({ embeds: [successEmbed('Resumed', 'Someone joined the voice channel. Playback resumed.')] }).catch(() => null);
+                channel.send({ embeds: [successEmbed('Đã Tiếp Tục', 'Có người đã vào kênh thoại. Phát nhạc tiếp tục.')] }).catch(() => null);
             }
         }
     }

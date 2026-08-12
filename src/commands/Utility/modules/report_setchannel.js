@@ -8,7 +8,7 @@ import { replyUserError, ErrorTypes } from '../../../utils/errorHandler.js';
 export default {
     async execute(interaction, config, client) {
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
-            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need **Manage Server** permissions to set the report channel.' });
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền **Quản Lý Server** để đặt kênh báo cáo.' });
         }
 
         const channel = interaction.options.getChannel('channel');
@@ -19,14 +19,14 @@ export default {
 
             return InteractionHelper.safeReply(interaction, {
                 embeds: [successEmbed(
-                    'Report Channel Set',
-                    `All new reports will now be sent to ${channel}.\nYou can also manage this from \`/logging dashboard\`.`,
+                    'Đã Đặt Kênh Báo Cáo',
+                    `Tất cả báo cáo mới sẽ được gửi đến ${channel}.\nBạn cũng có thể quản lý việc này từ \`/logging dashboard\`.`,
                 )],
                 ephemeral: true,
             });
         } catch (error) {
             logger.error('report_setchannel error:', error);
-            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not save the channel configuration.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Không thể lưu cấu hình kênh.' });
         }
     },
 };

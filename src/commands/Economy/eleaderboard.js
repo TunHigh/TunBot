@@ -8,7 +8,7 @@ import { getEconomyPrefix } from '../../utils/database.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("eleaderboard")
-        .setDescription("View the server's top 10 richest users.")
+        .setDescription("Xem top 10 người giàu nhất máy chủ.")
         .setDMPermission(false),
 
     execute: withErrorHandling(async (interaction, config, client) => {
@@ -31,7 +31,7 @@ export default {
                 throw createError(
                     "No economy data found",
                     ErrorTypes.VALIDATION,
-                    "No economy data found for this server."
+                    "Không tìm thấy dữ liệu kinh tế cho máy chủ này."
                 );
             }
 
@@ -76,12 +76,12 @@ export default {
 
             const description = leaderboardEntries.length > 0
                 ? leaderboardEntries.join("\n")
-                : "No economy data is available for this server yet.";
+                : "Chưa có dữ liệu kinh tế nào cho máy chủ này.";
 
             const embed = createEmbed({
-                title: `Economy Leaderboard`,
+                title: `Bảng Xếp Hạng Kinh Tế`,
                 description,
-                footer: `Your Rank: ${userRank > 0 ?`#${userRank}`: "No ranking data available"}`,
+                footer: `Xếp hạng của bạn: ${userRank > 0 ?`#${userRank}`: "Chưa có dữ liệu xếp hạng"}`,
             });
 
             await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });

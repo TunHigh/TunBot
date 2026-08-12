@@ -50,7 +50,7 @@ export function buildCommandRegistry(client) {
     // Add the main command
     categories.get(categoryKey).commands.push({
       name: command.data.name,
-      description: command.data.description || 'No description',
+      description: command.data.description || 'Không có mô tả',
       protected: PROTECTED_COMMANDS.has(command.data.name.toLowerCase()),
       isSubcommand: false,
     });
@@ -63,7 +63,7 @@ export function buildCommandRegistry(client) {
         const subcommandName = `${command.data.name} ${option.name}`;
         categories.get(categoryKey).commands.push({
           name: subcommandName,
-          description: option.description || 'No description',
+          description: option.description || 'Không có mô tả',
           protected: false,
           isSubcommand: true,
           parentCommand: command.data.name,
@@ -76,7 +76,7 @@ export function buildCommandRegistry(client) {
             const subcommandName = `${command.data.name} ${option.name} ${sub.name}`;
             categories.get(categoryKey).commands.push({
               name: subcommandName,
-              description: sub.description || 'No description',
+              description: sub.description || 'Không có mô tả',
               protected: false,
               isSubcommand: true,
               parentCommand: command.data.name,
@@ -224,12 +224,12 @@ export async function disableCommand(client, guildId, commandName, context = {})
   const target = resolveCommandTarget(client, normalizedName);
 
   if (!target) {
-    throw new Error(`Unknown command: \`${normalizedName}\`.`);
+    throw new Error(`Không tìm thấy lệnh: \`${normalizedName}\`.`);
   }
 
   const isProtectedTarget = isProtectedCommand(normalizedName) || (target.isSubcommand && isProtectedCommand(target.parentCommand));
   if (isProtectedTarget) {
-    throw new Error(`The \`${normalizedName}\` command cannot be disabled.`);
+    throw new Error(`Lệnh \`${normalizedName}\` không thể bị vô hiệu hóa.`);
   }
 
   const config = await getGuildConfig(client, guildId, context);
@@ -245,7 +245,7 @@ export async function enableCommand(client, guildId, commandName, context = {}) 
   const target = resolveCommandTarget(client, normalizedName);
 
   if (!target) {
-    throw new Error(`Unknown command: \`${normalizedName}\`.`);
+    throw new Error(`Không tìm thấy lệnh: \`${normalizedName}\`.`);
   }
 
   const config = await getGuildConfig(client, guildId, context);
@@ -261,7 +261,7 @@ export async function disableCategory(client, guildId, categoryKey, context = {}
   const category = getCategoryRegistry(client, normalizedKey);
 
   if (!category) {
-    throw new Error(`Unknown category: \`${categoryKey}\`.`);
+    throw new Error(`Không tìm thấy danh mục: \`${categoryKey}\`.`);
   }
 
   const config = await getGuildConfig(client, guildId, context);
@@ -277,7 +277,7 @@ export async function enableCategory(client, guildId, categoryKey, context = {})
   const category = getCategoryRegistry(client, normalizedKey);
 
   if (!category) {
-    throw new Error(`Unknown category: \`${categoryKey}\`.`);
+    throw new Error(`Không tìm thấy danh mục: \`${categoryKey}\`.`);
   }
 
   const config = await getGuildConfig(client, guildId, context);
@@ -293,7 +293,7 @@ export async function resetCategoryCommands(client, guildId, categoryKey, contex
   const category = getCategoryRegistry(client, normalizedKey);
 
   if (!category) {
-    throw new Error(`Unknown category: \`${categoryKey}\`.`);
+    throw new Error(`Không tìm thấy danh mục: \`${categoryKey}\`.`);
   }
 
   const config = await getGuildConfig(client, guildId, context);

@@ -58,12 +58,12 @@ export const addXp = wrapServiceBoundary(async function addXp(client, guild, mem
           guildId: guild.id,
           eventType: EVENT_TYPES.LEVELING_LEVELUP,
           data: {
-            title: 'Level Up',
+            title: 'Lên Cấp',
             lines: [
-              formatLogLine('Member', `${member.user.tag} (\`${member.user.id}\`)`),
-              formatLogLine('New Level', levelData.level.toString()),
-              formatLogLine('Levels Gained', (levelData.level - initialLevel).toString()),
-              formatLogLine('Total XP', levelData.totalXp.toString()),
+              formatLogLine('Thành viên', `${member.user.tag} (\`${member.user.id}\`)`),
+              formatLogLine('Cấp mới', levelData.level.toString()),
+              formatLogLine('Số cấp tăng', (levelData.level - initialLevel).toString()),
+              formatLogLine('Tổng XP', levelData.totalXp.toString()),
             ],
             userId: member.user.id,
           },
@@ -86,7 +86,7 @@ export const addXp = wrapServiceBoundary(async function addXp(client, guild, mem
 }, {
   service: 'xpSystem',
   operation: 'addXp',
-  userMessage: 'Failed to award XP. Please try again.',
+  userMessage: 'Không thể cộng XP. Vui lòng thử lại.',
 });
 
 async function awardRoleReward(guild, member, roleId, level) {

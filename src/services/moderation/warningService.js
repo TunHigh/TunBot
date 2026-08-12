@@ -22,7 +22,7 @@ class WarningService {
       throw createError(
         'Corrupted warning data',
         ErrorTypes.DATABASE,
-        'Warning data was corrupted and has been reset. Please try again.',
+        'Dữ liệu cảnh cáo bị hỏng và đã được đặt lại. Vui lòng thử lại.',
         { guildId, userId, service: 'warningService', operation: 'addWarning' }
       );
     }
@@ -71,7 +71,7 @@ class WarningService {
       throw createError(
         'Warning not found',
         ErrorTypes.USER_INPUT,
-        'That warning could not be found. It may have already been removed.',
+        'Không thể tìm thấy cảnh cáo đó. Có thể nó đã được xóa.',
         { guildId, userId, warningId, service: 'warningService', operation: 'removeWarning' }
       );
     }

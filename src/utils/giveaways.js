@@ -58,7 +58,7 @@ export async function saveGiveaway(client, guildId, giveawayData) {
             throw new TitanBotError(
                 'Invalid giveaway data: missing messageId',
                 ErrorTypes.VALIDATION,
-                'Cannot save giveaway without a message ID.',
+                'Không thể lưu giveaway khi thiếu ID tin nhắn.',
                 { giveawayData }
             );
         }
@@ -93,7 +93,7 @@ export async function deleteGiveaway(client, guildId, messageId) {
             throw new TitanBotError(
                 'Missing messageId parameter',
                 ErrorTypes.VALIDATION,
-                'Cannot delete giveaway without a message ID.',
+                'Không thể xóa giveaway khi thiếu ID tin nhắn.',
                 { messageId }
             );
         }
@@ -169,22 +169,22 @@ export function giveawayButtons(ended = false) {
             row.addComponents(
                 new ButtonBuilder()
                     .setCustomId('giveaway_reroll')
-                    .setLabel('🎲 Reroll')
+                    .setLabel('🎲 Quay lại')
                     .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setCustomId('giveaway_view')
-                    .setLabel('👁️ View')
+                    .setLabel('👁️ Xem')
                     .setStyle(ButtonStyle.Primary)
             );
         } else {
             row.addComponents(
                 new ButtonBuilder()
                     .setCustomId('giveaway_join')
-                    .setLabel('🎉 Join')
+                    .setLabel('🎉 Tham gia')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('giveaway_end')
-                    .setLabel('🛑 End')
+                    .setLabel('🛑 Kết thúc')
                     .setStyle(ButtonStyle.Danger)
             );
         }

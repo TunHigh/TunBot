@@ -20,7 +20,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             'Invalid duration format provided',
             ErrorTypes.VALIDATION,
-            'Please provide a valid duration (e.g., 1h, 30m, 5d, 10s).',
+            'Vui lòng cung cấp thời gian hợp lệ (ví dụ: 1h, 30m, 5d, 10s).',
             { durationString }
         );
     }
@@ -32,7 +32,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             `Invalid duration format: ${durationString}`,
             ErrorTypes.VALIDATION,
-            'Invalid duration format. Use: 1h, 30m, 5d, 10s (min: 10s, max: 30d)',
+            'Định dạng thời gian không hợp lệ. Hãy dùng: 1h, 30m, 5d, 10s (tối thiểu: 10s, tối đa: 30d)',
             { input: durationString }
         );
     }
@@ -44,7 +44,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             `Duration amount out of range: ${amount}`,
             ErrorTypes.VALIDATION,
-            'Duration amount must be between 1 and 999.',
+            'Số lượng thời gian phải nằm trong khoảng từ 1 đến 999.',
             { amount, unit }
         );
     }
@@ -67,7 +67,7 @@ export function parseDuration(durationString) {
             throw new TitanBotError(
                 `Unknown duration unit: ${unit}`,
                 ErrorTypes.VALIDATION,
-                'Please use s (seconds), m (minutes), h (hours), or d (days).',
+                'Vui lòng dùng s (giây), m (phút), h (giờ) hoặc d (ngày).',
                 { unit }
             );
     }
@@ -77,7 +77,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             `Duration exceeds maximum: ${ms}ms > ${maxDuration}ms`,
             ErrorTypes.VALIDATION,
-            `Maximum duration is ${Math.floor(maxDuration / (24 * 60 * 60 * 1000))} days.`,
+            `Thời gian tối đa là ${Math.floor(maxDuration / (24 * 60 * 60 * 1000))} ngày.`,
             { requestedMs: ms, maxMs: maxDuration }
         );
     }
@@ -87,7 +87,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             `Duration below minimum: ${ms}ms < ${minDuration}ms`,
             ErrorTypes.VALIDATION,
-            `Minimum duration is ${Math.ceil(minDuration / 1000)} seconds.`,
+            `Thời gian tối thiểu là ${Math.ceil(minDuration / 1000)} giây.`,
             { requestedMs: ms, minMs: minDuration }
         );
     }
@@ -100,7 +100,7 @@ export function validatePrize(prize) {
         throw new TitanBotError(
             'Prize must be a non-empty string',
             ErrorTypes.VALIDATION,
-            'Please provide a valid prize description.',
+            'Vui lòng cung cấp mô tả giải thưởng hợp lệ.',
             { prize }
         );
     }
@@ -110,7 +110,7 @@ export function validatePrize(prize) {
         throw new TitanBotError(
             `Prize length out of range: ${trimmed.length}`,
             ErrorTypes.VALIDATION,
-            'Prize must be between 1 and 256 characters.',
+            'Giải thưởng phải có từ 1 đến 256 ký tự.',
             { length: trimmed.length }
         );
     }
@@ -126,7 +126,7 @@ export function validateWinnerCount(winnerCount) {
         throw new TitanBotError(
             `Invalid winner count: ${winnerCount}`,
             ErrorTypes.VALIDATION,
-            `Winner count must be between ${minimumWinners} and ${maximumWinners}.`,
+            `Số người thắng phải nằm trong khoảng từ ${minimumWinners} đến ${maximumWinners}.`,
             { winnerCount, minimumWinners, maximumWinners }
         );
     }
@@ -140,22 +140,22 @@ export function createGiveawayEmbed(giveaway, status, winners = []) {
         
         const embed = new EmbedBuilder()
             .setTitle(`${statusEmoji} ${giveaway.prize}`)
-            .setDescription('React with the button below to enter!')
+            .setDescription('Bấm vào nút bên dưới để tham gia!')
             .setColor(color)
             .addFields(
-                { name: '👤 Hosted by', value: `<@${giveaway.hostId}>`, inline: true },
-                { name: '🏆 Winners', value: giveaway.winnerCount.toString(), inline: true },
-                { name: '👥 Entries', value: giveaway.participants?.length?.toString() || '0', inline: true }
+                { name: '👤 Người tổ chức', value: `<@${giveaway.hostId}>`, inline: true },
+                { name: '🏆 Người thắng', value: giveaway.winnerCount.toString(), inline: true },
+                { name: '👥 Lượt tham gia', value: giveaway.participants?.length?.toString() || '0', inline: true }
             );
 
         if (isEnded) {
             const winnerDisplay = winners.length > 0 
                 ? winners.map(id => `<@${id}>`).join(', ')
-                : 'No valid entries';
-            embed.addFields({ name: '🎯 Winners', value: winnerDisplay, inline: false });
+                : 'Không có lượt tham gia hợp lệ';
+            embed.addFields({ name: '🎯 Người thắng', value: winnerDisplay, inline: false });
         } else {
             const endTime = giveaway.endsAt || giveaway.endTime;
-            embed.addFields({ name: '⏰ Ends', value: `<t:${Math.floor(endTime / 1000)}:R>`, inline: false });
+            embed.addFields({ name: '⏰ Kết thúc', value: `<t:${Math.floor(endTime / 1000)}:R>`, inline: false });
         }
 
         embed.setTimestamp();
@@ -166,7 +166,7 @@ export function createGiveawayEmbed(giveaway, status, winners = []) {
         throw new TitanBotError(
             'Failed to create giveaway embed',
             ErrorTypes.UNKNOWN,
-            'An internal error occurred while formatting the giveaway.',
+            'Đã xảy ra lỗi nội bộ khi định dạng giveaway.',
             { error: error.message }
         );
     }
@@ -180,12 +180,12 @@ export function createGiveawayButtons(ended = false) {
             row.addComponents(
                 new ButtonBuilder()
                     .setCustomId('giveaway_reroll')
-                    .setLabel('🎲 Reroll')
+                    .setLabel('🎲 Quay lại')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(false),
                 new ButtonBuilder()
                     .setCustomId('giveaway_view')
-                    .setLabel('👁️ View Winners')
+                    .setLabel('👁️ Xem người thắng')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(false)
             );
@@ -193,12 +193,12 @@ export function createGiveawayButtons(ended = false) {
             row.addComponents(
                 new ButtonBuilder()
                     .setCustomId('giveaway_join')
-                    .setLabel('🎉 Join')
+                    .setLabel('🎉 Tham gia')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(false),
                 new ButtonBuilder()
                     .setCustomId('giveaway_end')
-                    .setLabel('🛑 End')
+                    .setLabel('🛑 Kết thúc')
                     .setStyle(ButtonStyle.Danger)
                     .setDisabled(false)
             );
@@ -210,7 +210,7 @@ export function createGiveawayButtons(ended = false) {
         throw new TitanBotError(
             'Failed to create giveaway buttons',
             ErrorTypes.UNKNOWN,
-            'An internal error occurred while creating interactive buttons.',
+            'Đã xảy ra lỗi nội bộ khi tạo các nút tương tác.',
             { error: error.message }
         );
     }
@@ -227,7 +227,7 @@ export function selectWinners(participants, winnerCount) {
         throw new TitanBotError(
             'Invalid winner count for selection',
             ErrorTypes.VALIDATION,
-            'Winner count must be at least 1.',
+            'Số người thắng phải ít nhất là 1.',
             { winnerCount }
         );
     }
@@ -247,7 +247,7 @@ export function selectWinners(participants, winnerCount) {
         throw new TitanBotError(
             'Failed to select winners',
             ErrorTypes.UNKNOWN,
-            'An error occurred while selecting winners.',
+            'Đã xảy ra lỗi khi chọn người thắng.',
             { error: error.message, participantCount: participants.length }
         );
     }
@@ -275,7 +275,7 @@ export async function endGiveaway(client, giveaway, guildId, endedBy) {
             throw new TitanBotError(
                 'Giveaway object is null or undefined',
                 ErrorTypes.VALIDATION,
-                'Cannot end a non-existent giveaway.',
+                'Không thể kết thúc một giveaway không tồn tại.',
                 { giveaway }
             );
         }
@@ -284,7 +284,7 @@ export async function endGiveaway(client, giveaway, guildId, endedBy) {
             throw new TitanBotError(
                 `Giveaway ${giveaway.messageId} is already ended`,
                 ErrorTypes.VALIDATION,
-                'This giveaway has already ended.',
+                'Giveaway này đã kết thúc rồi.',
                 { giveawayId: giveaway.messageId, status: 'already_ended' }
             );
         }
@@ -318,7 +318,7 @@ export async function endGiveaway(client, giveaway, guildId, endedBy) {
         throw new TitanBotError(
             'Failed to end giveaway',
             ErrorTypes.UNKNOWN,
-            'An error occurred while ending the giveaway.',
+            'Đã xảy ra lỗi khi kết thúc giveaway.',
             { error: error.message, giveawayId: giveaway?.messageId }
         );
     }
@@ -367,7 +367,7 @@ export async function checkGiveaways(client) {
 
         const winnerMentions = winners.length > 0
           ? winners.map(id => `<@${id}>`).join(', ')
-          : 'No valid entries!';
+          : 'Không có lượt tham gia hợp lệ!';
 
         const endedEmbed = createGiveawayEmbed(giveaway, 'ended', winners);
 
@@ -387,7 +387,7 @@ export async function checkGiveaways(client) {
         }
 
         if (winners.length > 0) {
-          const winnerAnnouncement = `🎉 Congratulations ${winnerMentions}! You won the **${giveaway.prize || 'giveaway'}**! Please contact <@${giveaway.hostId}> to claim your prize.`;
+          const winnerAnnouncement = `🎉 Chúc mừng ${winnerMentions}! Bạn đã thắng **${giveaway.prize || 'giveaway'}**! Hãy liên hệ <@${giveaway.hostId}> để nhận giải thưởng nhé.`;
           const winnerPingMsg = await channel.send({ content: winnerAnnouncement });
           giveaway.winnerPingMessageId = winnerPingMsg.id;
           await markGiveawayEnded(client, giveawayId, giveaway);
@@ -398,21 +398,21 @@ export async function checkGiveaways(client) {
               guildId,
               eventType: EVENT_TYPES.GIVEAWAY_WINNER,
               data: {
-                description: `Giveaway ended with ${winners.length} winner(s)`,
+                description: `Giveaway đã kết thúc với ${winners.length} người thắng`,
                 channelId: channel.id,
                 fields: [
                   {
-                    name: '🎁 Prize',
-                    value: giveaway.prize || 'Mystery Prize!',
+                    name: '🎁 Giải thưởng',
+                    value: giveaway.prize || 'Giải thưởng bí ẩn!',
                     inline: true
                   },
                   {
-                    name: '🏆 Winners',
+                    name: '🏆 Người thắng',
                     value: winners.map(id => `<@${id}>`).join(', '),
                     inline: false
                   },
                   {
-                    name: '👥 Entries',
+                    name: '👥 Lượt tham gia',
                     value: participants.length.toString(),
                     inline: true
                   }
@@ -423,7 +423,7 @@ export async function checkGiveaways(client) {
             logger.debug('Error logging giveaway winner:', error);
           }
         } else {
-          await channel.send({ content: `The giveaway for **${giveaway.prize}** has ended with no valid entries.` });
+          await channel.send({ content: `Giveaway **${giveaway.prize}** đã kết thúc nhưng không có lượt tham gia hợp lệ.` });
         }
 
         logger.info(`Ended giveaway ${messageId} in guild ${guildId}`);

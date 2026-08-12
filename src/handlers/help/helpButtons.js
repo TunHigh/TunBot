@@ -41,25 +41,25 @@ export const helpBugReportButton = {
     name: BUG_REPORT_BUTTON_ID,
     async execute(interaction, client) {
         const githubButton = new ButtonBuilder()
-            .setLabel('🐛 Report Bug on GitHub')
+            .setLabel('🐛 Báo Lỗi trên GitHub')
             .setStyle(ButtonStyle.Link)
             .setURL('https://github.com/codebymitch/TitanBot/issues');
 
         const bugRow = new ActionRowBuilder().addComponents(githubButton);
 
         const bugReportEmbed = createEmbed({
-            title: '🐛 Bug Report',
-            description: 'Found a bug? Please report it on our GitHub Issues page!\n\n' +
-                '**When reporting a bug, please include:**\n' +
-                '• 📝 Detailed description of the issue\n' +
-                '• 📋 Steps to reproduce the problem\n' +
-                '• 📸 Screenshots if applicable\n' +
-                '• 💻 Your bot version and environment\n\n' +
-                'This helps us fix issues faster and more effectively!',
+            title: '🐛 Báo Lỗi',
+            description: 'Phát hiện lỗi? Hãy báo cáo tại trang Issues trên GitHub của chúng mình!\n\n' +
+                '**Khi báo lỗi, hãy kèm theo:**\n' +
+                '• 📝 Mô tả chi tiết về vấn đề\n' +
+                '• 📋 Các bước để tái hiện lỗi\n' +
+                '• 📸 Ảnh chụp màn hình nếu có thể\n' +
+                '• 💻 Phiên bản bot và môi trường của bạn\n\n' +
+                'Điều này giúp chúng mình sửa lỗi nhanh và hiệu quả hơn!',
             color: 'error'
         });
         bugReportEmbed.setFooter({
-            text: 'TitanBot Bug Reporting System',
+            text: 'Hệ Thống Báo Lỗi TitanBot',
             iconURL: client.user.displayAvatarURL()
         });
         bugReportEmbed.setTimestamp();

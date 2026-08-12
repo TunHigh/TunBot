@@ -8,22 +8,22 @@ export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
         .setName('wipedata')
-        .setDescription('Delete all your personal data from the bot (irreversible)'),
+        .setDescription('Xóa toàn bộ dữ liệu cá nhân của bạn khỏi bot (không thể hoàn tác)'),
 
     async execute(interaction, guildConfig, client) {
         const warningMessage = 
-            `⚠️ **THIS ACTION IS IRREVERSIBLE!** ⚠️\n\n` +
-            `This will permanently delete **ALL** your data from this server including:\n` +
-            `• 💰 Economy balance (wallet & bank)\n` +
-            `• 📊 Levels and XP\n` +
-            `• 🎒 Inventory items\n` +
-            `• 🛍️ Shop purchases\n` +
-            `• 🎂 Birthday information\n` +
-            `• 🔢 Counter data\n` +
-            `• 📋 All other personal data\n\n` +
-            `**This cannot be undone. Are you absolutely sure?**`;
+            `⚠️ **HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC!** ⚠️\n\n` +
+            `Thao tác này sẽ xóa vĩnh viễn **TOÀN BỘ** dữ liệu của bạn trong server này bao gồm:\n` +
+            `• 💰 Số dư kinh tế (ví & ngân hàng)\n` +
+            `• 📊 Levels và XP\n` +
+            `• 🎒 Vật phẩm trong kho\n` +
+            `• 🛍️ Các giao dịch mua trong shop\n` +
+            `• 🎂 Thông tin sinh nhật\n` +
+            `• 🔢 Dữ liệu bộ đếm\n` +
+            `• 📋 Tất cả dữ liệu cá nhân khác\n\n` +
+            `**Việc này không thể hoàn tác. Bạn có chắc chắn không?**`;
 
-        const embed = warningEmbed('Wipe All Data', warningMessage);
+        const embed = warningEmbed('Xóa Toàn Bộ Dữ Liệu', warningMessage);
 
         const confirmButtons = getConfirmationButtons('wipedata');
 

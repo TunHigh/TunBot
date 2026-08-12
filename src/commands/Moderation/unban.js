@@ -8,16 +8,16 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("unban")
-        .setDescription("Unban a user from the server")
+        .setDescription("Gỡ cấm một người dùng khỏi server")
         .addStringOption(option =>
             option
                 .setName("target")
-                .setDescription("The ID (or mention) of the user to unban")
+                .setDescription("ID (hoặc mention) của người dùng cần gỡ cấm")
                 .setRequired(true),
         )
         .addStringOption(option =>
             option.setName("reason")
-                .setDescription("Reason for the unban")
+                .setDescription("Lý do gỡ cấm")
                 .setRequired(false),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
@@ -40,7 +40,7 @@ export default {
         if (!/^\d{17,20}$/.test(targetId)) {
             return replyUserError(interaction, {
                 type: ErrorTypes.USER_INPUT,
-                message: 'Please provide a valid user ID or mention.',
+                message: 'Vui lòng cung cấp ID hoặc mention hợp lệ.',
             });
         }
 
@@ -48,11 +48,11 @@ export default {
         if (!targetUser) {
             return replyUserError(interaction, {
                 type: ErrorTypes.USER_INPUT,
-                message: `Could not find a user with the ID \`${targetId}\`.`,
+                message: `Không thể tìm thấy người dùng có ID \`${targetId}\`.`,
             });
         }
 
-        const reason = interaction.options.getString("reason") || "No reason provided";
+        const reason = interaction.options.getString("reason") || "Không có lý do";
 
         const result = await ModerationService.unbanUser({
             guild: interaction.guild,
@@ -64,8 +64,8 @@ export default {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    "✅ User Unbanned",
-                    `Successfully unbanned **${targetUser.tag}** from the server.\n\n**Reason:** ${reason}\n**Case ID:** #${result.caseId}`,
+                    "✅ Đã gỡ cấm người dùng",
+                    `Đã gỡ cấm **${targetUser.tag}** khỏi server thành công.\n\n**Lý do:** ${reason}\n**Mã vụ việc:** #${result.caseId}`,
                 ),
             ],
         });

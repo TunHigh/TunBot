@@ -17,7 +17,7 @@ export function getXpForLevel(level) {
     throw new TitanBotError(
       `Invalid level: ${level}. Must be between ${MIN_LEVEL} and ${MAX_LEVEL}`,
       ErrorTypes.VALIDATION,
-      'The level must be a valid number.'
+      'Cấp độ phải là một số hợp lệ.'
     );
   }
   return 5 * Math.pow(level, 2) + 50 * level + 50;
@@ -28,7 +28,7 @@ export function getLevelFromXp(xp) {
     throw new TitanBotError(
       `Invalid XP: ${xp}`,
       ErrorTypes.VALIDATION,
-      'XP must be a non-negative number.'
+      'XP phải là một số không âm.'
     );
   }
 
@@ -63,7 +63,7 @@ export async function getLeaderboard(client, guildId, limit = 10) {
       throw new TitanBotError(
         'Invalid guild ID',
         ErrorTypes.VALIDATION,
-        'Guild ID is required.'
+        'Cần có ID máy chủ.'
       );
     }
 
@@ -112,19 +112,19 @@ export async function getLeaderboard(client, guildId, limit = 10) {
     throw new TitanBotError(
       `Failed to fetch leaderboard: ${error.message}`,
       ErrorTypes.DATABASE,
-      'Could not fetch the leaderboard at this time.'
+      'Không thể tải bảng xếp hạng vào lúc này.'
     );
   }
 }
 
 export function createLeaderboardEmbed(leaderboard, guild) {
   const embed = new EmbedBuilder()
-    .setTitle(`🏆 ${guild.name} Leaderboard`)
+    .setTitle(`🏆 Bảng Xếp Hạng ${guild.name}`)
     .setColor('#2ecc71')
     .setTimestamp();
     
   if (!leaderboard || leaderboard.length === 0) {
-    embed.setDescription('No users on the leaderboard yet!');
+    embed.setDescription('Chưa có ai trên bảng xếp hạng!');
     return embed;
   }
   
@@ -141,7 +141,7 @@ export function createLeaderboardEmbed(leaderboard, guild) {
   }).join('\n');
   
   embed.setDescription(
-    `**Top Members**\n${top3Text}${restText ? '\n\n' + restText : ''}`
+    `**Thành Viên Đứng Đầu**\n${top3Text}${restText ? '\n\n' + restText : ''}`
   );
   
   return embed;
@@ -154,7 +154,7 @@ export async function getLevelingConfig(client, guildId) {
       enabled: true,
       xpPerMessage: { min: 15, max: 25 },
       xpCooldown: 20,
-      levelUpMessage: '{user} has leveled up to level {level}!',
+      levelUpMessage: '{user} đã lên cấp {level}!',
       levelUpChannel: null,
       ignoredChannels: [],
       ignoredRoles: [],
@@ -169,7 +169,7 @@ export async function getLevelingConfig(client, guildId) {
       enabled: true,
       xpPerMessage: { min: 15, max: 25 },
       xpCooldown: 20,
-      levelUpMessage: '{user} has leveled up to level {level}!',
+      levelUpMessage: '{user} đã lên cấp {level}!',
       levelUpChannel: null,
       ignoredChannels: [],
       ignoredRoles: [],
@@ -216,7 +216,7 @@ export async function getUserLevelData(client, guildId, userId) {
     throw new TitanBotError(
       `Failed to fetch user data: ${error.message}`,
       ErrorTypes.DATABASE,
-      'Could not fetch level data at this time.'
+      'Không thể tải dữ liệu cấp độ vào lúc này.'
     );
   }
 }
@@ -253,7 +253,7 @@ export async function saveUserLevelData(client, guildId, userId, data) {
     throw new TitanBotError(
       `Failed to save user data: ${error.message}`,
       ErrorTypes.DATABASE,
-      'Could not save level data at this time.'
+      'Không thể lưu dữ liệu cấp độ vào lúc này.'
     );
   }
 }
@@ -273,7 +273,7 @@ export async function saveLevelingConfig(client, guildId, config) {
       throw new TitanBotError(
         'XP cooldown must be between 0 and 3600 seconds',
         ErrorTypes.VALIDATION,
-        'Cooldown must be between 0 and 3600 seconds.'
+        'Cooldown phải nằm trong khoảng từ 0 đến 3600 giây.'
       );
     }
 
@@ -281,7 +281,7 @@ export async function saveLevelingConfig(client, guildId, config) {
       throw new TitanBotError(
         'Invalid XP range configuration',
         ErrorTypes.VALIDATION,
-        'Minimum XP must be less than maximum XP, and both must be positive.'
+        'XP tối thiểu phải nhỏ hơn XP tối đa và cả hai phải là số dương.'
       );
     }
 
@@ -295,7 +295,7 @@ export async function saveLevelingConfig(client, guildId, config) {
     throw new TitanBotError(
       `Failed to save config: ${error.message}`,
       ErrorTypes.DATABASE,
-      'Could not save configuration at this time.'
+      'Không thể lưu cấu hình vào lúc này.'
     );
   }
 }
@@ -307,7 +307,7 @@ export async function addLevels(client, guildId, userId, levels) {
       throw new TitanBotError(
         'Leveling system is disabled on this server',
         ErrorTypes.CONFIGURATION,
-        'The leveling system is currently disabled on this server.'
+        'Hệ thống leveling hiện đang bị tắt trên máy chủ này.'
       );
     }
 
@@ -315,7 +315,7 @@ export async function addLevels(client, guildId, userId, levels) {
       throw new TitanBotError(
         `Invalid level amount: ${levels}`,
         ErrorTypes.VALIDATION,
-        'You must add a positive number of levels.'
+        'Bạn phải thêm một số cấp dương.'
       );
     }
 
@@ -326,7 +326,7 @@ export async function addLevels(client, guildId, userId, levels) {
       throw new TitanBotError(
         `Level ${newLevel} exceeds maximum level ${MAX_LEVEL}`,
         ErrorTypes.VALIDATION,
-        `Maximum level is ${MAX_LEVEL}.`
+        `Cấp tối đa là ${MAX_LEVEL}.`
       );
     }
 
@@ -347,7 +347,7 @@ export async function addLevels(client, guildId, userId, levels) {
     throw new TitanBotError(
       `Failed to add levels: ${error.message}`,
       ErrorTypes.DATABASE,
-      'Could not add levels at this time.'
+      'Không thể thêm cấp vào lúc này.'
     );
   }
 }
@@ -359,7 +359,7 @@ export async function removeLevels(client, guildId, userId, levels) {
       throw new TitanBotError(
         'Leveling system is disabled on this server',
         ErrorTypes.CONFIGURATION,
-        'The leveling system is currently disabled on this server.'
+        'Hệ thống leveling hiện đang bị tắt trên máy chủ này.'
       );
     }
 
@@ -367,7 +367,7 @@ export async function removeLevels(client, guildId, userId, levels) {
       throw new TitanBotError(
         `Invalid level amount: ${levels}`,
         ErrorTypes.VALIDATION,
-        'You must remove a positive number of levels.'
+        'Bạn phải gỡ một số cấp dương.'
       );
     }
 
@@ -391,7 +391,7 @@ export async function removeLevels(client, guildId, userId, levels) {
     throw new TitanBotError(
       `Failed to remove levels: ${error.message}`,
       ErrorTypes.DATABASE,
-      'Could not remove levels at this time.'
+      'Không thể gỡ cấp vào lúc này.'
     );
   }
 }
@@ -403,7 +403,7 @@ export async function setUserLevel(client, guildId, userId, level) {
       throw new TitanBotError(
         'Leveling system is disabled on this server',
         ErrorTypes.CONFIGURATION,
-        'The leveling system is currently disabled on this server.'
+        'Hệ thống leveling hiện đang bị tắt trên máy chủ này.'
       );
     }
 
@@ -411,7 +411,7 @@ export async function setUserLevel(client, guildId, userId, level) {
       throw new TitanBotError(
         `Invalid level: ${level}`,
         ErrorTypes.VALIDATION,
-        `Level must be between ${MIN_LEVEL} and ${MAX_LEVEL}.`
+        `Cấp độ phải nằm trong khoảng từ ${MIN_LEVEL} đến ${MAX_LEVEL}.`
       );
     }
 
@@ -434,7 +434,7 @@ export async function setUserLevel(client, guildId, userId, level) {
     throw new TitanBotError(
       `Failed to set level: ${error.message}`,
       ErrorTypes.DATABASE,
-      'Could not set level at this time.'
+      'Không thể đặt cấp vào lúc này.'
     );
   }
 }

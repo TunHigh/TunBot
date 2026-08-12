@@ -8,10 +8,10 @@ import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('hexcolor')
-        .setDescription('Generate a random hex color with preview')
+        .setDescription('Tạo màu hex ngẫu nhiên kèm bản xem trước')
         .addStringOption(option =>
             option.setName('color')
-                .setDescription('Specific hex color (e.g., #FF5733 or FF5733)')
+                .setDescription('Mã hex cụ thể (vd: #FF5733 hoặc FF5733)')
                 .setRequired(false)),
 
     async execute(interaction) {
@@ -27,7 +27,7 @@ export default {
                 } else {
                     hexColor = hexColor.replace('#', '');
                     if (!/^[0-9A-Fa-f]{3,6}$/.test(hexColor)) {
-                        return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please provide a valid hex code.\n\n**Valid formats:**\n• `#FF5733` (with hash)\n• `FF5733` (without hash)\n• `F57` (3-digit shorthand)\n\n**Invalid:** `#GG5733` (G is not a hex digit)' });
+                        return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Vui lòng cung cấp mã hex hợp lệ.\n\n**Định dạng hợp lệ:**\n• `#FF5733` (có dấu #)\n• `FF5733` (không có dấu #)\n• `F57` (rút gọn 3 chữ số)\n\n**Không hợp lệ:** `#GG5733` (G không phải chữ số hex)' });
                     }
 
                     if (hexColor.length === 3) {
@@ -49,22 +49,22 @@ export default {
                 const colorName = getColorName(hexColor);
 
                 const embed = successEmbed(
-                    '🎨 Color Information',
+                    '🎨 Thông Tin Màu Sắc',
                     `**Hex:** \`${hexColor}\`\n` +
                     `**RGB:** \`rgb(${r}, ${g}, ${b})\`\n` +
                     `**HSL:** \`${rgbToHsl(r, g, b)}\`\n` +
-                    `**Name:** ${colorName || 'Custom Color'}`
+                    `**Tên:** ${colorName || 'Màu Tùy Chỉnh'}`
                 )
                     .setColor(hexColor)
                     .setImage(colorPreviewUrl);
 
                 if (isRandom) {
-                    embed.setFooter({ text: 'Randomly generated color' });
+                    embed.setFooter({ text: 'Màu được tạo ngẫu nhiên' });
                 }
 
                 await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
             },
-            'Failed to generate color information. Please try again.',
+            'Không thể tạo thông tin màu sắc. Vui lòng thử lại.',
             {
                 autoDefer: true,
                 deferOptions: { flags: MessageFlags.Ephemeral }
@@ -96,26 +96,26 @@ h = s = 0;
 
 function getColorName(hex) {
     const colors = {
-        '#FF0000': 'Red',
-        '#00FF00': 'Green',
-        '#0000FF': 'Blue',
-        '#FFFF00': 'Yellow',
-        '#FF00FF': 'Magenta',
-        '#00FFFF': 'Cyan',
-        '#000000': 'Black',
-        '#FFFFFF': 'White',
-        '#808080': 'Gray',
-        '#FFA500': 'Orange',
-        '#800080': 'Purple',
-        '#A52A2A': 'Brown',
-        '#FFC0CB': 'Pink',
-        '#008000': 'Dark Green',
-        '#000080': 'Navy',
-        '#FFD700': 'Gold',
-        '#C0C0C0': 'Silver',
-        '#FF6347': 'Tomato',
-        '#40E0D0': 'Turquoise',
-        '#E6E6FA': 'Lavender'
+        '#FF0000': 'Đỏ',
+        '#00FF00': 'Xanh lá',
+        '#0000FF': 'Xanh dương',
+        '#FFFF00': 'Vàng',
+        '#FF00FF': 'Hồng cánh sen',
+        '#00FFFF': 'Xanh lơ',
+        '#000000': 'Đen',
+        '#FFFFFF': 'Trắng',
+        '#808080': 'Xám',
+        '#FFA500': 'Cam',
+        '#800080': 'Tím',
+        '#A52A2A': 'Nâu',
+        '#FFC0CB': 'Hồng',
+        '#008000': 'Xanh lá đậm',
+        '#000080': 'Xanh navy',
+        '#FFD700': 'Vàng gold',
+        '#C0C0C0': 'Bạc',
+        '#FF6347': 'Đỏ cà chua',
+        '#40E0D0': 'Xanh ngọc',
+        '#E6E6FA': 'Tím oải hương'
     };
     
     if (colors[hex.toUpperCase()]) {
@@ -136,5 +136,5 @@ function getColorName(hex) {
         }
     }
     
-    return minDistance < 1000000 ? `Close to ${closestColor}` : null;
+    return minDistance < 1000000 ? `Gần với ${closestColor}` : null;
 }

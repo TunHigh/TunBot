@@ -40,7 +40,7 @@ function buildButtonRow(guildConfig, guildId, disabled = false, panelStatus = nu
         buttons.push(
             new ButtonBuilder()
                 .setCustomId(`ticket_cfg_repost_${guildId}`)
-                .setLabel('Repost Panel')
+                .setLabel('Đăng Lại Bảng Vé')
                 .setStyle(ButtonStyle.Primary)
                 .setEmoji('📌')
                 .setDisabled(disabled),
@@ -50,19 +50,19 @@ function buildButtonRow(guildConfig, guildId, disabled = false, panelStatus = nu
     buttons.push(
         new ButtonBuilder()
             .setCustomId(`ticket_cfg_dm_toggle_${guildId}`)
-            .setLabel('DM on Close')
+            .setLabel('DM Khi Đóng')
             .setStyle(dmEnabled ? ButtonStyle.Success : ButtonStyle.Danger)
             .setEmoji(dmEnabled ? '📬' : '📭')
             .setDisabled(disabled),
         new ButtonBuilder()
             .setCustomId(`ticket_cfg_staff_role_btn_${guildId}`)
-            .setLabel('Staff Role')
+            .setLabel('Vai Trò Nhân Viên')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('🛡️')
             .setDisabled(disabled),
         new ButtonBuilder()
             .setCustomId(`ticket_cfg_delete_${guildId}`)
-            .setLabel('Delete System')
+            .setLabel('Xóa Hệ Thống')
             .setStyle(ButtonStyle.Danger)
             .setEmoji('🗑️')
             .setDisabled(disabled),
@@ -81,8 +81,8 @@ async function persistPanelMessageId(client, guildId, guildConfig, messageId) {
 
 function buildPanelEmbed(config) {
     return new EmbedBuilder()
-        .setTitle('Support Tickets')
-        .setDescription(config.ticketPanelMessage || 'Click the button below to create a support ticket.')
+        .setTitle('Vé Hỗ Trợ')
+        .setDescription(config.ticketPanelMessage || 'Nhấn vào nút bên dưới để tạo vé hỗ trợ.')
         .setColor(getColor('info'));
 }
 
@@ -90,7 +90,7 @@ function buildPanelButtonRow(config) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('create_ticket')
-            .setLabel(config.ticketButtonLabel || 'Create Ticket')
+            .setLabel(config.ticketButtonLabel || 'Tạo Vé Hỗ Trợ')
             .setStyle(ButtonStyle.Primary)
             .setEmoji('📩'),
     );
@@ -102,7 +102,7 @@ async function repostTicketPanel(client, guild, guildConfig, guildId) {
         throw new TitanBotError(
             'Panel channel missing',
             ErrorTypes.CONFIGURATION,
-            'The configured ticket panel channel no longer exists. Set a new panel channel from the dashboard.',
+            'Kênh bảng vé hỗ trợ đã cấu hình không còn tồn tại. Hãy đặt kênh bảng vé mới từ bảng điều khiển.',
         );
     }
 
@@ -119,99 +119,99 @@ function formatCloseDuration(ms) {
     if (ms == null) return '`N/A`';
     const hours = Math.floor(ms / 3_600_000);
     const minutes = Math.floor((ms % 3_600_000) / 60_000);
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
+    if (hours > 0) return `${hours} giờ ${minutes} phút`;
+    return `${minutes} phút`;
 }
 
 function buildDashboardEmbed(config, guild, panelStatus = null, ticketStats = null) {
-    const panelChannel = config.ticketPanelChannelId ? `<#${config.ticketPanelChannelId}>` : '`Not set`';
-    const staffRole = config.ticketStaffRoleId ? `<@&${config.ticketStaffRoleId}>` : '`Not set`';
-    const ticketLogsChannel = config.ticketLogsChannelId ? `<#${config.ticketLogsChannelId}>` : '`Not set`';
-    const transcriptChannel = config.ticketTranscriptChannelId ? `<#${config.ticketTranscriptChannelId}>` : '`Not set`';
+    const panelChannel = config.ticketPanelChannelId ? `<#${config.ticketPanelChannelId}>` : '`Chưa đặt`';
+    const staffRole = config.ticketStaffRoleId ? `<@&${config.ticketStaffRoleId}>` : '`Chưa đặt`';
+    const ticketLogsChannel = config.ticketLogsChannelId ? `<#${config.ticketLogsChannelId}>` : '`Chưa đặt`';
+    const transcriptChannel = config.ticketTranscriptChannelId ? `<#${config.ticketTranscriptChannelId}>` : '`Chưa đặt`';
 
     const openCategoryChannel = config.ticketCategoryId ? guild.channels.cache.get(config.ticketCategoryId) : null;
-    const openCategory = openCategoryChannel ? openCategoryChannel.toString() : '`Not set`';
+    const openCategory = openCategoryChannel ? openCategoryChannel.toString() : '`Chưa đặt`';
     
     const closedCategoryChannel = config.ticketClosedCategoryId ? guild.channels.cache.get(config.ticketClosedCategoryId) : null;
-    const closedCategory = closedCategoryChannel ? closedCategoryChannel.toString() : '`Not set`';
+    const closedCategory = closedCategoryChannel ? closedCategoryChannel.toString() : '`Chưa đặt`';
 
-    const rawMsg = config.ticketPanelMessage || 'Click the button below to create a support ticket.';
+    const rawMsg = config.ticketPanelMessage || 'Nhấn vào nút bên dưới để tạo vé hỗ trợ.';
     const panelMsg = `\`${rawMsg.length > 60 ? rawMsg.substring(0, 60) + '…' : rawMsg}\``;
-    const btnLabel = `\`${config.ticketButtonLabel || 'Create Ticket'}\``;
+    const btnLabel = `\`${config.ticketButtonLabel || 'Tạo Vé Hỗ Trợ'}\``;
 
     let panelStatusValue = formatPanelStatusField(panelStatus);
 
     const openTickets = ticketStats ? String(ticketStats.openCount) : '`—`';
     const avgCloseTime = ticketStats ? formatCloseDuration(ticketStats.avgCloseTimeMs) : '`—`';
     const feedbackSummary = ticketStats?.feedbackCount
-        ? `${ticketStats.avgRating}/5 (${ticketStats.feedbackCount} rating${ticketStats.feedbackCount !== 1 ? 's' : ''})`
-        : '`No ratings yet`';
+        ? `${ticketStats.avgRating}/5 (${ticketStats.feedbackCount} đánh giá)`
+        : '`Chưa có đánh giá nào`';
 
     return new EmbedBuilder()
-        .setTitle('🎫 Ticket System Dashboard')
-        .setDescription(`Manage ticket system settings for **${guild.name}**.\nSelect an option below to modify a setting.`)
+        .setTitle('🎫 Bảng Điều Khiển Hệ Thống Vé')
+        .setDescription(`Quản lý cài đặt hệ thống vé hỗ trợ cho **${guild.name}**.\nChọn một tùy chọn bên dưới để thay đổi cài đặt.`)
         .setColor(getColor('info'))
         .addFields(
-            { name: 'Panel Status', value: panelStatusValue, inline: false },
-            { name: 'Panel Channel', value: panelChannel, inline: true },
-            { name: 'Staff Role', value: staffRole, inline: true },
+            { name: 'Trạng Thái Bảng Vé', value: panelStatusValue, inline: false },
+            { name: 'Kênh Bảng Vé', value: panelChannel, inline: true },
+            { name: 'Vai Trò Nhân Viên', value: staffRole, inline: true },
             { name: '\u200B', value: '\u200B', inline: true },
-            { name: 'Open Tickets Category', value: openCategory, inline: true },
-            { name: 'Closed Tickets Category', value: closedCategory, inline: true },
+            { name: 'Danh Mục Vé Mở', value: openCategory, inline: true },
+            { name: 'Danh Mục Vé Đã Đóng', value: closedCategory, inline: true },
             { name: '\u200B', value: '\u200B', inline: true },
-            { name: 'Panel Message', value: panelMsg, inline: false },
-            { name: 'Button Label', value: btnLabel, inline: true },
-            { name: 'Max Tickets/User', value: String(config.maxTicketsPerUser || 3), inline: true },
-            { name: 'DM on Close', value: config.dmOnClose !== false ? 'Enabled' : 'Disabled', inline: true },
-            { name: 'Ticket Logs Channel', value: ticketLogsChannel, inline: true },
-            { name: 'Transcript Channel', value: transcriptChannel, inline: true },
+            { name: 'Nội Dung Bảng Vé', value: panelMsg, inline: false },
+            { name: 'Nhãn Nút', value: btnLabel, inline: true },
+            { name: 'Số Vé Tối Đa/Người', value: String(config.maxTicketsPerUser || 3), inline: true },
+            { name: 'DM Khi Đóng', value: config.dmOnClose !== false ? 'Bật' : 'Tắt', inline: true },
+            { name: 'Kênh Nhật Ký Vé', value: ticketLogsChannel, inline: true },
+            { name: 'Kênh Biên Bản', value: transcriptChannel, inline: true },
             { name: '\u200B', value: '\u200B', inline: true },
-            { name: 'Open Tickets', value: openTickets, inline: true },
-            { name: 'Avg Close Time', value: avgCloseTime, inline: true },
-            { name: 'Feedback Rating', value: feedbackSummary, inline: true },
+            { name: 'Vé Đang Mở', value: openTickets, inline: true },
+            { name: 'Thời Gian Đóng TB', value: avgCloseTime, inline: true },
+            { name: 'Đánh Giá Phản Hồi', value: feedbackSummary, inline: true },
         )
-        .setFooter({ text: 'Select an option below • Dashboard closes after 10 minutes of inactivity' })
+        .setFooter({ text: 'Chọn tùy chọn bên dưới • Bảng điều khiển tự đóng sau 10 phút không hoạt động' })
         .setTimestamp();
 }
 
 function buildSelectMenu(guildId) {
     return new StringSelectMenuBuilder()
         .setCustomId(`ticket_config_${guildId}`)
-        .setPlaceholder('Select a setting to configure...')
+        .setPlaceholder('Chọn một cài đặt để cấu hình...')
         .addOptions(
             new StringSelectMenuOptionBuilder()
-                .setLabel('Edit Panel Message')
-                .setDescription('Change the message displayed on the ticket creation panel')
+                .setLabel('Sửa Nội Dung Bảng Vé')
+                .setDescription('Thay đổi nội dung hiển thị trên bảng tạo vé hỗ trợ')
                 .setValue('panel_message')
                 .setEmoji('📝'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Edit Button Label')
-                .setDescription('Change the label on the Create Ticket button')
+                .setLabel('Sửa Nhãn Nút')
+                .setDescription('Thay đổi nhãn trên nút tạo vé hỗ trợ')
                 .setValue('button_label')
                 .setEmoji('🏷️'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Change Open Tickets Category')
-                .setDescription('Category where new tickets are created')
+                .setLabel('Đổi Danh Mục Vé Mở')
+                .setDescription('Danh mục nơi tạo vé hỗ trợ mới')
                 .setValue('open_category')
                 .setEmoji('📁'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Change Closed Tickets Category')
-                .setDescription('Category where closed tickets are moved')
+                .setLabel('Đổi Danh Mục Vé Đã Đóng')
+                .setDescription('Danh mục nơi chuyển vé hỗ trợ đã đóng')
                 .setValue('closed_category')
                 .setEmoji('📂'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Set Max Tickets per User')
-                .setDescription('Limit how many open tickets one user can have at once')
+                .setLabel('Đặt Số Vé Tối Đa Mỗi Người')
+                .setDescription('Giới hạn số vé mở tối đa mỗi người có thể sở hữu cùng lúc')
                 .setValue('max_tickets')
                 .setEmoji('🔢'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Set Ticket Logs Channel')
-                .setDescription('Channel to receive ticket feedback, lifecycle events, and logs')
+                .setLabel('Đặt Kênh Nhật Ký Vé')
+                .setDescription('Kênh nhận phản hồi, sự kiện và nhật ký vé hỗ trợ')
                 .setValue('logs_channel')
                 .setEmoji('🎫'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Set Transcript Channel')
-                .setDescription('Channel to receive auto-generated transcripts on deletion')
+                .setLabel('Đặt Kênh Biên Bản')
+                .setDescription('Kênh nhận biên bản tự động khi vé bị xóa')
                 .setValue('transcript_channel')
                 .setEmoji('📜'),
         );
@@ -266,7 +266,7 @@ export default {
                 throw new TitanBotError(
                     'Ticket system not configured',
                     ErrorTypes.CONFIGURATION,
-                    'The ticket system has not been set up yet. Run `/ticket setup` first to configure it.',
+                    'Hệ thống vé hỗ trợ chưa được cài đặt. Hãy chạy `/ticket setup` trước để cấu hình.',
                 );
             }
 
@@ -337,7 +337,7 @@ export default {
             throw new TitanBotError(
                 `Ticket config failed: ${error.message}`,
                 ErrorTypes.UNKNOWN,
-                'Failed to open the ticket configuration dashboard.',
+                'Không thể mở bảng điều khiển cấu hình vé hỗ trợ.',
             );
         }
     },
@@ -346,21 +346,21 @@ export default {
 async function handlePanelMessage(selectInteraction, rootInteraction, guildConfig, guildId, client) {
     const modal = new ModalBuilder()
         .setCustomId('ticket_cfg_panel_msg')
-        .setTitle('📝 Edit Panel Message')
+        .setTitle('📝 Sửa Nội Dung Bảng Vé')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('panel_msg_input')
-                    .setLabel('Panel Message')
+                    .setLabel('Nội Dung Bảng Vé')
                     .setStyle(TextInputStyle.Paragraph)
                     .setValue(
                         guildConfig.ticketPanelMessage ||
-                            'Click the button below to create a support ticket.',
+                            'Nhấn vào nút bên dưới để tạo vé hỗ trợ.',
                     )
                     .setMaxLength(2000)
                     .setMinLength(1)
                     .setRequired(true)
-                    .setPlaceholder('Click the button below to create a support ticket.'),
+                    .setPlaceholder('Nhấn vào nút bên dưới để tạo vé hỗ trợ.'),
             ),
         );
 
@@ -385,11 +385,11 @@ async function handlePanelMessage(selectInteraction, rootInteraction, guildConfi
     await submitted.reply({
         embeds: [
             successEmbed(
-                '✅ Panel Message Updated',
-                `The panel message has been updated.${
+                '✅ Đã Cập Nhật Nội Dung Bảng Vé',
+                `Nội dung bảng vé đã được cập nhật.${
                     panelUpdated
-                        ? '\nThe live ticket panel has also been refreshed.'
-                        : '\n> **Note:** The live panel could not be located. Use **Repost Panel** on the dashboard to restore it.'
+                        ? '\nBảng vé hỗ trợ đang hiển thị cũng đã được làm mới.'
+                        : '\n> **Lưu ý:** Không tìm thấy bảng vé đang hiển thị. Dùng **Đăng Lại Bảng Vé** trên bảng điều khiển để khôi phục.'
                 }`,
             ),
         ],
@@ -402,18 +402,18 @@ async function handlePanelMessage(selectInteraction, rootInteraction, guildConfi
 async function handleButtonLabel(selectInteraction, rootInteraction, guildConfig, guildId, client) {
     const modal = new ModalBuilder()
         .setCustomId('ticket_cfg_btn_label')
-        .setTitle('🏷️ Edit Button Label')
+        .setTitle('🏷️ Sửa Nhãn Nút')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('btn_label_input')
-                    .setLabel('Button Label (max 80 characters)')
+                    .setLabel('Nhãn Nút (tối đa 80 ký tự)')
                     .setStyle(TextInputStyle.Short)
-                    .setValue(guildConfig.ticketButtonLabel || 'Create Ticket')
+                    .setValue(guildConfig.ticketButtonLabel || 'Tạo Vé Hỗ Trợ')
                     .setMaxLength(80)
                     .setMinLength(1)
                     .setRequired(true)
-                    .setPlaceholder('Create Ticket'),
+                    .setPlaceholder('Tạo Vé Hỗ Trợ'),
             ),
         );
 
@@ -438,11 +438,11 @@ async function handleButtonLabel(selectInteraction, rootInteraction, guildConfig
     await submitted.reply({
         embeds: [
             successEmbed(
-                '✅ Button Label Updated',
-                `Button label changed to \`${newLabel}\`.${
+                '✅ Đã Cập Nhật Nhãn Nút',
+                `Nhãn nút đã được đổi thành \`${newLabel}\`.${
                     panelUpdated
-                        ? '\nThe live ticket panel button has also been updated.'
-                        : '\n> **Note:** The live panel could not be located. Use **Repost Panel** on the dashboard to restore it.'
+                        ? '\nNút trên bảng vé hỗ trợ đang hiển thị cũng đã được cập nhật.'
+                        : '\n> **Lưu ý:** Không tìm thấy bảng vé đang hiển thị. Dùng **Đăng Lại Bảng Vé** trên bảng điều khiển để khôi phục.'
                 }`,
             ),
         ],
@@ -457,7 +457,7 @@ async function handleStaffRole(selectInteraction, rootInteraction, guildConfig, 
 
     const roleSelect = new RoleSelectMenuBuilder()
         .setCustomId('ticket_cfg_staff_role')
-        .setPlaceholder('Select the staff role...')
+        .setPlaceholder('Chọn vai trò nhân viên...')
         .setMaxValues(1);
 
     const row = new ActionRowBuilder().addComponents(roleSelect);
@@ -465,9 +465,9 @@ async function handleStaffRole(selectInteraction, rootInteraction, guildConfig, 
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('🛡️ Change Staff Role')
+                .setTitle('🛡️ Đổi Vai Trò Nhân Viên')
                 .setDescription(
-                    `**Current:** ${guildConfig.ticketStaffRoleId ? `<@&${guildConfig.ticketStaffRoleId}>` : '`Not set`'}\n\nSelect the role that should have staff access to manage tickets.`,
+                    `**Hiện tại:** ${guildConfig.ticketStaffRoleId ? `<@&${guildConfig.ticketStaffRoleId}>` : '`Chưa đặt`'}\n\nChọn vai trò được cấp quyền nhân viên để quản lý vé hỗ trợ.`,
                 )
                 .setColor(getColor('info')),
         ],
@@ -491,7 +491,7 @@ async function handleStaffRole(selectInteraction, rootInteraction, guildConfig, 
         await setGuildConfig(client, guildId, guildConfig);
 
         await roleInteraction.followUp({
-            embeds: [successEmbed('Staff Role Updated', `Staff role set to ${role}.`)],
+            embeds: [successEmbed('Đã Cập Nhật Vai Trò Nhân Viên', `Vai trò nhân viên đã được đặt thành ${role}.`)],
             flags: MessageFlags.Ephemeral,
         });
 
@@ -502,7 +502,7 @@ async function handleStaffRole(selectInteraction, rootInteraction, guildConfig, 
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No role was selected. The staff role was not changed.',
+                message: 'Không có vai trò nào được chọn. Vai trò nhân viên không thay đổi.',
             }).catch(() => {});
         }
     });
@@ -513,16 +513,16 @@ async function handleOpenCategory(selectInteraction, rootInteraction, guildConfi
 
     const channelSelect = new ChannelSelectMenuBuilder()
         .setCustomId('ticket_cfg_open_cat')
-        .setPlaceholder('Select a category...')
+        .setPlaceholder('Chọn một danh mục...')
         .addChannelTypes(ChannelType.GuildCategory)
         .setMaxValues(1);
 
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('📁 Change Open Tickets Category')
+                .setTitle('📁 Đổi Danh Mục Vé Mở')
                 .setDescription(
-                    `**Current:** ${guildConfig.ticketCategoryId ? `<#${guildConfig.ticketCategoryId}>` : '`Not set`'}\n\nSelect the category where new tickets will be created.`,
+                    `**Hiện tại:** ${guildConfig.ticketCategoryId ? `<#${guildConfig.ticketCategoryId}>` : '`Chưa đặt`'}\n\nChọn danh mục nơi các vé hỗ trợ mới sẽ được tạo.`,
                 )
                 .setColor(getColor('info')),
         ],
@@ -548,8 +548,8 @@ async function handleOpenCategory(selectInteraction, rootInteraction, guildConfi
         await catInteraction.followUp({
             embeds: [
                 successEmbed(
-                    'Open Category Updated',
-                    `New tickets will now be created in **${category.name}**.`,
+                    'Đã Cập Nhật Danh Mục Vé Mở',
+                    `Các vé hỗ trợ mới giờ sẽ được tạo trong **${category.name}**.`,
                 ),
             ],
             flags: MessageFlags.Ephemeral,
@@ -562,7 +562,7 @@ async function handleOpenCategory(selectInteraction, rootInteraction, guildConfi
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No category was selected. The setting was not changed.',
+                message: 'Không có danh mục nào được chọn. Cài đặt không thay đổi.',
             }).catch(() => {});
         }
     });
@@ -573,16 +573,16 @@ async function handleClosedCategory(selectInteraction, rootInteraction, guildCon
 
     const channelSelect = new ChannelSelectMenuBuilder()
         .setCustomId('ticket_cfg_closed_cat')
-        .setPlaceholder('Select a category...')
+        .setPlaceholder('Chọn một danh mục...')
         .addChannelTypes(ChannelType.GuildCategory)
         .setMaxValues(1);
 
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('📂 Change Closed Tickets Category')
+                .setTitle('📂 Đổi Danh Mục Vé Đã Đóng')
                 .setDescription(
-                    `**Current:** ${guildConfig.ticketClosedCategoryId ? `<#${guildConfig.ticketClosedCategoryId}>` : '`Not set`'}\n\nSelect the category where closed tickets will be moved.`,
+                    `**Hiện tại:** ${guildConfig.ticketClosedCategoryId ? `<#${guildConfig.ticketClosedCategoryId}>` : '`Chưa đặt`'}\n\nChọn danh mục nơi các vé hỗ trợ đã đóng sẽ được chuyển đến.`,
                 )
                 .setColor(getColor('info')),
         ],
@@ -608,8 +608,8 @@ async function handleClosedCategory(selectInteraction, rootInteraction, guildCon
         await catInteraction.followUp({
             embeds: [
                 successEmbed(
-                    'Closed Category Updated',
-                    `Closed tickets will now be moved to **${category.name}**.`,
+                    'Đã Cập Nhật Danh Mục Vé Đã Đóng',
+                    `Các vé hỗ trợ đã đóng giờ sẽ được chuyển đến **${category.name}**.`,
                 ),
             ],
             flags: MessageFlags.Ephemeral,
@@ -622,7 +622,7 @@ async function handleClosedCategory(selectInteraction, rootInteraction, guildCon
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No category was selected. The setting was not changed.',
+                message: 'Không có danh mục nào được chọn. Cài đặt không thay đổi.',
             }).catch(() => {});
         }
     });
@@ -631,12 +631,12 @@ async function handleClosedCategory(selectInteraction, rootInteraction, guildCon
 async function handleMaxTickets(selectInteraction, rootInteraction, guildConfig, guildId, client) {
     const modal = new ModalBuilder()
         .setCustomId('ticket_cfg_max_tickets')
-        .setTitle('Set Max Tickets per User')
+        .setTitle('Đặt Số Vé Tối Đa Mỗi Người')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('max_tickets_input')
-                    .setLabel('Max Open Tickets (1–10)')
+                    .setLabel('Số Vé Mở Tối Đa (1–10)')
                     .setStyle(TextInputStyle.Short)
                     .setValue(String(guildConfig.maxTicketsPerUser || 3))
                     .setMaxLength(2)
@@ -664,7 +664,7 @@ async function handleMaxTickets(selectInteraction, rootInteraction, guildConfig,
     if (Number.isNaN(newMax) || newMax < 1 || newMax > 10) {
         await replyUserError(submitted, {
             type: ErrorTypes.VALIDATION,
-            message: 'Max tickets must be a whole number between **1** and **10**.',
+            message: 'Số vé tối đa phải là một số nguyên trong khoảng **1** đến **10**.',
         });
         return;
     }
@@ -675,8 +675,8 @@ async function handleMaxTickets(selectInteraction, rootInteraction, guildConfig,
     await submitted.reply({
         embeds: [
             successEmbed(
-                'Max Tickets Updated',
-                `Users can now have at most **${newMax}** open ticket${newMax !== 1 ? 's' : ''} at a time.`,
+                'Đã Cập Nhật Số Vé Tối Đa',
+                `Người dùng giờ có thể mở tối đa **${newMax}** vé cùng lúc.`,
             ),
         ],
         flags: MessageFlags.Ephemeral,
@@ -695,8 +695,8 @@ async function handleDmOnClose(btnInteraction, rootInteraction, guildConfig, gui
     await btnInteraction.followUp({
         embeds: [
             successEmbed(
-                'DM on Close Updated',
-                `Users will **${newState ? 'now' : 'no longer'}** receive a DM when their ticket is closed.`,
+                'Đã Cập Nhật DM Khi Đóng',
+                `Người dùng sẽ **${newState ? 'giờ' : 'không còn'}** nhận được tin nhắn riêng khi vé của họ bị đóng.`,
             ),
         ],
         flags: MessageFlags.Ephemeral,
@@ -710,15 +710,15 @@ async function handleLogsChannel(selectInteraction, rootInteraction, guildConfig
 
     const channelSelect = new ChannelSelectMenuBuilder()
         .setCustomId('ticket_cfg_logs_channel')
-        .setPlaceholder('Select a channel...')
+        .setPlaceholder('Chọn một kênh...')
         .addChannelTypes(ChannelType.GuildText)
         .setMaxValues(1);
 
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('🎫 Select Ticket Logs Channel')
-                .setDescription('Choose where ticket feedback, lifecycle events (open, close, claim, etc.), and other logs will be sent.')
+                .setTitle('🎫 Chọn Kênh Nhật Ký Vé')
+                .setDescription('Chọn nơi nhận phản hồi vé, các sự kiện (mở, đóng, nhận xử lý...) và nhật ký khác.')
                 .setColor(getColor('info')),
         ],
         components: [new ActionRowBuilder().addComponents(channelSelect)],
@@ -740,7 +740,7 @@ async function handleLogsChannel(selectInteraction, rootInteraction, guildConfig
         await setGuildConfig(client, guildId, guildConfig);
 
         await channelInteraction.followUp({
-            embeds: [successEmbed('Logs Channel Updated', `Ticket logs will be sent to ${channel}`)],
+            embeds: [successEmbed('Đã Cập Nhật Kênh Nhật Ký', `Nhật ký vé hỗ trợ sẽ được gửi đến ${channel}`)],
             flags: MessageFlags.Ephemeral,
         });
 
@@ -751,7 +751,7 @@ async function handleLogsChannel(selectInteraction, rootInteraction, guildConfig
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No channel selected. No changes were made.',
+                message: 'Không có kênh nào được chọn. Không có thay đổi nào.',
             }).catch(() => {});
         }
     });
@@ -762,15 +762,15 @@ async function handleTranscriptChannel(selectInteraction, rootInteraction, guild
 
     const channelSelect = new ChannelSelectMenuBuilder()
         .setCustomId('ticket_cfg_transcript_channel')
-        .setPlaceholder('Select a channel...')
+        .setPlaceholder('Chọn một kênh...')
         .addChannelTypes(ChannelType.GuildText)
         .setMaxValues(1);
 
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('📜 Select Transcript Channel')
-                .setDescription('Choose where auto-generated transcripts will be sent when tickets are deleted.')
+                .setTitle('📜 Chọn Kênh Biên Bản')
+                .setDescription('Chọn nơi nhận biên bản tự động khi vé hỗ trợ bị xóa.')
                 .setColor(getColor('info'))
         ],
         components: [new ActionRowBuilder().addComponents(channelSelect)],
@@ -792,7 +792,7 @@ async function handleTranscriptChannel(selectInteraction, rootInteraction, guild
         await setGuildConfig(client, guildId, guildConfig);
 
         await channelInteraction.followUp({
-            embeds: [successEmbed('Transcript Channel Updated', `Transcripts will be sent to ${channel}`)],
+            embeds: [successEmbed('Đã Cập Nhật Kênh Biên Bản', `Biên bản sẽ được gửi đến ${channel}`)],
             flags: MessageFlags.Ephemeral
         });
 
@@ -803,7 +803,7 @@ async function handleTranscriptChannel(selectInteraction, rootInteraction, guild
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No channel selected. No changes were made.',
+                message: 'Không có kênh nào được chọn. Không có thay đổi nào.',
             }).catch(() => {});
         }
     });
@@ -814,7 +814,7 @@ async function handleCheckUser(selectInteraction, rootInteraction, guildConfig, 
 
     const userSelect = new UserSelectMenuBuilder()
         .setCustomId('ticket_cfg_check_user')
-        .setPlaceholder('Select a user to check...')
+        .setPlaceholder('Chọn một người dùng để kiểm tra...')
         .setMaxValues(1);
 
     const row = new ActionRowBuilder().addComponents(userSelect);
@@ -822,8 +822,8 @@ async function handleCheckUser(selectInteraction, rootInteraction, guildConfig, 
     await selectInteraction.followUp({
         embeds: [
             new EmbedBuilder()
-                .setTitle('Check User Tickets')
-                .setDescription('Select a user to view their current open ticket count.')
+                .setTitle('Kiểm Tra Vé Của Người Dùng')
+                .setDescription('Chọn một người dùng để xem số vé đang mở của họ.')
                 .setColor(getColor('info')),
         ],
         components: [row],
@@ -848,13 +848,13 @@ async function handleCheckUser(selectInteraction, rootInteraction, guildConfig, 
         await userInteraction.followUp({
             embeds: [
                 new EmbedBuilder()
-                    .setTitle(`Ticket Check — ${targetUser.username}`)
+                    .setTitle(`Kiểm Tra Vé — ${targetUser.username}`)
                     .setDescription(
-                        `**Open Tickets:** ${openCount} / ${maxTickets}\n` +
-                            `**Remaining:** ${Math.max(0, maxTickets - openCount)}\n\n` +
+                        `**Vé Đang Mở:** ${openCount} / ${maxTickets}\n` +
+                            `**Còn Lại:** ${Math.max(0, maxTickets - openCount)}\n\n` +
                             (atLimit
-                                ? '⚠️ This user has reached their ticket limit.'
-                                : '✅ This user can still open more tickets.'),
+                                ? '⚠️ Người dùng này đã đạt giới hạn vé.'
+                                : '✅ Người dùng này vẫn có thể tạo thêm vé.'),
                     )
                     .setColor(atLimit ? getColor('error') : getColor('success'))
                     .setThumbnail(targetUser.displayAvatarURL({ size: 64 }))
@@ -868,7 +868,7 @@ async function handleCheckUser(selectInteraction, rootInteraction, guildConfig, 
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No user was selected.',
+                message: 'Không có người dùng nào được chọn.',
             }).catch(() => {});
         }
     });
@@ -880,7 +880,7 @@ async function handleRepostPanel(btnInteraction, rootInteraction, guildConfig, g
     const panelStatus = await getTicketPanelStatus(client, rootInteraction.guild, guildConfig);
     if (panelStatus.exists) {
         await btnInteraction.followUp({
-            embeds: [infoEmbed('Panel Already Active', 'The ticket panel is already posted in the configured channel.')],
+            embeds: [infoEmbed('Bảng Vé Đã Có Sẵn', 'Bảng vé hỗ trợ đã được đăng trong kênh đã cấu hình.')],
             flags: MessageFlags.Ephemeral,
         }).catch(() => {});
         await refreshDashboard(rootInteraction, guildConfig, guildId, client);
@@ -892,9 +892,9 @@ async function handleRepostPanel(btnInteraction, rootInteraction, guildConfig, g
     await btnInteraction.followUp({
         embeds: [
             successEmbed(
-                'Panel Reposted',
-                `A new ticket panel was posted in <#${guildConfig.ticketPanelChannelId}>.${
-                    sentPanel.url ? `\n[Open panel message](${sentPanel.url})` : ''
+                'Đã Đăng Lại Bảng Vé',
+                `Một bảng vé hỗ trợ mới đã được đăng trong <#${guildConfig.ticketPanelChannelId}>.${
+                    sentPanel.url ? `\n[Mở tin nhắn bảng vé](${sentPanel.url})` : ''
                 }`,
             ),
         ],
@@ -907,12 +907,12 @@ async function handleRepostPanel(btnInteraction, rootInteraction, guildConfig, g
 async function handleDeleteSystem(btnInteraction, rootInteraction, guildConfig, guildId, client) {
     const deleteModal = new ModalBuilder()
         .setCustomId('ticket_delete_confirm_modal')
-        .setTitle('Delete Ticket System')
+        .setTitle('Xóa Hệ Thống Vé Hỗ Trợ')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('delete_confirmation')
-                    .setLabel('Type "DELETE" to confirm')
+                    .setLabel('Nhập "DELETE" để xác nhận')
                     .setStyle(TextInputStyle.Short)
                     .setPlaceholder('DELETE')
                     .setMaxLength(6)
@@ -938,7 +938,7 @@ async function handleDeleteSystem(btnInteraction, rootInteraction, guildConfig, 
     const confirmation = submitted.fields.getTextInputValue('delete_confirmation').trim();
 
     if (confirmation !== 'DELETE') {
-        await replyUserError(submitted, { type: ErrorTypes.UNKNOWN, message: 'You must type "DELETE" exactly to confirm deletion.' });
+        await replyUserError(submitted, { type: ErrorTypes.UNKNOWN, message: 'Bạn phải nhập chính xác "DELETE" để xác nhận xóa.' });
         await refreshDashboard(rootInteraction, guildConfig, guildId, client);
         return;
     }
@@ -1000,8 +1000,8 @@ async function handleDeleteSystem(btnInteraction, rootInteraction, guildConfig, 
     await submitted.followUp({
         embeds: [
             successEmbed(
-                '✅ Ticket System Deleted',
-                'All ticket system configuration has been cleared. Run `/ticket setup` to set it up again.',
+                '✅ Đã Xóa Hệ Thống Vé',
+                'Toàn bộ cấu hình hệ thống vé hỗ trợ đã được xóa. Chạy `/ticket setup` để cài đặt lại.',
             ),
         ],
         flags: MessageFlags.Ephemeral,
@@ -1010,8 +1010,8 @@ async function handleDeleteSystem(btnInteraction, rootInteraction, guildConfig, 
     await InteractionHelper.safeEditReply(rootInteraction, {
         embeds: [
             new EmbedBuilder()
-                .setTitle('Ticket System Deleted')
-                .setDescription('The ticket system configuration has been cleared.')
+                .setTitle('Đã Xóa Hệ Thống Vé Hỗ Trợ')
+                .setDescription('Cấu hình hệ thống vé hỗ trợ đã được xóa.')
                 .setColor(getColor('error'))
                 .setTimestamp(),
         ],

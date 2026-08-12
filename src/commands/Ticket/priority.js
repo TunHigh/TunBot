@@ -10,18 +10,18 @@ import { updateTicketPriority } from '../../services/ticket.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("priority")
-        .setDescription("Sets the priority level for the current support ticket.")
+        .setDescription("Đặt mức ưu tiên cho vé hỗ trợ hiện tại.")
         .addStringOption((option) =>
             option
                 .setName("level")
-                .setDescription("The priority level for the ticket.")
+                .setDescription("Mức ưu tiên cho vé hỗ trợ.")
                 .setRequired(true)
                 .addChoices(
-                    { name: "Urgent", value: "urgent" },
-                    { name: "High", value: "high" },
-                    { name: "Medium", value: "medium" },
-                    { name: "Low", value: "low" },
-                    { name: "None", value: "none" },
+                    { name: "Khẩn cấp", value: "urgent" },
+                    { name: "Cao", value: "high" },
+                    { name: "Trung bình", value: "medium" },
+                    { name: "Thấp", value: "low" },
+                    { name: "Không", value: "none" },
                 ),
             )
         .setDMPermission(false),
@@ -35,11 +35,11 @@ export default {
 
         const permissionContext = await getTicketPermissionContext({ client, interaction });
         if (!permissionContext.ticketData) {
-            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'This command can only be used in a valid ticket channel.' });
+            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Lệnh này chỉ có thể dùng trong một kênh vé hỗ trợ hợp lệ.' });
         }
 
         if (!permissionContext.canManageTicket) {
-            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission or the configured `Ticket Staff Role` to change ticket priority.' });
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền `Manage Channels` hoặc `Ticket Staff Role` đã cấu hình để thay đổi mức ưu tiên vé.' });
         }
 
         const priorityLevel = interaction.options.getString("level");
@@ -48,8 +48,8 @@ export default {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    "Priority Updated",
-                    `Ticket priority set to **${priorityLevel.toUpperCase()}**.`,
+                    "Đã Cập Nhật Ưu Tiên",
+                    `Mức ưu tiên vé đã được đặt thành **${priorityLevel.toUpperCase()}**.`,
                 ),
             ],
         });

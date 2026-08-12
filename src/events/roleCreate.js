@@ -18,8 +18,8 @@ export default {
         guildId: role.guild.id,
         eventType: EVENT_TYPES.ROLE_CREATE,
         data: {
-          title: 'Role Created',
-          headline: `${role.toString()} was created`,
+          title: 'Đã Tạo Role',
+          headline: `${role.toString()} vừa được tạo`,
           lines,
         },
       });

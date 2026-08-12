@@ -101,7 +101,7 @@ class ConfigService {
             throw createError(
                 'Invalid setting key',
                 ErrorTypes.VALIDATION,
-                'Setting key must be a non-empty string.',
+                'Khóa cài đặt phải là một chuỗi không rỗng.',
                 { key }
             );
         }
@@ -110,7 +110,7 @@ class ConfigService {
             throw createError(
                 'Unsafe setting key',
                 ErrorTypes.VALIDATION,
-                'This setting key is not allowed for security reasons.',
+                'Khóa cài đặt này không được phép vì lý do bảo mật.',
                 { key }
             );
         }
@@ -137,7 +137,7 @@ class ConfigService {
                 throw createError(
                     'Invalid configuration value',
                     ErrorTypes.VALIDATION,
-                    'Provided configuration value is invalid.',
+                    'Giá trị cấu hình được cung cấp không hợp lệ.',
                     {
                         key,
                         errorCode: 'VALIDATION_FAILED',
@@ -156,7 +156,7 @@ class ConfigService {
                 throw createError(
                     'Invalid channel',
                     ErrorTypes.VALIDATION,
-                    'Channel ID must be a string.',
+                    'ID kênh phải là một chuỗi.',
                     { key, provided: typeof value }
                 );
             }
@@ -168,7 +168,7 @@ class ConfigService {
                 throw createError(
                     'Channel not found',
                     ErrorTypes.VALIDATION,
-                    'The specified channel does not exist.',
+                    'Kênh được chỉ định không tồn tại.',
                     { key, channelId }
                 );
             }
@@ -177,7 +177,7 @@ class ConfigService {
                 throw createError(
                     'Invalid channel type',
                     ErrorTypes.VALIDATION,
-                    'Only text channels are allowed.',
+                    'Chỉ chấp nhận kênh văn bản.',
                     { key, channelId, channelType: channel.type }
                 );
             }
@@ -190,7 +190,7 @@ class ConfigService {
                 throw createError(
                     'Invalid role',
                     ErrorTypes.VALIDATION,
-                    'Role ID must be a string.',
+                    'ID vai trò phải là một chuỗi.',
                     { key, provided: typeof value }
                 );
             }
@@ -202,7 +202,7 @@ class ConfigService {
                 throw createError(
                     'Role not found',
                     ErrorTypes.VALIDATION,
-                    'The specified role does not exist.',
+                    'Vai trò được chỉ định không tồn tại.',
                     { key, roleId }
                 );
             }
@@ -212,7 +212,7 @@ class ConfigService {
                 throw createError(
                     'Role too high',
                     ErrorTypes.VALIDATION,
-                    "Can't set roles higher than my highest role.",
+                    "Không thể đặt vai trò cao hơn vai trò cao nhất của tôi.",
                     { key, roleId, rolePosition: role.position }
                 );
             }
@@ -225,7 +225,7 @@ class ConfigService {
                 throw createError(
                     'Invalid value type',
                     ErrorTypes.VALIDATION,
-                    'Value must be a string.',
+                    'Giá trị phải là một chuỗi.',
                     { key, provided: typeof value }
                 );
             }
@@ -235,7 +235,7 @@ class ConfigService {
                 throw createError(
                     'Value too long',
                     ErrorTypes.VALIDATION,
-                    `Value cannot exceed **${rule.maxLength}** characters.`,
+                    `Giá trị không được vượt quá **${rule.maxLength}** ký tự.`,
                     { key, current: length, max: rule.maxLength }
                 );
             }
@@ -244,7 +244,7 @@ class ConfigService {
                 throw createError(
                     'Value too short',
                     ErrorTypes.VALIDATION,
-                    `Value must be at least **${rule.minLength}** character(s).`,
+                    `Giá trị phải có ít nhất **${rule.minLength}** ký tự.`,
                     { key, current: length, min: rule.minLength }
                 );
             }
@@ -257,7 +257,7 @@ class ConfigService {
                 throw createError(
                     'Invalid value type',
                     ErrorTypes.VALIDATION,
-                    'Value must be a number.',
+                    'Giá trị phải là một số.',
                     { key, provided: typeof value }
                 );
             }
@@ -266,7 +266,7 @@ class ConfigService {
                 throw createError(
                     'Value too low',
                     ErrorTypes.VALIDATION,
-                    `Value must be at least **${rule.min}**.`,
+                    `Giá trị phải ít nhất là **${rule.min}**.`,
                     { key, value, min: rule.min }
                 );
             }
@@ -275,7 +275,7 @@ class ConfigService {
                 throw createError(
                     'Value too high',
                     ErrorTypes.VALIDATION,
-                    `Value cannot exceed **${rule.max}**.`,
+                    `Giá trị không được vượt quá **${rule.max}**.`,
                     { key, value, max: rule.max }
                 );
             }
@@ -288,7 +288,7 @@ class ConfigService {
                 throw createError(
                     'Invalid value type',
                     ErrorTypes.VALIDATION,
-                    'Value must be true or false.',
+                    'Giá trị phải là true hoặc false.',
                     { key, provided: typeof value }
                 );
             }
@@ -301,7 +301,7 @@ class ConfigService {
                 throw createError(
                     'Invalid value type',
                     ErrorTypes.VALIDATION,
-                    'Value must be an object.',
+                    'Giá trị phải là một đối tượng.',
                     { key, provided: typeof value }
                 );
             }
@@ -323,7 +323,7 @@ class ConfigService {
                 
                 if (currentConfig.logging?.enabled) {
                     conflicts.push(
-                        `Disabling log channel but logging system is still enabled. Consider disabling logging first.`
+                        `Bạn đang tắt kênh log nhưng hệ thống logging vẫn đang bật. Hãy cân nhắc tắt logging trước.`
                     );
                 }
             }
@@ -351,7 +351,7 @@ class ConfigService {
             throw createError(
                 'Protected setting',
                 ErrorTypes.VALIDATION,
-                `The setting **${key}** cannot be modified.`,
+                `Cài đặt **${key}** không thể bị chỉnh sửa.`,
                 { key }
             );
         }
@@ -361,7 +361,7 @@ class ConfigService {
             throw createError(
                 'Guild not found',
                 ErrorTypes.VALIDATION,
-                'Guild does not exist.',
+                'Máy chủ không tồn tại.',
                 { guildId }
             );
         }
@@ -426,7 +426,7 @@ class ConfigService {
             throw createError(
                 'Guild not found',
                 ErrorTypes.VALIDATION,
-                'Guild does not exist.',
+                'Máy chủ không tồn tại.',
                 { guildId }
             );
         }
@@ -439,7 +439,7 @@ class ConfigService {
                 this.validateConfigKeySafety(key);
 
                 if (this.PROTECTED_SETTINGS.includes(key)) {
-                    validationErrors.push(`${key}: Protected setting cannot be modified`);
+                    validationErrors.push(`${key}: Không thể sửa đổi cài đặt được bảo vệ`);
                     continue;
                 }
 
@@ -458,7 +458,7 @@ class ConfigService {
             throw createError(
                 'Validation failed',
                 ErrorTypes.VALIDATION,
-                `Some settings failed validation:\n• ${validationErrors.join('\n• ')}`,
+                `Một số cài đặt không vượt qua kiểm tra:\n• ${validationErrors.join('\n• ')}`,
                 { errors: validationErrors }
             );
         }
@@ -568,7 +568,7 @@ class ConfigService {
             throw createError(
                 'Guild not found',
                 ErrorTypes.VALIDATION,
-                'Guild does not exist.',
+                'Máy chủ không tồn tại.',
                 { guildId }
             );
         }
@@ -585,15 +585,15 @@ class ConfigService {
                 const channel = guild.channels.cache.get(value);
                 summary[key] = {
                     id: value,
-                    name: channel?.name || 'Unknown',
-                    status: channel ? 'Valid' : 'Missing'
+                    name: channel?.name || 'Không xác định',
+                    status: channel ? 'Hợp lệ' : 'Thiếu'
                 };
             } else if (rule.type === 'role' && value) {
                 const role = guild.roles.cache.get(value);
                 summary[key] = {
                     id: value,
-                    name: role?.name || 'Unknown',
-                    status: role ? 'Valid' : 'Missing'
+                    name: role?.name || 'Không xác định',
+                    status: role ? 'Hợp lệ' : 'Thiếu'
                 };
             } else {
                 summary[key] = value;
@@ -619,7 +619,7 @@ wrapServiceClassMethods(ConfigService, (methodName) => ({
     service: 'ConfigService',
     operation: methodName,
     message: `Configuration service operation failed: ${methodName}`,
-    userMessage: 'A configuration operation failed. Please try again in a moment.'
+    userMessage: 'Thao tác cấu hình gặp lỗi. Vui lòng thử lại sau ít phút nữa.'
 }));
 
 export default ConfigService;

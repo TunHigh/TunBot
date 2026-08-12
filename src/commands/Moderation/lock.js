@@ -10,7 +10,7 @@ export default {
     data: new SlashCommandBuilder()
     .setName("lock")
     .setDescription(
-      "Locks the current channel (prevents @everyone from sending messages).",
+      "Khóa kênh hiện tại (ngăn @everyone gửi tin nhắn).",
     )
 .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   category: "moderation",
@@ -32,13 +32,13 @@ export default {
     try {
       const currentPermissions = channel.permissionsFor(everyoneRole);
       if (currentPermissions.has(PermissionFlagsBits.SendMessages) === false) {
-        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `${channel} is already locked.` });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `${channel} đã bị khóa rồi.` });
       }
 
       await channel.permissionOverwrites.edit(
         everyoneRole,
         { SendMessages: false },
-{ type: 0, reason: `Channel locked by ${interaction.user.tag}` },
+        { type: 0, reason: `Kênh đã được khóa bởi ${interaction.user.tag}` },
       );
 
       await logEvent({
@@ -59,14 +59,14 @@ export default {
       await InteractionHelper.safeEditReply(interaction, {
         embeds: [
           successEmbed(
-            `🔒 **Channel Locked**`,
-            `${channel} is now locked down. No one can speak here now.`,
+            `🔒 **Kênh đã khóa**`,
+            `${channel} giờ đã bị khóa. Không ai có thể nhắn tin ở đây nữa.`,
           ),
         ],
       });
     } catch (error) {
       logger.error('Lock command error:', error);
-      await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'An unexpected error occurred while trying to lock the channel. Check my permissions (I need \'Manage Channels\').' });
+      await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Đã xảy ra lỗi không mong muốn khi khóa kênh. Hãy kiểm tra quyền của tôi (tôi cần \'Manage Channels\').' });
     }
   }
 };

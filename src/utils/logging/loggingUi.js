@@ -45,22 +45,22 @@ const DASHBOARD_CATEGORY_EMOJIS = {
 };
 
 export const DASHBOARD_CATEGORY_LABELS = {
-  moderation: 'Moderation',
-  message: 'Messages',
-  role: 'Roles',
-  member: 'Members',
+  moderation: 'Kiểm duyệt',
+  message: 'Tin nhắn',
+  role: 'Vai trò',
+  member: 'Thành viên',
   leveling: 'Leveling',
   reactionrole: 'Reaction Roles',
   giveaway: 'Giveaways',
-  counter: 'Counters',
-  application: 'Applications',
-  report: 'Reports',
+  counter: 'Bộ đếm',
+  application: 'Đơn ứng tuyển',
+  report: 'Báo cáo',
 };
 
 function createBackButton() {
   return new ButtonBuilder()
     .setCustomId('log_dash_back')
-    .setLabel('Back to Dashboard')
+    .setLabel('Quay lại bảng điều khiển')
     .setStyle(ButtonStyle.Secondary);
 }
 
@@ -92,43 +92,43 @@ export function createLoggingMainMenuSelect() {
   return new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId('log_dash_menu')
-      .setPlaceholder('Choose a setting to configure…')
+      .setPlaceholder('Chọn một cài đặt để cấu hình…')
       .addOptions(
         new StringSelectMenuOptionBuilder()
-          .setLabel('Set Audit Log Channel')
-          .setDescription('Moderation, messages, members, roles, etc.')
+          .setLabel('Đặt kênh nhật ký kiểm duyệt')
+          .setDescription('Kiểm duyệt, tin nhắn, thành viên, vai trò, v.v.')
           .setValue('set:audit')
           .setEmoji('🧾'),
         new StringSelectMenuOptionBuilder()
-          .setLabel('Set Applications Channel')
-          .setDescription('New applications and review updates')
+          .setLabel('Đặt kênh đơn ứng tuyển')
+          .setDescription('Đơn mới và cập nhật xét duyệt')
           .setValue('set:applications')
           .setEmoji('📝'),
         new StringSelectMenuOptionBuilder()
-          .setLabel('Set Reports Channel')
-          .setDescription('User reports filed via /report')
+          .setLabel('Đặt kênh báo cáo')
+          .setDescription('Báo cáo người dùng gửi qua /report')
           .setValue('set:reports')
           .setEmoji('🚨'),
         new StringSelectMenuOptionBuilder()
-          .setLabel('Clear Audit Channel')
+          .setLabel('Xóa kênh nhật ký kiểm duyệt')
           .setValue('clear:audit')
           .setEmoji('🗑️'),
         new StringSelectMenuOptionBuilder()
-          .setLabel('Clear Applications Channel')
+          .setLabel('Xóa kênh đơn ứng tuyển')
           .setValue('clear:applications')
           .setEmoji('🗑️'),
         new StringSelectMenuOptionBuilder()
-          .setLabel('Clear Reports Channel')
+          .setLabel('Xóa kênh báo cáo')
           .setValue('clear:reports')
           .setEmoji('🗑️'),
         new StringSelectMenuOptionBuilder()
-          .setLabel('Event Categories')
-          .setDescription('Toggle which log types are sent')
+          .setLabel('Danh mục sự kiện')
+          .setDescription('Bật/tắt các loại nhật ký được gửi')
           .setValue('view:categories')
           .setEmoji('📋'),
         new StringSelectMenuOptionBuilder()
-          .setLabel('Manage Ignore Filters')
-          .setDescription('Skip logs from specific users or channels')
+          .setLabel('Quản lý bộ lọc bỏ qua')
+          .setDescription('Bỏ qua nhật ký từ người dùng hoặc kênh cụ thể')
           .setValue('view:filters')
           .setEmoji('🔇'),
       ),
@@ -139,11 +139,11 @@ export function createLoggingMainActionRow(loggingEnabled = false) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('log_dash_toggle:audit_enabled')
-      .setLabel('Audit Logging')
+      .setLabel('Nhật ký kiểm duyệt')
       .setStyle(loggingEnabled ? ButtonStyle.Success : ButtonStyle.Danger),
     new ButtonBuilder()
       .setCustomId('log_dash_refresh')
-      .setLabel('Refresh')
+      .setLabel('Làm mới')
       .setStyle(ButtonStyle.Primary),
   );
 }
@@ -162,11 +162,11 @@ export function createLoggingCategoryViewComponents(enabledEvents, loggingEnable
     createBackButton(),
     new ButtonBuilder()
       .setCustomId('log_dash_toggle:all')
-      .setLabel('Toggle All Categories')
+      .setLabel('Bật/tắt tất cả danh mục')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('log_dash_refresh')
-      .setLabel('Refresh')
+      .setLabel('Làm mới')
       .setStyle(ButtonStyle.Primary),
   );
 
@@ -179,15 +179,15 @@ export function createLoggingFilterComponents() {
       createBackButton(),
       new ButtonBuilder()
         .setCustomId('log_dash_add_filter:user')
-        .setLabel('Add User Filter')
+        .setLabel('Thêm bộ lọc người dùng')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId('log_dash_add_filter:channel')
-        .setLabel('Add Channel Filter')
+        .setLabel('Thêm bộ lọc kênh')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId('log_dash_remove_filter')
-        .setLabel('Remove Filter')
+        .setLabel('Xóa bộ lọc')
         .setStyle(ButtonStyle.Danger),
     ),
   ];

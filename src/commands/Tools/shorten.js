@@ -8,17 +8,17 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("shorten")
-        .setDescription("Shorten a URL using is.gd")
+        .setDescription("Rút gọn liên kết bằng is.gd")
         .addStringOption(option =>
             option
                 .setName("url")
-                .setDescription("The URL to shorten")
+                .setDescription("Liên kết cần rút gọn")
                 .setRequired(true)
         )
         .addStringOption(option =>
             option
                 .setName("custom")
-                .setDescription("Custom URL ending (optional)")
+                .setDescription("Đuôi liên kết tùy chỉnh (tùy chọn)")
                 .setRequired(false)
         )
         .setDMPermission(false),
@@ -45,14 +45,14 @@ export default {
         } catch (e) {
             return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'Invalid URL format. Include http:// or https://',
+                message: 'Định dạng liên kết không hợp lệ. Phải có http:// hoặc https://',
             });
         }
 
         if (custom && !/^[a-zA-Z0-9_-]+$/.test(custom)) {
             return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'Custom URL can only contain letters, numbers, underscores, and hyphens.',
+                message: 'Đuôi liên kết chỉ được chứa chữ cái, chữ số, gạch dưới và gạch ngang.',
             });
         }
 
@@ -74,8 +74,8 @@ export default {
             });
         } catch (networkError) {
             const message = networkError?.name === 'AbortError'
-                ? 'The URL shortener timed out. Please try again in a moment.'
-                : 'Unable to reach the URL shortener service right now. Please try again later.';
+                ? 'Dịch vụ rút gọn liên kết hết thời gian chờ. Vui lòng thử lại sau ít phút.'
+                : 'Hiện không thể kết nối đến dịch vụ rút gọn liên kết. Vui lòng thử lại sau.';
             return replyUserError(interaction, {
                 type: ErrorTypes.NETWORK,
                 message,
@@ -87,7 +87,7 @@ export default {
         if (!response.ok) {
             return replyUserError(interaction, {
                 type: ErrorTypes.UNKNOWN,
-                message: `Shortener service returned HTTP ${response.status}. Please try again later.`,
+                message: `Dịch vụ rút gọn trả về HTTP ${response.status}. Vui lòng thử lại sau.`,
             });
         }
 
@@ -99,21 +99,21 @@ export default {
             if (shortUrl.includes("already exists")) {
                 return replyUserError(interaction, {
                     type: ErrorTypes.VALIDATION,
-                    message: 'That custom URL is already taken. Try a different one.',
+                    message: 'Đuôi liên kết đó đã có người dùng. Hãy thử một đuôi khác.',
                 });
             } else if (shortUrl.includes("invalid")) {
                 return replyUserError(interaction, {
                     type: ErrorTypes.VALIDATION,
-                    message: 'Invalid URL. Include http:// or https://',
+                    message: 'Liên kết không hợp lệ. Phải có http:// hoặc https://',
                 });
             }
             return replyUserError(interaction, {
                 type: ErrorTypes.UNKNOWN,
-                message: `URL shortening failed: ${shortUrl}`,
+                message: `Rút gọn liên kết thất bại: ${shortUrl}`,
             });
         }
 
-        const embed = successEmbed('URL Shortened', `Here's your shortened URL: ${shortUrl}`);
+        const embed = successEmbed('Đã Rút Gọn Liên Kết', `Liên kết rút gọn của bạn: ${shortUrl}`);
         embed.setColor(getColor('success'));
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [embed],

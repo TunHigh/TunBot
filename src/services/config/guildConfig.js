@@ -14,7 +14,7 @@ export const getGuildConfig = wrapServiceBoundary(async function getGuildConfig(
     service: 'guildConfigService',
     operation: 'getGuildConfig',
     message: 'Failed to fetch guild configuration',
-    userMessage: 'Failed to load server configuration. Please try again.',
+    userMessage: 'Không thể tải cấu hình máy chủ. Vui lòng thử lại.',
 });
 
 export const setGuildConfig = wrapServiceBoundary(async function setGuildConfig(client, guildId, config, context = {}) {
@@ -24,7 +24,7 @@ export const setGuildConfig = wrapServiceBoundary(async function setGuildConfig(
     service: 'guildConfigService',
     operation: 'setGuildConfig',
     message: 'Failed to save guild configuration',
-    userMessage: 'Failed to save server configuration. Please try again.',
+    userMessage: 'Không thể lưu cấu hình máy chủ. Vui lòng thử lại.',
 });
 
 export const updateGuildConfig = wrapServiceBoundary(async function updateGuildConfig(client, guildId, updates, context = {}) {
@@ -36,7 +36,7 @@ export const updateGuildConfig = wrapServiceBoundary(async function updateGuildC
     service: 'guildConfigService',
     operation: 'updateGuildConfig',
     message: 'Failed to update guild configuration',
-    userMessage: 'Failed to update server configuration. Please try again.',
+    userMessage: 'Không thể cập nhật cấu hình máy chủ. Vui lòng thử lại.',
 });
 
 export const getConfigValue = wrapServiceBoundary(async function getConfigValue(client, guildId, key, defaultValue = null, context = {}) {
@@ -46,7 +46,7 @@ export const getConfigValue = wrapServiceBoundary(async function getConfigValue(
     service: 'guildConfigService',
     operation: 'getConfigValue',
     message: 'Failed to read guild configuration value',
-    userMessage: 'Failed to read a server setting. Please try again.',
+    userMessage: 'Không thể đọc cài đặt máy chủ. Vui lòng thử lại.',
 });
 
 export const setConfigValue = wrapServiceBoundary(async function setConfigValue(client, guildId, key, value, context = {}) {
@@ -55,7 +55,7 @@ export const setConfigValue = wrapServiceBoundary(async function setConfigValue(
     service: 'guildConfigService',
     operation: 'setConfigValue',
     message: 'Failed to update guild configuration value',
-    userMessage: 'Failed to update a server setting. Please try again.',
+    userMessage: 'Không thể cập nhật cài đặt máy chủ. Vui lòng thử lại.',
 });
 
 /**
@@ -66,7 +66,7 @@ export const patchGuildConfig = wrapServiceBoundary(async function patchGuildCon
         throw createError(
             'Invalid guild config patch',
             ErrorTypes.VALIDATION,
-            'Invalid configuration update.',
+            'Cập nhật cấu hình không hợp lệ.',
             { guildId, ...context },
         );
     }
@@ -80,7 +80,7 @@ export const patchGuildConfig = wrapServiceBoundary(async function patchGuildCon
     service: 'guildConfigService',
     operation: 'patchGuildConfig',
     message: 'Failed to patch guild configuration',
-    userMessage: 'Failed to update server configuration. Please try again.',
+    userMessage: 'Không thể cập nhật cấu hình máy chủ. Vui lòng thử lại.',
 });
 
 function deepMergeGuildConfig(base, patch) {

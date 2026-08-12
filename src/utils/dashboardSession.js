@@ -25,8 +25,8 @@ function wrapHandler(handler, interactionLabel = 'dashboard') {
 
             const errorMessage =
                 error instanceof TitanBotError
-                    ? error.userMessage || 'An error occurred while processing your selection.'
-                    : 'An unexpected error occurred while updating the configuration.';
+                    ? error.userMessage || 'Đã xảy ra lỗi khi xử lý lựa chọn của bạn.'
+                    : 'Đã xảy ra lỗi không mong muốn khi cập nhật cấu hình.';
 
             if (!componentInteraction.replied && !componentInteraction.deferred) {
                 await componentInteraction.deferUpdate().catch(() => {});
@@ -101,9 +101,9 @@ export async function startDashboardSession({
             }
 
             const timeoutEmbed = new EmbedBuilder()
-                .setTitle('Dashboard Timed Out')
+                .setTitle('Bảng điều khiển hết thời gian')
                 .setDescription(
-                    'This dashboard has been closed due to inactivity. Please run the command again to continue.',
+                    'Bảng điều khiển này đã đóng do không có hoạt động. Vui lòng chạy lại lệnh để tiếp tục.',
                 )
                 .setColor(getColor('error'));
 

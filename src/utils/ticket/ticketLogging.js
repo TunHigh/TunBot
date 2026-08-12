@@ -98,20 +98,20 @@ function getLogChannelForEventType(config, eventType) {
 }
 
 const TICKET_EVENT_STYLES = {
-  open: { color: 0x5865F2, title: 'Ticket Created' },
-  close: { color: 0xED4245, title: 'Ticket Closed' },
-  delete: { color: 0x8b0000, title: 'Ticket Deleted' },
-  claim: { color: 0x5865F2, title: 'Ticket Claimed' },
-  unclaim: { color: 0xFAA61A, title: 'Ticket Unclaimed' },
-  priority: { color: 0x9b59b6, title: 'Priority Updated' },
-  transcript: { color: 0x57F287, title: 'Transcript Generated' },
-  feedback: { color: 0x57F287, title: 'Feedback Received' },
+  open: { color: 0x5865F2, title: 'Đã Tạo Vé Hỗ Trợ' },
+  close: { color: 0xED4245, title: 'Đã Đóng Vé Hỗ Trợ' },
+  delete: { color: 0x8b0000, title: 'Đã Xóa Vé Hỗ Trợ' },
+  claim: { color: 0x5865F2, title: 'Đã Nhận Xử Lý Vé' },
+  unclaim: { color: 0xFAA61A, title: 'Đã Hủy Nhận Xử Lý Vé' },
+  priority: { color: 0x9b59b6, title: 'Đã Cập Nhật Ưu Tiên' },
+  transcript: { color: 0x57F287, title: 'Đã Tạo Biên Bản' },
+  feedback: { color: 0x57F287, title: 'Đã Nhận Phản Hồi' },
 };
 
 async function createTicketLogEmbed(guild, event) {
-  const style = TICKET_EVENT_STYLES[event.type] || { color: 0x95a5a6, title: 'Ticket Event' };
+  const style = TICKET_EVENT_STYLES[event.type] || { color: 0x95a5a6, title: 'Sự Kiện Vé Hỗ Trợ' };
   const ticketNumber = event.ticketNumber || event.ticketId;
-  const ticketRef = ticketNumber ? `#${ticketNumber}` : 'Unknown';
+  const ticketRef = ticketNumber ? `#${ticketNumber}` : 'Không xác định';
   const channelMention = event.ticketId ? `<#${event.ticketId}>` : null;
   const executorMention = event.executorId ? `<@${event.executorId}>` : null;
   const userMention = event.userId ? `<@${event.userId}>` : null;
@@ -119,42 +119,42 @@ async function createTicketLogEmbed(guild, event) {
   let inlineFields = [];
   let fields = [];
   let author = null;
-  let footer = { text: 'TitanBot Ticketing' };
+  let footer = { text: 'Hệ Thống Vé TitanBot' };
 
   switch (event.type) {
     case 'open':
       author = await resolveUserAuthor(guild.client, event.userId);
       inlineFields = [
-        { name: 'Ticket', value: ticketRef, inline: true },
-        { name: 'Creator', value: userMention || 'Unknown', inline: true },
+        { name: 'Vé', value: ticketRef, inline: true },
+        { name: 'Người Tạo', value: userMention || 'Không xác định', inline: true },
       ];
       if (channelMention) {
-        inlineFields.push({ name: 'Channel', value: channelMention, inline: true });
+        inlineFields.push({ name: 'Kênh', value: channelMention, inline: true });
       }
       if (event.reason) {
-        fields.push({ name: 'Reason', value: String(event.reason).slice(0, 1024), inline: false });
+        fields.push({ name: 'Lý Do', value: String(event.reason).slice(0, 1024), inline: false });
       }
       break;
 
     case 'close':
       author = await resolveUserAuthor(guild.client, event.executorId);
       inlineFields = [
-        { name: 'Ticket', value: ticketRef, inline: true },
-        { name: 'Closed by', value: executorMention || 'Unknown', inline: true },
+        { name: 'Vé', value: ticketRef, inline: true },
+        { name: 'Đóng Bởi', value: executorMention || 'Không xác định', inline: true },
       ];
       if (channelMention) {
-        inlineFields.push({ name: 'Channel', value: channelMention, inline: true });
+        inlineFields.push({ name: 'Kênh', value: channelMention, inline: true });
       }
       if (event.reason) {
-        fields.push({ name: 'Reason', value: String(event.reason).slice(0, 1024), inline: false });
+        fields.push({ name: 'Lý Do', value: String(event.reason).slice(0, 1024), inline: false });
       }
       break;
 
     case 'delete':
       author = await resolveUserAuthor(guild.client, event.executorId);
       inlineFields = [
-        { name: 'Ticket', value: ticketRef, inline: true },
-        { name: 'Deleted by', value: executorMention || 'Unknown', inline: true },
+        { name: 'Vé', value: ticketRef, inline: true },
+        { name: 'Xóa Bởi', value: executorMention || 'Không xác định', inline: true },
       ];
       break;
 
@@ -162,10 +162,10 @@ async function createTicketLogEmbed(guild, event) {
     case 'unclaim':
       author = await resolveUserAuthor(guild.client, event.executorId);
       inlineFields = [
-        { name: 'Ticket', value: ticketRef, inline: true },
+        { name: 'Vé', value: ticketRef, inline: true },
         {
-          name: event.type === 'claim' ? 'Claimed by' : 'Unclaimed by',
-          value: executorMention || 'Unknown',
+          name: event.type === 'claim' ? 'Nhận Xử Lý Bởi' : 'Hủy Nhận Bởi',
+          value: executorMention || 'Không xác định',
           inline: true,
         },
       ];
@@ -173,32 +173,33 @@ async function createTicketLogEmbed(guild, event) {
 
     case 'priority': {
       const priorityEmojis = { none: '⚪', low: '🔵', medium: '🟢', high: '🟡', urgent: '🔴' };
+      const priorityLabels = { none: 'Không', low: 'Thấp', medium: 'Trung bình', high: 'Cao', urgent: 'Khẩn cấp' };
       const priorityLabel = event.priority
-        ? `${priorityEmojis[event.priority] || '⚪'} ${event.priority.charAt(0).toUpperCase()}${event.priority.slice(1)}`
-        : 'Unknown';
+        ? `${priorityEmojis[event.priority] || '⚪'} ${priorityLabels[event.priority] || event.priority}`
+        : 'Không xác định';
       author = await resolveUserAuthor(guild.client, event.executorId);
       inlineFields = [
-        { name: 'Ticket', value: ticketRef, inline: true },
-        { name: 'Priority', value: priorityLabel, inline: true },
-        { name: 'Updated by', value: executorMention || 'Unknown', inline: true },
+        { name: 'Vé', value: ticketRef, inline: true },
+        { name: 'Ưu Tiên', value: priorityLabel, inline: true },
+        { name: 'Cập Nhật Bởi', value: executorMention || 'Không xác định', inline: true },
       ];
       break;
     }
 
     case 'transcript':
       inlineFields = [
-        { name: 'Ticket', value: ticketRef, inline: true },
-        { name: 'Creator', value: userMention || 'Unknown', inline: true },
+        { name: 'Vé', value: ticketRef, inline: true },
+        { name: 'Người Tạo', value: userMention || 'Không xác định', inline: true },
       ];
       if (event.metadata?.messageCount) {
-        inlineFields.push({ name: 'Messages', value: String(event.metadata.messageCount), inline: true });
+        inlineFields.push({ name: 'Tin Nhắn', value: String(event.metadata.messageCount), inline: true });
       }
       if (event.metadata?.duration) {
-        fields.push({ name: 'Duration', value: String(event.metadata.duration), inline: false });
+        fields.push({ name: 'Thời Gian', value: String(event.metadata.duration), inline: false });
       }
       if (event.metadata?.subject || event.reason) {
         fields.push({
-          name: 'Subject',
+          name: 'Chủ Đề',
           value: String(event.metadata?.subject || event.reason).slice(0, 1024),
           inline: false,
         });
@@ -208,17 +209,17 @@ async function createTicketLogEmbed(guild, event) {
     case 'feedback': {
       const rating = event.metadata?.rating ?? event.rating;
       const comment = event.metadata?.comment;
-      const ratingDisplay = formatRatingStars(rating) || 'No rating';
+      const ratingDisplay = formatRatingStars(rating) || 'Chưa đánh giá';
 
       author = await resolveUserAuthor(guild.client, event.userId);
       inlineFields = [
-        { name: 'Ticket', value: ticketRef, inline: true },
-        { name: 'Rating', value: ratingDisplay, inline: true },
+        { name: 'Vé', value: ticketRef, inline: true },
+        { name: 'Đánh Giá', value: ratingDisplay, inline: true },
       ];
 
       if (comment) {
         fields.push({
-          name: 'Comment',
+          name: 'Bình Luận',
           value: String(comment).slice(0, 1024),
           inline: false,
         });
@@ -228,10 +229,10 @@ async function createTicketLogEmbed(guild, event) {
 
     default:
       inlineFields = [
-        { name: 'Ticket', value: ticketRef, inline: true },
+        { name: 'Vé', value: ticketRef, inline: true },
       ];
       if (event.reason) {
-        fields.push({ name: 'Details', value: String(event.reason).slice(0, 1024), inline: false });
+        fields.push({ name: 'Chi Tiết', value: String(event.reason).slice(0, 1024), inline: false });
       }
   }
 
@@ -259,7 +260,7 @@ export function validateLogChannel(channel, botMember) {
   if (!channel || channel.type !== ChannelType.GuildText) {
     return {
       valid: false,
-      error: 'Channel must be a text channel.',
+      error: 'Kênh phải là một kênh văn bản.',
     };
   }
 
@@ -271,7 +272,7 @@ export function validateLogChannel(channel, botMember) {
   if (missing.length > 0) {
     return {
       valid: false,
-      error: `Missing permissions: ${missing.join(', ')}`,
+      error: `Thiếu quyền: ${missing.join(', ')}`,
     };
   }
 

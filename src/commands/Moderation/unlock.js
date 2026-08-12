@@ -10,7 +10,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName("unlock")
         .setDescription(
-            "Unlocks the current channel (allows @everyone to send messages again).",
+            "Mở khóa kênh hiện tại (cho phép @everyone gửi tin nhắn trở lại).",
         )
 .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
     category: "moderation",
@@ -37,7 +37,7 @@ export default {
                 currentPermissions.has(PermissionFlagsBits.SendMessages) ===
                     null
             ) {
-                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `${channel} is not explicitly locked (everyone can already send messages).` });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `${channel} không bị khóa (mọi người đã có thể gửi tin nhắn rồi).` });
             }
 
             await channel.permissionOverwrites.edit(
@@ -45,7 +45,7 @@ export default {
                 { SendMessages: true },
                 {
                     type: 0,
-                    reason: `Channel unlocked by ${interaction.user.tag}`,
+                    reason: `Kênh đã được mở khóa bởi ${interaction.user.tag}`,
 },
             );
 
@@ -66,14 +66,14 @@ export default {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     successEmbed(
-                        `🔓 **Channel Unlocked**`,
-                        `${channel} is now unlocked. You may speak now.`,
+                        `🔓 **Kênh đã mở khóa**`,
+                        `${channel} giờ đã được mở khóa. Bạn có thể nhắn tin được rồi.`,
                     ),
                 ],
             });
         } catch (error) {
             logger.error('Unlock command error:', error);
-            await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'An unexpected error occurred while trying to unlock the channel. Check my permissions (I need \'Manage Channels\').' });
+            await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Đã xảy ra lỗi không mong muốn khi mở khóa kênh. Hãy kiểm tra quyền của tôi (tôi cần \'Manage Channels\').' });
         }
     }
 };

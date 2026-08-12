@@ -22,7 +22,7 @@ export const MUSIC_BUTTON_IDS = {
 
 export function formatDuration(ms) {
     if (!ms || Number.isNaN(ms)) {
-        return 'Live';
+        return 'Trực Tiếp';
     }
     const totalSeconds = Math.floor(ms / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -41,37 +41,37 @@ function getTrackArtwork(track) {
 function getLoopLabel(loop) {
     switch (loop) {
         case 'track':
-            return 'Track';
+            return 'Bài Hát';
         case 'queue':
-            return 'Queue';
+            return 'Danh Sách Chờ';
         default:
-            return 'Off';
+            return 'Tắt';
     }
 }
 
 export function buildNowPlayingEmbed(track, player, guildData) {
     const requester = track?.info?.requester;
     const requesterLabel = requester
-        ? (requester.username || requester.tag || 'Unknown')
-        : 'Unknown';
+        ? (requester.username || requester.tag || 'Không xác định')
+        : 'Không xác định';
 
     const position = formatDuration(player?.position || 0);
     const duration = formatDuration(track?.info?.length || 0);
 
     return createEmbed({
-        title: 'Now Playing',
-        description: track?.info?.title || 'Unknown track',
+        title: 'Đang Phát',
+        description: track?.info?.title || 'Bài hát không xác định',
         color: 'primary',
         fields: [
-            { name: 'Artist', value: track?.info?.author || 'Unknown', inline: true },
-            { name: 'Requester', value: requesterLabel, inline: true },
-            { name: 'Progress', value: `${position} / ${duration}`, inline: true },
-            { name: 'Volume', value: `${guildData?.volume ?? 75}%`, inline: true },
-            { name: 'Loop', value: getLoopLabel(guildData?.loop), inline: true },
-            { name: 'Queue', value: `${player?.queue?.length || 0} track(s)`, inline: true },
+            { name: 'Nghệ Sĩ', value: track?.info?.author || 'Không xác định', inline: true },
+            { name: 'Người Yêu Cầu', value: requesterLabel, inline: true },
+            { name: 'Tiến Trình', value: `${position} / ${duration}`, inline: true },
+            { name: 'Âm Lượng', value: `${guildData?.volume ?? 75}%`, inline: true },
+            { name: 'Lặp Lại', value: getLoopLabel(guildData?.loop), inline: true },
+            { name: 'Danh Sách Chờ', value: `${player?.queue?.length || 0} bài hát`, inline: true },
         ],
         thumbnail: getTrackArtwork(track),
-        footer: player?.paused ? 'Paused' : 'Playing',
+        footer: player?.paused ? 'Tạm Dừng' : 'Đang Phát',
     });
 }
 
@@ -84,25 +84,25 @@ export function buildQueueEmbed(queue, currentTrack, page = 0) {
 
     let description = '';
     if (currentTrack) {
-        description += `**Now Playing**\n${currentTrack.info?.title || 'Unknown'} — ${currentTrack.info?.author || 'Unknown'}\n\n`;
+        description += `**Đang Phát**\n${currentTrack.info?.title || 'Không xác định'} — ${currentTrack.info?.author || 'Không xác định'}\n\n`;
     }
 
     if (slice.length === 0) {
-        description += 'The queue is empty.';
+        description += 'Danh sách chờ đang trống.';
     } else {
         description += slice
             .map((track, index) => {
                 const num = start + index + 1;
-                return `${num}. ${track.info?.title || 'Unknown'} — ${track.info?.author || 'Unknown'}`;
+                return `${num}. ${track.info?.title || 'Không xác định'} — ${track.info?.author || 'Không xác định'}`;
             })
             .join('\n');
     }
 
     return createEmbed({
-        title: 'Music Queue',
+        title: 'Danh Sách Chờ Nhạc',
         description: description.substring(0, 4096),
         color: 'info',
-        footer: `Page ${safePage + 1} of ${totalPages} • ${totalTracks} queued`,
+        footer: `Trang ${safePage + 1}/${totalPages} • ${totalTracks} bài trong danh sách chờ`,
     });
 }
 
@@ -111,29 +111,29 @@ export function buildPlayerButtonRows(player, guildData) {
     const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.PAUSE)
-            .setLabel('Pause')
+            .setLabel('Tạm Dừng')
             .setStyle(ButtonStyle.Primary)
             .setEmoji('⏸️')
             .setDisabled(Boolean(paused)),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.RESUME)
-            .setLabel('Resume')
+            .setLabel('Tiếp Tục')
             .setStyle(ButtonStyle.Success)
             .setEmoji('▶️')
             .setDisabled(!paused),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.SKIP)
-            .setLabel('Skip')
+            .setLabel('Bỏ Qua')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('⏭️'),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.STOP)
-            .setLabel('Stop')
+            .setLabel('Dừng')
             .setStyle(ButtonStyle.Danger)
             .setEmoji('⏹️'),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.SHUFFLE)
-            .setLabel('Shuffle')
+            .setLabel('Trộn')
             .setStyle(guildData?.shuffle ? ButtonStyle.Success : ButtonStyle.Secondary)
             .setEmoji('🔀'),
     );
@@ -141,22 +141,22 @@ export function buildPlayerButtonRows(player, guildData) {
     const row2 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.LOOP)
-            .setLabel('Loop')
+            .setLabel('Lặp Lại')
             .setStyle(guildData?.loop !== 'none' ? ButtonStyle.Success : ButtonStyle.Secondary)
             .setEmoji('🔁'),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.VOL_DOWN)
-            .setLabel('Vol -')
+            .setLabel('Âm Lượng -')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('🔉'),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.VOL_UP)
-            .setLabel('Vol +')
+            .setLabel('Âm Lượng +')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('🔊'),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.QUEUE)
-            .setLabel('Queue')
+            .setLabel('Danh Sách Chờ')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('📋'),
     );

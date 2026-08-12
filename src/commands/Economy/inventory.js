@@ -11,7 +11,7 @@ const SHOP_ITEMS = shopItems;
 export default {
     data: new SlashCommandBuilder()
         .setName('inventory')
-        .setDescription('View your economy inventory'),
+        .setDescription('Xem kho đồ kinh tế của bạn'),
 
     execute: withErrorHandling(async (interaction, config, client) => {
         const deferred = await InteractionHelper.safeDefer(interaction);
@@ -35,7 +35,7 @@ export default {
 
             const inventory = userData.inventory || {};
 
-            let inventoryDescription = "Your inventory is currently empty.";
+            let inventoryDescription = "Kho đồ của bạn hiện đang trống.";
 
             if (Object.keys(inventory).length > 0) {
                 inventoryDescription = Object.entries(inventory)
@@ -61,7 +61,7 @@ export default {
             });
 
             const embed = createEmbed({ 
-                title: `🎒 ${interaction.user.username}'s Inventory`, 
+                title: `🎒 Kho đồ của ${interaction.user.username}`, 
                 description: inventoryDescription, 
             }).setThumbnail(interaction.user.displayAvatarURL());
 

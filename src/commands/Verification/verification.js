@@ -12,35 +12,35 @@ import verificationDashboard from './modules/verification_dashboard.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("verification")
-        .setDescription("Manage the server verification system")
+        .setDescription("Quản lý hệ thống xác minh server")
         .addSubcommand(subcommand =>
             subcommand
                 .setName("setup")
-                .setDescription("Set up the verification system")
+                .setDescription("Thiết lập hệ thống xác minh")
                 .addChannelOption(option =>
                     option
                         .setName("verification_channel")
-                        .setDescription("Channel where verification messages will be sent")
+                        .setDescription("Kênh sẽ gửi tin nhắn xác minh")
                         .addChannelTypes(ChannelType.GuildText)
                         .setRequired(true)
                 )
                 .addRoleOption(option =>
                     option
                         .setName("verified_role")
-                        .setDescription("Role to give to verified users")
+                        .setDescription("Vai trò cho người đã xác minh")
                         .setRequired(true)
                 )
                 .addStringOption(option =>
                     option
                         .setName("message")
-                        .setDescription("Custom verification message")
+                        .setDescription("Tin nhắn xác minh tùy chỉnh")
                         .setMaxLength(2000)
                         .setRequired(false)
                 )
                 .addStringOption(option =>
                     option
                         .setName("button_text")
-                        .setDescription("Text for the verification button")
+                        .setDescription("Văn bản cho nút xác minh")
                         .setMaxLength(80)
                         .setRequired(false)
                 )
@@ -48,7 +48,7 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("remove")
-                .setDescription("Remove verification from a user")
+                .setDescription("Xóa xác minh khỏi người dùng")
                 .addUserOption(option =>
                     option
                         .setName("user")
@@ -59,7 +59,7 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("dashboard")
-                .setDescription("Open the verification system configuration dashboard")
+                .setDescription("Mở bảng điều khiển cấu hình hệ thống xác minh")
         ),
 
     async execute(interaction, config, client) {
@@ -154,7 +154,7 @@ async function handleSetup(interaction, guild, client) {
         throw createError(
             "Role hierarchy error",
             ErrorTypes.PERMISSION,
-            "The verified role must be below my highest role in the server role hierarchy.",
+            "Role xác minh phải nằm dưới role cao nhất của tôi trong phân cấp role server.",
             { rolePosition: verifiedRole.position, botRolePosition: botRole.position }
         );
     }
@@ -213,11 +213,11 @@ async function handleSetup(interaction, guild, client) {
 
     await InteractionHelper.safeEditReply(interaction, {
         embeds: [successEmbed(
-            'Verification System Updated',
+            'Hệ thống xác minh đã cập nhật',
             [
-                `Channel: ${verificationChannel}`,
-                `Verified Role: ${verifiedRole}`,
-                `Button Text: ${buttonText}`
+                `Kênh: ${verificationChannel}`,
+                `Vai trò xác minh: ${verifiedRole}`,
+                `Văn bản nút: ${buttonText}`
             ].join('\n')
         )]
     });
@@ -233,7 +233,7 @@ async function handleRemove(interaction, guild, client) {
 
     if (result.status === 'not_verified') {
         return await InteractionHelper.safeReply(interaction, {
-            embeds: [infoEmbed('Not Verified', `${targetUser.tag} does not currently have the verified role.`)],
+            embeds: [infoEmbed('Chưa xác minh', `${targetUser.tag} chưa có role xác minh.`)],
             flags: MessageFlags.Ephemeral
         });
     }
@@ -245,6 +245,6 @@ async function handleRemove(interaction, guild, client) {
     });
 
     return await InteractionHelper.safeReply(interaction, {
-        embeds: [successEmbed('Verification Removed', `Verification removed from ${targetUser.tag}.`)]
+        embeds: [successEmbed('Xác minh đã bị xóa', `Xác minh đã được xóa khỏi ${targetUser.tag}.`)]
     });
 }

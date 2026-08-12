@@ -8,54 +8,54 @@ const MAX_OPTIONS = 10;
 export default {
     data: new SlashCommandBuilder()
         .setName('poll')
-        .setDescription('Create a simple poll with up to 10 options')
+        .setDescription('Tạo cuộc bình chọn đơn giản với tối đa 10 lựa chọn')
         .addStringOption(option =>
             option.setName('question')
-                .setDescription('The poll question')
+                .setDescription('Câu hỏi bình chọn')
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('option1')
-                .setDescription('First option')
+                .setDescription('Lựa chọn thứ nhất')
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('option2')
-                .setDescription('Second option')
+                .setDescription('Lựa chọn thứ hai')
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('option3')
-                .setDescription('Third option (optional)')
+                .setDescription('Lựa chọn thứ ba (tùy chọn)')
                 .setRequired(false))
         .addStringOption(option =>
             option.setName('option4')
-                .setDescription('Fourth option (optional)')
+                .setDescription('Lựa chọn thứ tư (tùy chọn)')
                 .setRequired(false))
         .addStringOption(option =>
             option.setName('option5')
-                .setDescription('Fifth option (optional)')
+                .setDescription('Lựa chọn thứ năm (tùy chọn)')
                 .setRequired(false))
         .addStringOption(option =>
             option.setName('option6')
-                .setDescription('Sixth option (optional)')
+                .setDescription('Lựa chọn thứ sáu (tùy chọn)')
                 .setRequired(false))
         .addStringOption(option =>
             option.setName('option7')
-                .setDescription('Seventh option (optional)')
+                .setDescription('Lựa chọn thứ bảy (tùy chọn)')
                 .setRequired(false))
         .addStringOption(option =>
             option.setName('option8')
-                .setDescription('Eighth option (optional)')
+                .setDescription('Lựa chọn thứ tám (tùy chọn)')
                 .setRequired(false))
         .addStringOption(option =>
             option.setName('option9')
-                .setDescription('Ninth option (optional)')
+                .setDescription('Lựa chọn thứ chín (tùy chọn)')
                 .setRequired(false))
         .addStringOption(option =>
             option.setName('option10')
-                .setDescription('Tenth option (optional)')
+                .setDescription('Lựa chọn thứ mười (tùy chọn)')
                 .setRequired(false))
         .addBooleanOption(option =>
             option.setName('anonymous')
-                .setDescription('Make the poll anonymous (default: false)')
+                .setDescription('Bình chọn ẩn danh (mặc định: tắt)')
                 .setRequired(false)),
 
     async execute(interaction) {
@@ -88,13 +88,13 @@ export default {
         });
 
         if (isAnonymous) {
-            description += '\n*This is an anonymous poll. Votes are not tracked to users.*';
+            description += '\n*Đây là cuộc bình chọn ẩn danh. Phiếu bầu không được gắn với người dùng.*';
         } else {
-            description += '\n*React with the emoji to vote!*';
+            description += '\n*Thả emoji để bình chọn nhé!*';
         }
 
         const embed = successEmbed(
-            `📊 ${isAnonymous ? 'Anonymous ' : ''}Poll`,
+            `📊 ${isAnonymous ? 'Ẩn Danh ' : ''}Bình Chọn`,
             description
         );
 
@@ -106,7 +106,7 @@ export default {
         }
 
         await InteractionHelper.safeEditReply(interaction, {
-            content: '✅ Poll created successfully!',
+            content: '✅ Đã tạo cuộc bình chọn thành công!',
         });
     },
 };

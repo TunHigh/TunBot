@@ -78,24 +78,24 @@ export function buildOverviewEmbed(snapshot, guild) {
   const partial = snapshot.categories.filter((c) => !c.categoryDisabled && c.disabledCount > 0).length;
   const disabled = snapshot.categories.filter((c) => c.categoryDisabled).length;
 
-  const categoryLines = snapshot.categories.map((category) => {
+    const categoryLines = snapshot.categories.map((category) => {
     const icon = getCategoryStatus(category);
-    const subcommandNote = category.commands.some((c) => c.isSubcommand) ? ' · incl. subcommands' : '';
+    const subcommandNote = category.commands.some((c) => c.isSubcommand) ? ' · gồm lệnh con' : '';
     return `${icon} ${category.icon} **${category.displayName}** — ${category.enabledCount}/${category.totalCount}${subcommandNote}`;
   });
 
   const fields = [
     {
-      name: '📊 Summary',
+      name: '📊 Tóm Tắt',
       value: [
-        `**${snapshot.enabledTotal}/${snapshot.totalCommands}** entries enabled`,
-        `${STATUS.enabled} ${fullyEnabled} fully on · ${STATUS.partial} ${partial} partial · ${STATUS.disabled} ${disabled} off`,
+        `**${snapshot.enabledTotal}/${snapshot.totalCommands}** mục đang bật`,
+        `${STATUS.enabled} ${fullyEnabled} bật hoàn toàn · ${STATUS.partial} ${partial} một phần · ${STATUS.disabled} ${disabled} tắt`,
       ].join('\n'),
       inline: false,
     },
     {
-      name: '🔑 Legend',
-      value: `${STATUS.enabled} All enabled · ${STATUS.partial} Some disabled · ${STATUS.disabled} Category off`,
+      name: '🔑 Chú Thích',
+      value: `${STATUS.enabled} Tất cả bật · ${STATUS.partial} Một số tắt · ${STATUS.disabled} Tắt cả danh mục`,
       inline: false,
     },
   ];
@@ -103,37 +103,37 @@ export function buildOverviewEmbed(snapshot, guild) {
   const chunks = chunkLines(categoryLines);
   chunks.forEach((chunk, index) => {
     fields.push({
-      name: index === 0 ? '📁 Categories' : '📁 Categories (cont.)',
+      name: index === 0 ? '📁 Danh Mục' : '📁 Danh Mục (tiếp theo)',
       value: chunk,
       inline: false,
     });
   });
 
   fields.push({
-    name: 'How to Use',
+    name: 'Cách Sử Dụng',
     value: [
-      '• Select a category below to manage commands and subcommands',
-      '• `/commands disable` — turn off a category or specific command',
-      '• `/commands enable` — turn something back on',
+      '• Chọn một danh mục bên dưới để quản lý lệnh và lệnh con',
+      '• `/commands disable` — tắt một danh mục hoặc lệnh cụ thể',
+      '• `/commands enable` — bật lại thứ đã tắt',
     ].join('\n'),
   });
 
   return createEmbed({
-    title: '⚙️ Command Access',
-    description: `Manage slash and prefix commands for **${guild.name}**. Subcommands (e.g. \`birthday list\`) are listed separately.`,
+    title: '⚙️ Truy Cập Lệnh',
+    description: `Quản lý lệnh Slash và lệnh tiền tố cho **${guild.name}**. Lệnh con (vd: \`birthday list\`) được liệt kê riêng.`,
     color: 'info',
     fields,
-    footer: '🔒 commands & configwizard always stay available',
+    footer: '🔒 lệnh commands & configwizard luôn khả dụng',
   });
 }
 
 export function buildCategoryEmbed(category, guild) {
   const statusIcon = getCategoryStatus(category);
   const statusText = category.categoryDisabled
-    ? 'Category disabled'
+    ? 'Danh mục đã tắt'
     : category.disabledCount === 0
-      ? 'All entries enabled'
-      : `${category.disabledCount} of ${category.totalCount} disabled`;
+      ? 'Tất cả mục đang bật'
+      : `${category.disabledCount} / ${category.totalCount} mục đã tắt`;
 
   const commandLines = category.commands.map((command) => {
     const enabled = category.enabledCommands.includes(command.name);
@@ -144,13 +144,13 @@ export function buildCategoryEmbed(category, guild) {
 
   const fields = [
     {
-      name: `${statusIcon} Status`,
+      name: `${statusIcon} Trạng Thái`,
       value: statusText,
       inline: true,
     },
     {
-      name: '📈 Count',
-      value: `${category.enabledCount}/${category.totalCount} enabled`,
+      name: '📈 Số Lượng',
+      value: `${category.enabledCount}/${category.totalCount} đang bật`,
       inline: true,
     },
   ];
@@ -158,27 +158,27 @@ export function buildCategoryEmbed(category, guild) {
   const chunks = chunkLines(commandLines);
   chunks.forEach((chunk, index) => {
     fields.push({
-      name: index === 0 ? '📋 Commands & Subcommands' : '📋 (cont.)',
+      name: index === 0 ? '📋 Lệnh & Lệnh Con' : '📋 (tiếp theo)',
       value: chunk,
       inline: false,
     });
   });
 
   fields.push({
-    name: 'How to Use',
+    name: 'Cách Sử Dụng',
     value: [
-      '• Use the dropdown to toggle individual commands or subcommands',
-      '• **Disable All** turns off the whole category',
-      '• **Clear Overrides** re-enables individually disabled entries',
+      '• Dùng menu thả xuống để bật/tắt từng lệnh hoặc lệnh con',
+      '• **Tắt Tất Cả** để tắt cả danh mục',
+      '• **Xóa Ghi Đè** bật lại các mục đã tắt riêng lẻ',
     ].join('\n'),
   });
 
   return createEmbed({
     title: `${category.icon} ${category.displayName}`,
-    description: `Command access for **${guild.name}**.`,
+    description: `Quyền truy cập lệnh cho **${guild.name}**.`,
     color: category.categoryDisabled ? 'error' : category.disabledCount > 0 ? 'warning' : 'success',
     fields,
-    footer: '🔒 Protected entries cannot be disabled',
+    footer: '🔒 Các mục được bảo vệ không thể bị tắt',
   });
 }
 
@@ -187,7 +187,7 @@ export function buildOverviewComponents(guildId, snapshot) {
     const status = getCategoryStatus(category);
     return new StringSelectMenuOptionBuilder()
       .setLabel(`${category.displayName}`.slice(0, 100))
-      .setDescription(`${status} ${category.enabledCount}/${category.totalCount} enabled`.slice(0, 100))
+      .setDescription(`${status} ${category.enabledCount}/${category.totalCount} đang bật`.slice(0, 100))
       .setValue(category.key)
       .setEmoji(category.icon);
   });
@@ -196,13 +196,13 @@ export function buildOverviewComponents(guildId, snapshot) {
     new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(customId(DASHBOARD_CATEGORY_SELECT, guildId))
-        .setPlaceholder('📁 Select a category...')
+        .setPlaceholder('📁 Chọn một danh mục...')
         .addOptions(categoryOptions),
     ),
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(customId(DASHBOARD_REFRESH, guildId))
-        .setLabel('Refresh')
+        .setLabel('Làm Mới')
         .setEmoji('🔄')
         .setStyle(ButtonStyle.Secondary),
     ),
@@ -219,7 +219,7 @@ export function buildCategoryComponents(guildId, category) {
 
     return new StringSelectMenuOptionBuilder()
       .setLabel(label)
-      .setDescription((enabled ? '🟢 Enabled — click to disable' : '🔴 Disabled — click to enable').slice(0, 100))
+      .setDescription((enabled ? '🟢 Đang bật — bấm để tắt' : '🔴 Đang tắt — bấm để bật').slice(0, 100))
       .setValue(command.name);
   });
 
@@ -227,27 +227,27 @@ export function buildCategoryComponents(guildId, category) {
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(customId(DASHBOARD_HOME, guildId))
-        .setLabel('Back')
+        .setLabel('Quay Lại')
         .setEmoji('◀️')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId(customId(DASHBOARD_TOGGLE_CATEGORY, guildId, category.key))
-        .setLabel(category.categoryDisabled ? 'Enable Category' : 'Disable Category')
+        .setLabel(category.categoryDisabled ? 'Bật Danh Mục' : 'Tắt Danh Mục')
         .setEmoji(category.categoryDisabled ? '🟢' : '🔴')
         .setStyle(category.categoryDisabled ? ButtonStyle.Success : ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId(customId(DASHBOARD_ENABLE_ALL, guildId, category.key))
-        .setLabel('Enable All')
+        .setLabel('Bật Tất Cả')
         .setEmoji('✅')
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId(customId(DASHBOARD_DISABLE_ALL, guildId, category.key))
-        .setLabel('Disable All')
+        .setLabel('Tắt Tất Cả')
         .setEmoji('⛔')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId(customId(DASHBOARD_RESET_COMMANDS, guildId, category.key))
-        .setLabel('Clear Overrides')
+        .setLabel('Xóa Ghi Đè')
         .setEmoji('🧹')
         .setStyle(ButtonStyle.Secondary),
     ),
@@ -258,7 +258,7 @@ export function buildCategoryComponents(guildId, category) {
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId(customId(DASHBOARD_COMMAND_SELECT, guildId, category.key))
-          .setPlaceholder('Toggle a command or subcommand...')
+          .setPlaceholder('Bật/tắt một lệnh hoặc lệnh con...')
           .addOptions(commandOptions),
       ),
     );
@@ -301,7 +301,7 @@ export async function handleDashboardComponent(interaction, client) {
 
   if (guildId !== interaction.guildId) {
     return interaction.reply({
-      content: 'This dashboard belongs to another server.',
+      content: 'Bảng điều khiển này thuộc về máy chủ khác.',
       ephemeral: true,
     });
   }
@@ -373,7 +373,7 @@ export async function handleDashboardComponent(interaction, client) {
     return interaction.editReply({ embeds: [view.embed], components: view.components });
   }
 
-  return interaction.editReply({ content: 'Unknown dashboard action.', embeds: [], components: [] });
+  return interaction.editReply({ content: 'Hành động bảng điều khiển không xác định.', embeds: [], components: [] });
 }
 
 export function isCommandAccessCustomId(customIdValue) {

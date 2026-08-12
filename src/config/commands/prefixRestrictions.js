@@ -80,11 +80,11 @@ export function getPrefixRestriction(command, args, resolveSubcommandAlias) {
   const commandName = commandJson.name?.toLowerCase();
 
   if (command.prefixOnly === false || command.slashOnly === true) {
-    return { blocked: true, reason: 'This command is only available as a slash command.' };
+    return { blocked: true, reason: 'Lệnh này chỉ khả dụng dưới dạng lệnh slash.' };
   }
 
   if (SLASH_ONLY_COMMANDS.has(commandName)) {
-    return { blocked: true, reason: 'This command is only available as a slash command.' };
+    return { blocked: true, reason: 'Lệnh này chỉ khả dụng dưới dạng lệnh slash.' };
   }
 
   const [firstArg, secondArg] = args.map((arg) => arg?.toLowerCase?.() || null);
@@ -99,27 +99,27 @@ export function getPrefixRestriction(command, args, resolveSubcommandAlias) {
     allSubcommandNames.every((name) => isSubcommandBlocked(commandName, name));
 
   if (allSubcommandsBlocked) {
-    return { blocked: true, reason: 'This command is only available as a slash command.' };
+    return { blocked: true, reason: 'Lệnh này chỉ khả dụng dưới dạng lệnh slash.' };
   }
 
   if (firstArg && GLOBAL_BLOCKED_SUBCOMMAND_GROUPS.has(firstArg)) {
     return {
       blocked: true,
-      reason: 'This configuration flow is only available as a slash command.',
+      reason: 'Luồng cấu hình này chỉ khả dụng dưới dạng lệnh slash.',
     };
   }
 
   if (resolvedFirstArg && isSubcommandBlocked(commandName, resolvedFirstArg)) {
     return {
       blocked: true,
-      reason: 'This subcommand is only available as a slash command.',
+      reason: 'Lệnh con này chỉ khả dụng dưới dạng lệnh slash.',
     };
   }
 
   if (subcommandGroup && resolvedSecondArg && isSubcommandBlocked(commandName, resolvedSecondArg)) {
     return {
       blocked: true,
-      reason: 'This subcommand is only available as a slash command.',
+      reason: 'Lệnh con này chỉ khả dụng dưới dạng lệnh slash.',
     };
   }
 

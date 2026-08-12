@@ -8,18 +8,18 @@ export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
         .setName('greet')
-        .setDescription('Manage welcome & goodbye settings')
+        .setDescription('Quản lý cài đặt chào mừng & tạm biệt')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('dashboard')
-                .setDescription('Open the welcome & goodbye configuration dashboard'),
+                .setDescription('Mở bảng điều khiển cấu hình chào mừng & tạm biệt'),
         ),
 
     async execute(interaction, config, client) {
         try {
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-                return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the **Manage Server** permission to use `/greet`.' });
+                return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền **Manage Server** để dùng `/greet`.' });
             }
 
             const subcommand = interaction.options.getSubcommand();
@@ -32,7 +32,7 @@ export default {
             }
         } catch (error) {
             if (error instanceof TitanBotError) {
-                return await replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: error.userMessage || 'Something went wrong.' });
+                return await replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: error.userMessage || 'Đã xảy ra lỗi.' });
             }
             await handleInteractionError(interaction, error, { command: 'greet' });
         }

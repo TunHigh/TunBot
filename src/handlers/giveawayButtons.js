@@ -23,7 +23,7 @@ export const giveawayJoinHandler = {
         try {
             
             if (isUserRateLimited(interaction.user.id, interaction.message.id)) {
-                return replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'Please wait a moment before interacting with this giveaway again.' });
+                return replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'Hãy chờ một chút trước khi tương tác với giveaway này lần nữa.' });
             }
 
             await recordUserInteraction(interaction.user.id, interaction.message.id);
@@ -37,7 +37,7 @@ export const giveawayJoinHandler = {
                     throw new TitanBotError(
                         'Giveaway not found in database',
                         ErrorTypes.VALIDATION,
-                        'This giveaway is no longer active.',
+                        'Giveaway này không còn hoạt động.',
                         { messageId: interaction.message.id, guildId: interaction.guildId }
                     );
                 }
@@ -46,14 +46,14 @@ export const giveawayJoinHandler = {
                 const endedByFlag = giveaway.ended || giveaway.isEnded;
 
                 if (endedByTime || endedByFlag) {
-                    return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This giveaway has already ended.' });
+                    return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Giveaway này đã kết thúc rồi.' });
                 }
 
                 const participants = giveaway.participants || [];
                 const userId = interaction.user.id;
 
                 if (participants.includes(userId)) {
-                    return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'You have already entered this giveaway! 🎉' });
+                    return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Bạn đã tham gia giveaway này rồi! 🎉' });
                 }
 
                 participants.push(userId);
@@ -74,8 +74,8 @@ export const giveawayJoinHandler = {
                 await interaction.reply({
                     embeds: [
                         successEmbed(
-                            'Success! You have entered the giveaway! 🎉',
-                            `Good luck! There are now ${participants.length} entry/entries.`
+                            'Thành công! Bạn đã tham gia giveaway! 🎉',
+                            `Chúc may mắn nhé! Hiện có ${participants.length} lượt tham gia.`
                         )
                     ],
                     flags: MessageFlags.Ephemeral
@@ -101,13 +101,13 @@ export const giveawayEndHandler = {
                 throw new TitanBotError(
                     'Button used outside guild',
                     ErrorTypes.VALIDATION,
-                    'This button can only be used in a server.',
+                    'Nút này chỉ có thể dùng trong máy chủ.',
                     { userId: interaction.user.id }
                 );
             }
 
             if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-                return replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the \'Manage Server\' permission to end a giveaway.' });
+                return replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền \'Quản Lý Máy Chủ\' để kết thúc giveaway.' });
             }
 
             const guildGiveaways = await getGuildGiveaways(client, interaction.guildId);
@@ -117,7 +117,7 @@ export const giveawayEndHandler = {
                 throw new TitanBotError(
                     'Giveaway not found in database',
                     ErrorTypes.VALIDATION,
-                    'This giveaway is no longer active.',
+                    'Giveaway này không còn hoạt động.',
                     { messageId: interaction.message.id, guildId: interaction.guildId }
                 );
             }
@@ -126,7 +126,7 @@ export const giveawayEndHandler = {
                 throw new TitanBotError(
                     'Giveaway already ended',
                     ErrorTypes.VALIDATION,
-                    'This giveaway has already ended.',
+                    'Giveaway này đã kết thúc rồi.',
                     { messageId: interaction.message.id }
                 );
             }
@@ -148,7 +148,7 @@ export const giveawayEndHandler = {
             const updatedRow = createGiveawayButtons(true);
 
             await interaction.message.edit({
-                content: '🎉 **GIVEAWAY ENDED** 🎉',
+                content: '🎉 **GIVEAWAY ĐÃ KẾT THÚC** 🎉',
                 embeds: [updatedEmbed],
                 components: [updatedRow]
             });
@@ -159,24 +159,24 @@ export const giveawayEndHandler = {
                     guildId: interaction.guildId,
                     eventType: EVENT_TYPES.GIVEAWAY_WINNER,
                     data: {
-                        description: `Giveaway ended with ${winners.length} winner(s)`,
+                        description: `Giveaway đã kết thúc với ${winners.length} người thắng`,
                         channelId: interaction.channelId,
                         userId: interaction.user.id,
                         fields: [
                             {
-                                name: '🎁 Prize',
-                                value: giveaway.prize || 'Mystery Prize!',
+                                name: '🎁 Giải Thưởng',
+                                value: giveaway.prize || 'Giải Thưởng Bí Ẩn!',
                                 inline: true
                             },
                             {
-                                name: '🏆 Winners',
+                                name: '🏆 Người Thắng',
                                 value: winners.length > 0 
                                     ? winners.map(id => `<@${id}>`).join(', ')
-                                    : 'No valid entries',
+                                    : 'Không có lượt tham gia hợp lệ',
                                 inline: false
                             },
                             {
-                                name: '👥 Total Entries',
+                                name: '👥 Tổng Lượt Tham Gia',
                                 value: participants.length.toString(),
                                 inline: true
                             }
@@ -190,8 +190,8 @@ export const giveawayEndHandler = {
             await interaction.reply({
                 embeds: [
                     successEmbed(
-                        `Giveaway Ended ✅`,
-                        `The giveaway has been ended and ${winners.length} winner(s) have been selected!`
+                        `Giveaway Đã Kết Thúc ✅`,
+                        `Giveaway đã kết thúc và chọn được ${winners.length} người thắng!`
                     )
                 ],
                 flags: MessageFlags.Ephemeral
@@ -217,13 +217,13 @@ export const giveawayRerollHandler = {
                 throw new TitanBotError(
                     'Button used outside guild',
                     ErrorTypes.VALIDATION,
-                    'This button can only be used in a server.',
+                    'Nút này chỉ có thể dùng trong máy chủ.',
                     { userId: interaction.user.id }
                 );
             }
 
             if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-                return replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the \'Manage Server\' permission to reroll a giveaway.' });
+                return replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Bạn cần quyền \'Quản Lý Máy Chủ\' để quay số lại giveaway.' });
             }
 
             const guildGiveaways = await getGuildGiveaways(client, interaction.guildId);
@@ -233,7 +233,7 @@ export const giveawayRerollHandler = {
                 throw new TitanBotError(
                     'Giveaway not found in database',
                     ErrorTypes.VALIDATION,
-                    'This giveaway is no longer active.',
+                    'Giveaway này không còn hoạt động.',
                     { messageId: interaction.message.id, guildId: interaction.guildId }
                 );
             }
@@ -242,7 +242,7 @@ export const giveawayRerollHandler = {
                 throw new TitanBotError(
                     'Giveaway still active',
                     ErrorTypes.VALIDATION,
-                    'This giveaway has not ended yet. Please end it first.',
+                    'Giveaway này chưa kết thúc. Hãy kết thúc nó trước đã.',
                     { messageId: interaction.message.id }
                 );
             }
@@ -253,7 +253,7 @@ export const giveawayRerollHandler = {
                 throw new TitanBotError(
                     'No participants to reroll',
                     ErrorTypes.VALIDATION,
-                    'There are no entries to reroll from.',
+                    'Không có lượt tham gia nào để quay số lại.',
                     { messageId: interaction.message.id }
                 );
             }
@@ -272,7 +272,7 @@ export const giveawayRerollHandler = {
             const updatedRow = createGiveawayButtons(true);
 
             await interaction.message.edit({
-                content: '🔄 **GIVEAWAY REROLLED** 🔄',
+                content: '🔄 **GIVEAWAY ĐÃ QUAY SỐ LẠI** 🔄',
                 embeds: [updatedEmbed],
                 components: [updatedRow]
             });
@@ -283,22 +283,22 @@ export const giveawayRerollHandler = {
                     guildId: interaction.guildId,
                     eventType: EVENT_TYPES.GIVEAWAY_REROLL,
                     data: {
-                        description: `Giveaway rerolled`,
+                        description: `Giveaway đã quay số lại`,
                         channelId: interaction.channelId,
                         userId: interaction.user.id,
                         fields: [
                             {
-                                name: '🎁 Prize',
-                                value: giveaway.prize || 'Mystery Prize!',
+                                name: '🎁 Giải Thưởng',
+                                value: giveaway.prize || 'Giải Thưởng Bí Ẩn!',
                                 inline: true
                             },
                             {
-                                name: '🏆 New Winners',
+                                name: '🏆 Người Thắng Mới',
                                 value: newWinners.map(id => `<@${id}>`).join(', '),
                                 inline: false
                             },
                             {
-                                name: '👥 Total Entries',
+                                name: '👥 Tổng Lượt Tham Gia',
                                 value: participants.length.toString(),
                                 inline: true
                             }
@@ -312,8 +312,8 @@ export const giveawayRerollHandler = {
             await interaction.reply({
                 embeds: [
                     successEmbed(
-                        'Giveaway Rerolled ✅',
-                        `New winner(s) have been selected!`
+                        'Đã Quay Số Lại Giveaway ✅',
+                        `Đã chọn ra người thắng mới!`
                     )
                 ],
                 flags: MessageFlags.Ephemeral
@@ -338,7 +338,7 @@ export const giveawayViewHandler = {
                 throw new TitanBotError(
                     'Button used outside guild',
                     ErrorTypes.VALIDATION,
-                    'This button can only be used in a server.',
+                    'Nút này chỉ có thể dùng trong máy chủ.',
                     { userId: interaction.user.id }
                 );
             }
@@ -350,24 +350,24 @@ export const giveawayViewHandler = {
                 throw new TitanBotError(
                     'Giveaway not found in database',
                     ErrorTypes.VALIDATION,
-                    'This giveaway could not be found.',
+                    'Không tìm thấy giveaway này.',
                     { messageId: interaction.message.id, guildId: interaction.guildId }
                 );
             }
 
             if (!giveaway.ended && !giveaway.isEnded && !isGiveawayEnded(giveaway)) {
-                return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This giveaway has not ended yet, so winners are not available.' });
+                return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Giveaway này chưa kết thúc nên chưa có người thắng.' });
             }
 
             const winnerIds = Array.isArray(giveaway.winnerIds) ? giveaway.winnerIds : [];
             const winnerMentions = winnerIds.length > 0
                 ? winnerIds.map(id => `<@${id}>`).join(', ')
-                : 'No valid winners were selected for this giveaway.';
+                : 'Giveaway này không có người thắng nào được chọn.';
 
             await interaction.reply({
                 embeds: [
                     successEmbed(
-                        `Winners for ${giveaway.prize || 'this giveaway'} 🎉`,
+                        `Người thắng của ${giveaway.prize || 'giveaway này'} 🎉`,
                         winnerMentions
                     )
                 ],

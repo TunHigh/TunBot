@@ -10,32 +10,32 @@ import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("usernotes")
-        .setDescription("Manage user notes for moderation purposes")
+        .setDescription("Quản lý ghi chú người dùng phục vụ mục đích điều hành")
         .addSubcommand(subcommand =>
             subcommand
                 .setName("add")
-                .setDescription("Add a note to a user")
+                .setDescription("Thêm ghi chú cho một người dùng")
                 .addUserOption(option =>
                     option
                         .setName("target")
-                        .setDescription("The user to add a note for")
+                        .setDescription("Người dùng cần thêm ghi chú")
                         .setRequired(true)
                 )
                 .addStringOption(option =>
                     option
                         .setName("note")
-                        .setDescription("The note to add")
+                        .setDescription("Ghi chú cần thêm")
                         .setRequired(true)
                 )
                 .addStringOption(option =>
                     option
                         .setName("type")
-                        .setDescription("Type of note")
+                        .setDescription("Loại ghi chú")
                         .addChoices(
-                            { name: "Warning", value: "warning" },
-                            { name: "Positive", value: "positive" },
-                            { name: "Neutral", value: "neutral" },
-                            { name: "Alert", value: "alert" }
+                            { name: "Cảnh cáo", value: "warning" },
+                            { name: "Tích cực", value: "positive" },
+                            { name: "Trung lập", value: "neutral" },
+                            { name: "Cảnh báo", value: "alert" }
                         )
                         .setRequired(false)
                 )
@@ -43,28 +43,28 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("view")
-                .setDescription("View notes for a user")
+                .setDescription("Xem ghi chú của một người dùng")
                 .addUserOption(option =>
                     option
                         .setName("target")
-                        .setDescription("The user to view notes for")
+                        .setDescription("Người dùng cần xem ghi chú")
                         .setRequired(true)
                 )
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName("remove")
-                .setDescription("Remove a specific note from a user")
+                .setDescription("Xóa một ghi chú cụ thể của người dùng")
                 .addUserOption(option =>
                     option
                         .setName("target")
-                        .setDescription("The user to remove a note from")
+                        .setDescription("Người dùng cần xóa ghi chú")
                         .setRequired(true)
                 )
                 .addIntegerOption(option =>
                     option
                         .setName("index")
-                        .setDescription("The index of the note to remove")
+                        .setDescription("Chỉ số của ghi chú cần xóa")
                         .setRequired(true)
                         .setMinValue(1)
                 )
@@ -72,11 +72,11 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("clear")
-                .setDescription("Clear all notes for a user")
+                .setDescription("Xóa toàn bộ ghi chú của một người dùng")
                 .addUserOption(option =>
                     option
                         .setName("target")
-                        .setDescription("The user to clear notes for")
+                        .setDescription("Người dùng cần xóa ghi chú")
                         .setRequired(true)
                 )
         )
@@ -89,7 +89,7 @@ export default {
         const guildId = interaction.guild.id;
 
         if (subcommand !== "view" && subcommand !== "remove" && subcommand !== "clear" && subcommand !== "add") {
-            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please select a valid subcommand.' });
+            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Vui lòng chọn một lệnh con hợp lệ.' });
         }
 
         let notes = [];
@@ -109,11 +109,11 @@ export default {
                 case "clear":
                     return await handleClearNotes(interaction, targetUser, notes, guildId);
                 default:
-                    return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please select a valid subcommand.' });
+                    return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Vui lòng chọn một lệnh con hợp lệ.' });
             }
         } catch (error) {
             logger.error(`Error in usernotes command (${subcommand}):`, error);
-            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while processing your request. Please try again later.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.' });
         }
     }
 };
@@ -123,11 +123,11 @@ async function handleAddNote(interaction, targetUser, notes, guildId) {
     const type = interaction.options.getString("type") || "neutral";
 
     if (note.length > 1000) {
-        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Notes must be 1000 characters or less.' });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ghi chú phải có 1000 ký tự trở xuống.' });
     }
 
     if (note.length === 0) {
-        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Note cannot be empty.' });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ghi chú không được để trống.' });
     }
 
     note = sanitizeInput(note);
@@ -151,11 +151,11 @@ async function handleAddNote(interaction, targetUser, notes, guildId) {
     return InteractionHelper.safeReply(interaction, {
         embeds: [
             successEmbed(
-                `${typeInfo.emoji} Note Added`,
-                `Added a **${type}** note for **${targetUser.tag}**:\n\n` +
+                `${typeInfo.emoji} Đã thêm ghi chú`,
+                `Đã thêm ghi chú loại **${getNoteTypeDisplay(type)}** cho **${targetUser.tag}**:\n\n` +
                 `> ${note}\n\n` +
-                `**Moderator:** ${interaction.user.tag}\n` +
-                `**Total Notes:** ${notes.length}`
+                `**Người điều hành:** ${interaction.user.tag}\n` +
+                `**Tổng số ghi chú:** ${notes.length}`
             )
         ]
     });
@@ -166,8 +166,8 @@ async function handleViewNotes(interaction, targetUser, notes) {
         return InteractionHelper.safeReply(interaction, {
             embeds: [
                 infoEmbed(
-                    "📝 No Notes",
-                    `There are no notes for **${targetUser.tag}**.`
+                    "📝 Không có ghi chú",
+                    `Không có ghi chú nào cho **${targetUser.tag}**.`
                 ),
             ],
         });
@@ -175,24 +175,24 @@ async function handleViewNotes(interaction, targetUser, notes) {
 
     const sortedNotes = [...notes].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    let description = `**Notes for ${targetUser.tag} (${targetUser.id}):**\n\n`;
+    let description = `**Ghi chú của ${targetUser.tag} (${targetUser.id}):**\n\n`;
     
     sortedNotes.forEach((note, index) => {
         const typeInfo = getNoteTypeInfo(note.type);
         const date = new Date(note.timestamp).toLocaleDateString();
-        description += `${typeInfo.emoji} **Note #${index + 1}** (${note.type}) - ${date}\n`;
+        description += `${typeInfo.emoji} **Ghi chú #${index + 1}** (${getNoteTypeDisplay(note.type)}) - ${date}\n`;
         description += `> ${note.content}\n`;
-        description += `*Added by ${note.author}*\n\n`;
+        description += `*Được thêm bởi ${note.author}*\n\n`;
     });
 
     if (description.length > 4000) {
-        description = description.substring(0, 3900) + "\n... *(truncated)*";
+        description = description.substring(0, 3900) + "\n... *(bị cắt ngắn)*";
     }
 
     return InteractionHelper.safeReply(interaction, {
         embeds: [
             infoEmbed(
-                `📝 User Notes (${notes.length})`,
+                `📝 Ghi chú người dùng (${notes.length})`,
                 description
             )
         ]
@@ -203,7 +203,7 @@ async function handleRemoveNote(interaction, targetUser, notes, guildId) {
     const index = interaction.options.getInteger("index") - 1;
 
     if (index < 0 || index >= notes.length) {
-        return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: `Please provide a valid note index (1-${notes.length}).` });
+        return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: `Vui lòng cung cấp chỉ số ghi chú hợp lệ (1-${notes.length}).` });
     }
 
     // The view command displays notes sorted newest-first, so resolve the index
@@ -221,10 +221,10 @@ async function handleRemoveNote(interaction, targetUser, notes, guildId) {
     return InteractionHelper.safeReply(interaction, {
         embeds: [
             successEmbed(
-                `${typeInfo.emoji} Note Removed`,
-                `Removed note #${index + 1} from **${targetUser.tag}**:\n\n` +
+                `${typeInfo.emoji} Đã xóa ghi chú`,
+                `Đã xóa ghi chú #${index + 1} khỏi **${targetUser.tag}**:\n\n` +
                 `> ${removedNote.content}\n\n` +
-                `**Remaining Notes:** ${notes.length}`
+                `**Số ghi chú còn lại:** ${notes.length}`
             )
         ]
     });
@@ -237,8 +237,8 @@ async function handleClearNotes(interaction, targetUser, notes, guildId) {
         return InteractionHelper.safeReply(interaction, {
             embeds: [
                 infoEmbed(
-                    "No Notes to Clear",
-                    `There are no notes for **${targetUser.tag}** to clear.`
+                    "Không có ghi chú để xóa",
+                    `Không có ghi chú nào của **${targetUser.tag}** để xóa.`
                 ),
             ],
         });
@@ -252,8 +252,8 @@ async function handleClearNotes(interaction, targetUser, notes, guildId) {
     return InteractionHelper.safeReply(interaction, {
         embeds: [
             successEmbed(
-                "🗑️ Notes Cleared",
-                `Cleared **${noteCount}** notes from **${targetUser.tag}**.`
+                "🗑️ Đã xóa ghi chú",
+                `Đã xóa **${noteCount}** ghi chú của **${targetUser.tag}**.`
             )
         ]
     });
@@ -268,4 +268,15 @@ function getNoteTypeInfo(type) {
     };
     
     return types[type] || types.neutral;
+}
+
+function getNoteTypeDisplay(type) {
+    const display = {
+        warning: "Cảnh cáo",
+        positive: "Tích cực",
+        neutral: "Trung lập",
+        alert: "Cảnh báo"
+    };
+    
+    return display[type] || type;
 }

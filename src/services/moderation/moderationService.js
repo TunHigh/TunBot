@@ -18,14 +18,14 @@ export class ModerationService {
   static buildHierarchyMessage({ actor, actorRole, targetRole, targetLabel, action }) {
     if (actor === 'moderator') {
       return (
-        `You cannot ${action} **${targetLabel}** — their role **${targetRole.name}** is equal to or above yours (**${actorRole.name}**). ` +
-        `In **Server Settings → Roles**, drag your moderator role above **${targetRole.name}**.`
+        `Bạn không thể ${action} **${targetLabel}** — vai trò **${targetRole.name}** của họ ngang bằng hoặc cao hơn vai trò của bạn (**${actorRole.name}**). ` +
+        `Trong **Server Settings → Roles**, hãy kéo vai trò điều hành của bạn lên trên **${targetRole.name}**.`
       );
     }
 
     return (
-      `I cannot ${action} **${targetLabel}** — my role **${actorRole.name}** is equal to or below theirs (**${targetRole.name}**). ` +
-      `In **Server Settings → Roles**, drag my bot role above **${targetRole.name}**.`
+      `Tôi không thể ${action} **${targetLabel}** — vai trò của tôi **${actorRole.name}** ngang bằng hoặc thấp hơn vai trò của họ (**${targetRole.name}**). ` +
+      `Trong **Server Settings → Roles**, hãy kéo vai trò bot của tôi lên trên **${targetRole.name}**.`
     );
   }
 
@@ -37,21 +37,21 @@ export class ModerationService {
       const botMember = target.guild?.members?.me;
       const botRole = getHighestRole(botMember);
       if (!botRole || !targetRole) {
-        return `Bot role hierarchy blocked ${action} for ${targetLabel}`;
+        return `Thứ bậc vai trò của bot đã chặn ${action} đối với ${targetLabel}`;
       }
-      return `Bot role **${botRole.name}** is too low for **${targetRole.name}** — move the bot role higher`;
+      return `Vai trò bot **${botRole.name}** quá thấp so với **${targetRole.name}** — hãy kéo vai trò bot lên cao hơn`;
     }
 
     const modRole = getHighestRole(moderator);
     if (!modRole || !targetRole) {
-      return `Role hierarchy blocked ${action} for ${targetLabel}`;
+      return `Thứ bậc vai trò đã chặn ${action} đối với ${targetLabel}`;
     }
-    return `Your role **${modRole.name}** is too low for **${targetRole.name}** — move your role higher`;
+    return `Vai trò của bạn **${modRole.name}** quá thấp so với **${targetRole.name}** — hãy kéo vai trò của bạn lên cao hơn`;
   }
 
   static validateHierarchy(moderator, target, action) {
     if (!moderator || !target) {
-      return { valid: false, error: 'Invalid moderator or target' };
+      return { valid: false, error: 'Đối tượng điều hành không hợp lệ' };
     }
 
     if (moderator.guild?.ownerId === moderator.id) {
@@ -64,7 +64,7 @@ export class ModerationService {
     if (!modRole || !targetRole) {
       return {
         valid: false,
-        error: 'Could not resolve role hierarchy. Try mentioning the user or use the slash command.',
+        error: 'Không thể xác định thứ bậc vai trò. Hãy thử mention người dùng hoặc dùng lệnh slash.',
       };
     }
 
@@ -86,12 +86,12 @@ export class ModerationService {
 
   static validateBotHierarchy(target, action) {
     if (!target) {
-      return { valid: false, error: 'Invalid target' };
+      return { valid: false, error: 'Đối tượng không hợp lệ' };
     }
 
     const botMember = target.guild?.members?.me;
     if (!botMember) {
-      return { valid: false, error: 'Bot is not in the guild' };
+      return { valid: false, error: 'Bot không có trong server này' };
     }
 
     const botRole = getHighestRole(botMember);
@@ -100,7 +100,7 @@ export class ModerationService {
     if (!botRole || !targetRole) {
       return {
         valid: false,
-        error: 'Could not resolve bot role hierarchy. Check that my role is configured in this server.',
+        error: 'Không thể xác định thứ bậc vai trò của bot. Hãy kiểm tra vai trò của tôi đã được cấu hình trong server này.',
       };
     }
 
@@ -144,7 +144,7 @@ export class ModerationService {
         throw new TitanBotError(
           'Missing required parameters',
           ErrorTypes.VALIDATION,
-          'Guild, user, and moderator are required'
+          'Cần có server, người dùng và người điều hành.'
         );
       }
 
@@ -169,7 +169,7 @@ export class ModerationService {
             throw new TitanBotError(
                 'You do not have sufficient permissions to ban users who are not in the server.',
                 ErrorTypes.PERMISSION,
-                'You need "Manage Server" or "Administrator" permissions to ban users not currently in the guild.'
+                'Bạn cần quyền "Manage Server" hoặc "Administrator" để cấm người dùng hiện không ở trong server.'
             );
         }
       }
@@ -217,7 +217,7 @@ export class ModerationService {
         throw new TitanBotError(
           'Missing required parameters',
           ErrorTypes.VALIDATION,
-          'Guild, member, and moderator are required'
+          'Cần có server, thành viên và người điều hành.'
         );
       }
 
@@ -228,8 +228,8 @@ export class ModerationService {
         throw new TitanBotError(
           'Cannot kick member',
           ErrorTypes.PERMISSION,
-          `I cannot kick **${targetLabel}**. They may have **Administrator** permission or a managed/integration role. ` +
-          'Ensure my bot role is above theirs in **Server Settings → Roles** and that they do not have Admin.'
+          `Tôi không thể đuổi **${targetLabel}**. Họ có thể có quyền **Administrator** hoặc một vai trò được quản lý/tích hợp. ` +
+          'Hãy đảm bảo vai trò bot của tôi cao hơn vai trò của họ trong **Server Settings → Roles** và họ không có quyền Admin.'
         );
       }
 
@@ -275,7 +275,7 @@ export class ModerationService {
         throw new TitanBotError(
           'Missing required parameters',
           ErrorTypes.VALIDATION,
-          'Guild, member, moderator, and duration are required'
+          'Cần có server, thành viên, người điều hành và thời lượng.'
         );
       }
 
@@ -286,8 +286,8 @@ export class ModerationService {
         throw new TitanBotError(
           'Cannot timeout member',
           ErrorTypes.PERMISSION,
-          `I cannot timeout **${targetLabel}**. They may have **Administrator** permission or a managed/integration role. ` +
-          'Ensure my bot role is above theirs in **Server Settings → Roles** and that they do not have Admin.'
+          `Tôi không thể khóa tạm thời **${targetLabel}**. Họ có thể có quyền **Administrator** hoặc một vai trò được quản lý/tích hợp. ` +
+          'Hãy đảm bảo vai trò bot của tôi cao hơn vai trò của họ trong **Server Settings → Roles** và họ không có quyền Admin.'
         );
       }
 
@@ -329,14 +329,14 @@ export class ModerationService {
     guild,
     member,
     moderator,
-    reason = 'Timeout removed by moderator'
+    reason = 'Khóa tạm thời được gỡ bởi người điều hành'
   }) {
     try {
       if (!guild || !member || !moderator) {
         throw new TitanBotError(
           'Missing required parameters',
           ErrorTypes.VALIDATION,
-          'Guild, member, and moderator are required'
+          'Cần có server, thành viên và người điều hành.'
         );
       }
 
@@ -347,8 +347,8 @@ export class ModerationService {
         throw new TitanBotError(
           'Cannot modify member',
           ErrorTypes.PERMISSION,
-          `I cannot modify **${targetLabel}**. They may have **Administrator** permission or a managed/integration role. ` +
-          'Ensure my bot role is above theirs in **Server Settings → Roles**.'
+          `Tôi không thể thao tác với **${targetLabel}**. Họ có thể có quyền **Administrator** hoặc một vai trò được quản lý/tích hợp. ` +
+          'Hãy đảm bảo vai trò bot của tôi cao hơn vai trò của họ trong **Server Settings → Roles**.'
         );
       }
 
@@ -356,7 +356,7 @@ export class ModerationService {
         throw new TitanBotError(
           'User not timed out',
           ErrorTypes.VALIDATION,
-          `${member.user.tag} is not currently timed out`
+          `${member.user.tag} hiện không bị khóa tạm thời`
         );
       }
 
@@ -399,7 +399,7 @@ export class ModerationService {
         throw new TitanBotError(
           'Missing required parameters',
           ErrorTypes.VALIDATION,
-          'Guild, user, and moderator are required'
+          'Cần có server, người dùng và người điều hành.'
         );
       }
 
@@ -410,7 +410,7 @@ export class ModerationService {
         throw new TitanBotError(
           'User not banned',
           ErrorTypes.VALIDATION,
-          `${user.tag} is not currently banned from this server`
+          `${user.tag} hiện không bị cấm khỏi server này`
         );
       }
 

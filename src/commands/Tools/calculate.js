@@ -14,17 +14,24 @@ function evaluate(expression) {
 const calculationHistory = new Map();
 const MAX_HISTORY = 5;
 
+const OPERATION_LABELS = {
+    add: 'cộng',
+    subtract: 'trừ',
+    multiply: 'nhân',
+    divide: 'chia',
+};
+
 export { calculationContexts };
 
 export default {
     data: new SlashCommandBuilder()
         .setName("calculate")
-        .setDescription("Evaluate a mathematical expression")
+        .setDescription("Tính toán một biểu thức toán học")
         .addStringOption((option) =>
             option
                 .setName("expression")
                 .setDescription(
-                    "The mathematical expression to evaluate (e.g., 2+2*3, sin(45 deg), 16^0.5)",
+                    "Biểu thức toán học cần tính (vd: 2+2*3, sin(45 deg), 16^0.5)",
                 )
                 .setRequired(true),
         ),
@@ -47,9 +54,9 @@ export default {
         ) {
             return await replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: '**Contains unsupported characters.**\n\n' +
-                    '✅ Supported: Numbers, decimals, + - * / ^ %, sin cos tan sqrt abs log exp, pi e, ()\n' +
-                    '❌ Not supported: Brackets, curly braces, and other symbols'
+                message: '**Chứa ký tự không được hỗ trợ.**\n\n' +
+                    '✅ Được hỗ trợ: Số, số thập phân, + - * / ^ %, sin cos tan sqrt abs log exp, pi e, ()\n' +
+                    '❌ Không hỗ trợ: Dấu ngoặc vuông, ngoặc nhọn và các ký hiệu khác'
             });
         }
 
@@ -66,9 +73,9 @@ export default {
             if (pattern.test(expression)) {
                 return await replyUserError(interaction, {
                     type: ErrorTypes.VALIDATION,
-                    message: '**Contains blocked code patterns.**\n\n' +
-                        '🚫 **Blocked:** import, require, eval, Function, setTimeout, setInterval, process, fs, document, window, fetch, loops, async/await\n\n' +
-                        'Code-like syntax is not allowed in calculations.'
+                    message: '**Chứa mã nguồn bị chặn.**\n\n' +
+                        '🚫 **Đã chặn:** import, require, eval, Function, setTimeout, setInterval, process, fs, document, window, fetch, vòng lặp, async/await\n\n' +
+                        'Không cho phép cú pháp giống mã nguồn trong phép tính.'
                 });
             }
         }
@@ -92,7 +99,7 @@ export default {
             } else if (typeof result === "boolean") {
                 formattedResult = result ? "true" : "false";
             } else if (result === null || result === undefined) {
-                formattedResult = "No result";
+                formattedResult = "Không có kết quả";
             } else if (
                 Array.isArray(result) ||
                 typeof result === "object"
@@ -138,15 +145,15 @@ export default {
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId(`calc_${interaction.id}_history`)
-                    .setLabel("History")
+                    .setLabel("Lịch Sử")
                     .setStyle(ButtonStyle.Secondary),
             );
 
             const embed = successEmbed(
-                "🧮 Calculation Result",
-                `**Expression:** \`${expression.replace(/`/g, "\`")}\`\n` +
-                    `**Result:** \`${formattedResult}\`\n\n` +
-                    `*Use the buttons below to perform operations with the result.*`,
+                "🧮 Kết Quả Tính Toán",
+                `**Biểu thức:** \`${expression.replace(/`/g, "\`")}\`\n` +
+                    `**Kết quả:** \`${formattedResult}\`\n\n` +
+                    `*Dùng các nút bên dưới để thực hiện phép toán với kết quả.*`,
             );
 
             await InteractionHelper.safeEditReply(interaction, {
@@ -178,7 +185,7 @@ export default {
 
                         if (userHistory.length === 0) {
                             await i.followUp({
-                                content: "No calculation history found.",
+                                content: "Chưa có lịch sử tính toán nào.",
                                 flags: ["Ephemeral"],
                             });
                             return;
@@ -193,7 +200,7 @@ export default {
                             .join("\n\n");
 
                         await i.followUp({
-                            content: `📜 **Your Calculation History**\n\n${historyText}`,
+                            content: `📜 **Lịch Sử Tính Toán Của Bạn**\n\n${historyText}`,
                             flags: ["Ephemeral"],
                         });
                         return;
@@ -229,7 +236,7 @@ export default {
 
                         await i.showModal({
                             customId: `calc_modal:${operation}`,
-                            title: `Enter a number to ${operation}`,
+                            title: `Nhập một số để ${OPERATION_LABELS[operation]}`,
                             components: [
                                 {
                                     type: 1,
@@ -237,8 +244,8 @@ export default {
                                         {
                                             type: 4,
                                             customId: `operand:${contextKey}`,
-                                            label: `Number to ${operator} with ${formattedResult}`,
-                                            placeholder: "Enter a number...",
+                                            label: `Số cần ${OPERATION_LABELS[operation]} với ${formattedResult}`,
+                                            placeholder: "Nhập một số...",
                                             style: 1,
                                             required: true,
                                             maxLength: 50,
@@ -251,7 +258,7 @@ export default {
                         logger.error("Failed to show modal:", modalError);
                         if (!i.replied && !i.deferred) {
                             await i.reply({
-                                content: "Failed to open calculator. Please try again.",
+                                content: "Không thể mở máy tính. Vui lòng thử lại.",
                                 flags: ["Ephemeral"],
                             }).catch(console.error);
                         }
@@ -262,7 +269,7 @@ export default {
                     logger.error("Button interaction error:", error);
                     if (!i.deferred && !i.replied) {
                         await i.followUp({
-                            content: "An error occurred while processing your request.",
+                            content: "Đã xảy ra lỗi khi xử lý yêu cầu của bạn.",
                             flags: ["Ephemeral"],
                         }).catch(console.error);
                     }
@@ -277,7 +284,7 @@ export default {
                                 .setCustomId(
                                     `calc_${interaction.id}_expired`,
                                 )
-                                .setLabel("Calculator Expired")
+                                .setLabel("Máy Tính Đã Hết Hạn")
                                 .setStyle(ButtonStyle.Secondary)
                                 .setDisabled(true),
                         );
@@ -286,7 +293,7 @@ export default {
                         .editReply({
                             components: [disabledRow],
                             content:
-                                "⏱️ This calculator has expired. Use the command again to perform more calculations.",
+                                "⏱️ Máy tính này đã hết hạn. Hãy dùng lại lệnh để thực hiện thêm phép tính.",
                         })
                         .catch(console.error);
                 } else {
@@ -306,24 +313,24 @@ export default {
         } catch (error) {
             logger.error('Calculation error:', error);
 
-            let errorMessage = 'Failed to evaluate the expression.';
+            let errorMessage = 'Không thể tính biểu thức.';
 
             if (error.message.includes('Unexpected type')) {
                 errorMessage +=
-                    'The expression contains an unsupported operation or function.';
+                    'Biểu thức chứa phép toán hoặc hàm không được hỗ trợ.';
             } else if (error.message.includes('Undefined symbol')) {
                 errorMessage +=
-                    'The expression contains an undefined variable or function.';
+                    'Biểu thức chứa biến hoặc hàm không xác định.';
             } else if (error.message.includes('Brackets not balanced')) {
-                errorMessage += 'The expression has unbalanced brackets.';
+                errorMessage += 'Biểu thức có dấu ngoặc không cân bằng.';
             } else if (
                 error.message.includes('Unexpected operator') ||
                 error.message.includes('Unexpected character')
             ) {
                 errorMessage +=
-                    'The expression contains an invalid operator or character.';
+                    'Biểu thức chứa phép toán hoặc ký tự không hợp lệ.';
             } else {
-                errorMessage += 'Please check the syntax and try again.';
+                errorMessage += 'Vui lòng kiểm tra lại cú pháp và thử lại.';
             }
 
             await replyUserError(interaction, {

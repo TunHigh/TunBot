@@ -26,11 +26,11 @@ export default {
               guildId: message.guild.id,
               eventType: EVENT_TYPES.REACTION_ROLE_DELETE,
               data: {
-                title: 'Reaction Role Removed',
+                title: 'Đã Gỡ Reaction Role',
                 lines: [
-                  formatLogLine('Channel', message.channel ? `${message.channel.name} ${message.channel.toString()}` : 'Unknown'),
-                  formatLogLine('Message ID', `\`${message.id}\``),
-                  formatLogLine('Cleanup', 'Database entry removed automatically'),
+                  formatLogLine('Kênh', message.channel ? `${message.channel.name} ${message.channel.toString()}` : 'Không xác định'),
+                  formatLogLine('ID Tin Nhắn', `\`${message.id}\``),
+                  formatLogLine('Dọn Dẹp', 'Đã tự động xóa mục khỏi cơ sở dữ liệu'),
                 ],
                 quoted: true,
               }
@@ -46,10 +46,10 @@ export default {
       if (message.author?.bot) return;
 
       const metaLines = [
-        formatLogLine('Channel', message.channel ? `${message.channel.name} ${message.channel.toString()}` : 'Unknown'),
-        formatLogLine('Message ID', `\`${message.id}\``),
-        formatLogLine('Message author', message.author ? message.author.toString() : 'Unknown'),
-        formatLogLine('Message created', `<t:${Math.floor(message.createdTimestamp / 1000)}:R>`),
+        formatLogLine('Kênh', message.channel ? `${message.channel.name} ${message.channel.toString()}` : 'Không xác định'),
+        formatLogLine('ID Tin Nhắn', `\`${message.id}\``),
+        formatLogLine('Người gửi', message.author ? message.author.toString() : 'Không xác định'),
+        formatLogLine('Tin nhắn tạo lúc', `<t:${Math.floor(message.createdTimestamp / 1000)}:R>`),
       ];
 
       let messageBody = null;
@@ -60,7 +60,7 @@ export default {
       }
 
       if (message.attachments.size > 0) {
-        metaLines.push(formatLogLine('Attachments', String(message.attachments.size)));
+        metaLines.push(formatLogLine('Tệp đính kèm', String(message.attachments.size)));
       }
 
       await logEvent({
@@ -68,10 +68,10 @@ export default {
         guildId: message.guild.id,
         eventType: EVENT_TYPES.MESSAGE_DELETE,
         data: {
-          title: 'Message deleted',
+          title: 'Tin nhắn đã bị xóa',
           lines: metaLines,
           quoted: true,
-          section: messageBody ? { title: 'Message', body: messageBody || '*(empty message)*' } : null,
+          section: messageBody ? { title: 'Tin nhắn', body: messageBody || '*(tin nhắn trống)*' } : null,
           userId: message.author?.id,
           channelId: message.channel.id,
         }

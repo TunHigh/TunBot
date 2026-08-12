@@ -10,12 +10,12 @@ export default {
     data: new SlashCommandBuilder()
         .setName("gdelete")
         .setDescription(
-            "Deletes a giveaway message and removes it from the database.",
+            "Xóa tin nhắn quà tặng và gỡ khỏi cơ sở dữ liệu.",
         )
         .addStringOption((option) =>
             option
                 .setName("messageid")
-                .setDescription("The message ID of the giveaway to delete.")
+                .setDescription("ID tin nhắn của quà tặng cần xóa.")
                 .setRequired(true),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -25,7 +25,7 @@ export default {
             throw new TitanBotError(
                 'Giveaway command used outside guild',
                 ErrorTypes.VALIDATION,
-                'This command can only be used in a server.',
+                'Lệnh này chỉ có thể dùng trong máy chủ.',
                 { userId: interaction.user.id }
             );
         }
@@ -34,7 +34,7 @@ export default {
             throw new TitanBotError(
                 'User lacks ManageGuild permission',
                 ErrorTypes.PERMISSION,
-                "You need the 'Manage Server' permission to delete a giveaway.",
+                "Bạn cần quyền 'Manage Server' để xóa quà tặng.",
                 { userId: interaction.user.id, guildId: interaction.guildId }
             );
         }
@@ -47,7 +47,7 @@ export default {
             throw new TitanBotError(
                 'Invalid message ID format',
                 ErrorTypes.VALIDATION,
-                'Please provide a valid message ID.',
+                'Vui lòng cung cấp ID tin nhắn hợp lệ.',
                 { providedId: messageId }
             );
         }
@@ -59,13 +59,13 @@ export default {
             throw new TitanBotError(
                 `Giveaway not found: ${messageId}`,
                 ErrorTypes.VALIDATION,
-                "No giveaway was found with that message ID.",
+                "Không tìm thấy quà tặng nào với ID tin nhắn đó.",
                 { messageId, guildId: interaction.guildId }
             );
         }
 
         let deletedMessage = false;
-        let channelName = "Unknown Channel";
+        let channelName = "Kênh không xác định";
 
         const tryDeleteFromChannel = async (channel) => {
             if (!channel || !channel.isTextBased() || !channel.messages?.fetch) {
@@ -116,7 +116,7 @@ export default {
             throw new TitanBotError(
                 `Failed to delete giveaway from database: ${messageId}`,
                 ErrorTypes.UNKNOWN,
-                'The giveaway could not be removed from the database. Please try again.',
+                'Không thể xóa quà tặng khỏi cơ sở dữ liệu. Vui lòng thử lại.',
                 { messageId, guildId: interaction.guildId }
             );
         }
@@ -128,24 +128,24 @@ export default {
             throw new TitanBotError(
                 `Giveaway still exists after deletion: ${messageId}`,
                 ErrorTypes.UNKNOWN,
-                'Deletion did not persist in the database. Please try again.',
+                'Việc xóa không được lưu trong cơ sở dữ liệu. Vui lòng thử lại.',
                 { messageId, guildId: interaction.guildId }
             );
         }
 
         const statusMsg = deletedMessage
-            ? `and the message was deleted from #${channelName}`
-            : `but the message was already deleted or the channel was inaccessible.`;
+            ? `và tin nhắn đã bị xóa khỏi #${channelName}`
+            : `nhưng tin nhắn đã bị xóa trước đó hoặc kênh không thể truy cập.`;
 
         const winnerIds = Array.isArray(giveaway.winnerIds) ? giveaway.winnerIds : [];
         const hasWinners = winnerIds.length > 0;
         const wasEnded = giveaway.ended === true || giveaway.isEnded === true || hasWinners;
 
         const winnerStatusMsg = hasWinners
-            ? `This giveaway already had ${winnerIds.length} winner(s) selected.`
+            ? `Quà tặng này đã chọn ${winnerIds.length} người thắng.`
             : wasEnded
-                ? 'This giveaway was ended with no valid winners.'
-                : 'No winner was picked before deletion.';
+                ? 'Quà tặng đã kết thúc nhưng không có người thắng hợp lệ.'
+                : 'Chưa có người thắng nào được chọn trước khi xóa.';
 
         logger.info(`Giveaway deleted: ${messageId} in ${channelName}`);
 
@@ -160,12 +160,12 @@ export default {
                     userId: interaction.user.id,
                     fields: [
                         {
-                            name: 'Prize',
-                            value: giveaway.prize || 'Unknown',
+                            name: 'Phần thưởng',
+                            value: giveaway.prize || 'Không xác định',
                             inline: true
                         },
                         {
-                            name: 'Entries',
+                            name: 'Lượt tham gia',
                             value: (giveaway.participants?.length || 0).toString(),
                             inline: true
                         }
@@ -179,8 +179,8 @@ export default {
         return InteractionHelper.safeReply(interaction, {
             embeds: [
                 successEmbed(
-                    "Giveaway Deleted",
-                    `Successfully deleted the giveaway for **${giveaway.prize}** ${statusMsg}. ${winnerStatusMsg}`,
+                    "Đã xóa quà tặng",
+                    `Đã xóa quà tặng **${giveaway.prize}** thành công ${statusMsg}. ${winnerStatusMsg}`,
                 ),
             ],
             flags: MessageFlags.Ephemeral,

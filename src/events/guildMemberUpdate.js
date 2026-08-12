@@ -16,12 +16,12 @@ export default {
           guildId: newMember.guild.id,
           eventType: EVENT_TYPES.MEMBER_NAME_CHANGE,
           data: {
-            title: 'Nickname changed',
+            title: 'Đã đổi biệt danh',
             lines: [
-              `**User:** ${newMember.user.toString()} (${newMember.user.tag})`,
+              `**Người dùng:** ${newMember.user.toString()} (${newMember.user.tag})`,
               `**ID:** \`${newMember.user.id}\``,
-              `**Before:** ${oldMember.nickname || '*(no nickname)*'}`,
-              `**After:** ${newMember.nickname || '*(no nickname)*'}`,
+              `**Trước:** ${oldMember.nickname || '*(không có biệt danh)*'}`,
+              `**Sau:** ${newMember.nickname || '*(không có biệt danh)*'}`,
             ],
             thumbnail: newMember.user.displayAvatarURL({ dynamic: true }),
             userId: newMember.user.id,

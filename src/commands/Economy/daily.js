@@ -15,7 +15,7 @@ const PREMIUM_BONUS_PERCENTAGE = 0.1;
 export default {
     data: new SlashCommandBuilder()
         .setName('daily')
-        .setDescription('Claim your daily cash reward'),
+        .setDescription('Nhận thưởng tiền mặt hằng ngày'),
 
     execute: withErrorHandling(async (interaction, config, client) => {
         const deferred = await InteractionHelper.safeDefer(interaction);
@@ -45,7 +45,7 @@ export default {
                 throw createError(
                     "Daily cooldown active",
                     ErrorTypes.RATE_LIMIT,
-                    `You need to wait before claiming daily again. Try again in **${formatDuration(timeRemaining)}**.`,
+                    `Bạn cần đợi thêm trước khi nhận thưởng lần nữa. Thử lại sau **${formatDuration(timeRemaining)}** nhé.`,
                     { timeRemaining, cooldownType: 'daily' }
                 );
             }
@@ -66,7 +66,7 @@ export default {
                     DAILY_AMOUNT * PREMIUM_BONUS_PERCENTAGE,
                 );
                 earned += bonusAmount;
-                bonusMessage = `\n✨ **Premium Bonus:** +$${bonusAmount.toLocaleString()}`;
+                bonusMessage = `\n✨ **Thưởng Premium:** +$${bonusAmount.toLocaleString()}`;
                 hasPremiumRole = true;
             }
 
@@ -85,18 +85,18 @@ export default {
             });
 
             const embed = successEmbed(
-                "✅ Daily Claimed!",
-                `You have claimed your daily **$${earned.toLocaleString()}**!${bonusMessage}`
+                "✅ Đã Nhận Thưởng Hằng Ngày!",
+                `Bạn đã nhận **$${earned.toLocaleString()}** thưởng hằng ngày!${bonusMessage}`
             )
                 .addFields({
-                    name: "New Cash Balance",
+                    name: "Số dư tiền mặt mới",
                     value: `$${userData.wallet.toLocaleString()}`,
                     inline: true,
                 })
                 .setFooter({
                     text: hasPremiumRole
-                        ? `Next claim in 24 hours. (Premium Active)`
-                        : `Next claim in 24 hours.`,
+                        ? `Nhận thưởng tiếp theo sau 24 giờ. (Premium đang kích hoạt)`
+                        : `Nhận thưởng tiếp theo sau 24 giờ.`,
                 });
 
             await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });

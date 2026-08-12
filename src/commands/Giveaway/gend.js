@@ -15,12 +15,12 @@ export default {
     data: new SlashCommandBuilder()
         .setName("gend")
         .setDescription(
-            "Ends an active giveaway immediately and picks the winner(s).",
+            "Kết thúc ngay quà tặng đang diễn ra và chọn người thắng.",
         )
         .addStringOption((option) =>
             option
                 .setName("messageid")
-                .setDescription("The message ID of the giveaway to end.")
+                .setDescription("ID tin nhắn của quà tặng cần kết thúc.")
                 .setRequired(true),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -30,7 +30,7 @@ export default {
             throw new TitanBotError(
                 'Giveaway command used outside guild',
                 ErrorTypes.VALIDATION,
-                'This command can only be used in a server.',
+                'Lệnh này chỉ có thể dùng trong máy chủ.',
                 { userId: interaction.user.id }
             );
         }
@@ -39,7 +39,7 @@ export default {
             throw new TitanBotError(
                 'User lacks ManageGuild permission',
                 ErrorTypes.PERMISSION,
-                "You need the 'Manage Server' permission to end a giveaway.",
+                "Bạn cần quyền 'Manage Server' để kết thúc quà tặng.",
                 { userId: interaction.user.id, guildId: interaction.guildId }
             );
         }
@@ -52,7 +52,7 @@ export default {
             throw new TitanBotError(
                 'Invalid message ID format',
                 ErrorTypes.VALIDATION,
-                'Please provide a valid message ID.',
+                'Vui lòng cung cấp ID tin nhắn hợp lệ.',
                 { providedId: messageId }
             );
         }
@@ -64,7 +64,7 @@ export default {
             throw new TitanBotError(
                 `Giveaway not found: ${messageId}`,
                 ErrorTypes.VALIDATION,
-                "No giveaway was found with that message ID in the database.",
+                "Không tìm thấy quà tặng nào với ID tin nhắn đó trong cơ sở dữ liệu.",
                 { messageId, guildId: interaction.guildId }
             );
         }
@@ -90,7 +90,7 @@ export default {
             throw new TitanBotError(
                 `Channel not found: ${updatedGiveaway.channelId}`,
                 ErrorTypes.VALIDATION,
-                "Could not find the channel where the giveaway was hosted. The giveaway state has been updated.",
+                "Không tìm thấy kênh nơi quà tặng được tổ chức. Trạng thái quà tặng đã được cập nhật.",
                 { channelId: updatedGiveaway.channelId, messageId }
             );
         }
@@ -106,7 +106,7 @@ export default {
             throw new TitanBotError(
                 `Message not found: ${messageId}`,
                 ErrorTypes.VALIDATION,
-                "Could not find the giveaway message. The giveaway state has been updated.",
+                "Không tìm thấy tin nhắn quà tặng. Trạng thái quà tặng đã được cập nhật.",
                 { messageId, channelId: updatedGiveaway.channelId }
             );
         }
@@ -121,7 +121,7 @@ export default {
         const newRow = createGiveawayButtons(true);
 
         await message.edit({
-            content: "🎉 **GIVEAWAY ENDED** 🎉",
+            content: "🎉 **QUÀ TẶNG ĐÃ KẾT THÚC** 🎉",
             embeds: [newEmbed],
             components: [newRow],
         });
@@ -131,7 +131,7 @@ export default {
                 .map((id) => `<@${id}>`)
                 .join(",");
             const winnerPingMsg = await channel.send({
-                content: `🎉 CONGRATULATIONS ${winnerMentions}! You won the **${updatedGiveaway.prize}** giveaway! Please contact the host <@${updatedGiveaway.hostId}> to claim your prize.`,
+                content: `🎉 CHÚC MỪNG ${winnerMentions}! Bạn đã thắng quà tặng **${updatedGiveaway.prize}**! Vui lòng liên hệ người tổ chức <@${updatedGiveaway.hostId}> để nhận phần thưởng.`,
             });
             updatedGiveaway.winnerPingMessageId = winnerPingMsg.id;
             await saveGiveaway(interaction.client, interaction.guildId, updatedGiveaway);
@@ -150,7 +150,7 @@ export default {
                         fields: [
                             {
                                 name: 'Prize',
-                                value: updatedGiveaway.prize || 'Mystery Prize!',
+                                value: updatedGiveaway.prize || 'Phần thưởng bí ẩn!',
                                 inline: true
                             },
                             {
@@ -159,7 +159,7 @@ export default {
                                 inline: false
                             },
                             {
-                                name: 'Entries',
+                                name: 'Lượt tham gia',
                                 value: endResult.participantCount.toString(),
                                 inline: true
                             }
@@ -171,7 +171,7 @@ export default {
             }
         } else {
             await channel.send({
-                content: `The giveaway for **${updatedGiveaway.prize}** has ended with no valid entries.`,
+                content: `Quà tặng **${updatedGiveaway.prize}** đã kết thúc nhưng không có lượt tham gia hợp lệ.`,
             });
             logger.info(`Giveaway ended with no winners: ${messageId}`);
         }
@@ -181,8 +181,8 @@ export default {
         return InteractionHelper.safeReply(interaction, {
             embeds: [
                 successEmbed(
-                    "Giveaway Ended ✅",
-                    `Successfully ended the giveaway for **${updatedGiveaway.prize}** in ${channel}. Selected ${winners.length} winner(s) from ${endResult.participantCount} entries.`,
+                    "Quà tặng đã kết thúc ✅",
+                    `Đã kết thúc quà tặng **${updatedGiveaway.prize}** tại ${channel}. Đã chọn ${winners.length} người thắng trong ${endResult.participantCount} lượt tham gia.`,
                 ),
             ],
             flags: MessageFlags.Ephemeral,

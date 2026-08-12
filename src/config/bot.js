@@ -61,9 +61,9 @@ export const botConfig = {
   applications: {
     // Default questions shown when someone fills out an application.
     defaultQuestions: [
-      { question: "What is your name?", required: true },
-      { question: "How old are you?", required: true },
-      { question: "Why do you want to join?", required: true },
+      { question: "Tên của bạn là gì?", required: true },
+      { question: "Bạn bao nhiêu tuổi?", required: true },
+      { question: "Vì sao bạn muốn tham gia?", required: true },
     ],
 
     // Embed colors by application status.
@@ -224,27 +224,27 @@ export const botConfig = {
       none: {
         emoji: "⚪",
         color: "#95A5A6",
-        label: "None",
+        label: "Không có",
       },
       low: {
         emoji: "🟢",
         color: "#2ECC71",
-        label: "Low",
+        label: "Thấp",
       },
       medium: {
         emoji: "🟡",
         color: "#F1C40F",
-        label: "Medium",
+        label: "Trung bình",
       },
       high: {
         emoji: "🔴",
         color: "#E74C3C",
-        label: "High",
+        label: "Cao",
       },
       urgent: {
         emoji: "🚨",
         color: "#E91E63",
-        label: "Urgent",
+        label: "Khẩn cấp",
       },
     },
 
@@ -302,10 +302,10 @@ export const botConfig = {
   // =========================
   verification: {
     // Message shown when posting the verification panel.
-    defaultMessage: "Click the button below to verify yourself and gain access to the server!",
+    defaultMessage: "Nhấn nút bên dưới để xác minh danh tính và nhận quyền truy cập vào máy chủ!",
 
     // Text on the verification button.
-    defaultButtonText: "Verify",
+    defaultButtonText: "Xác minh",
 
     // Automatic verification behavior.
     autoVerify: {
@@ -332,9 +332,9 @@ export const botConfig = {
 
       // Human-readable descriptions for each criteria mode.
       criteria: {
-        account_age: "Account must be older than specified days",
-        server_size: "All users if server has less than 1000 members",
-        none: "All users immediately"
+        account_age: "Tài khoản phải có tuổi đời lớn hơn số ngày đã đặt",
+        server_size: "Tất cả người dùng nếu máy chủ có ít hơn 1000 thành viên",
+        none: "Tất cả người dùng ngay lập tức"
       }
     },
 
@@ -372,11 +372,11 @@ export const botConfig = {
     // Welcome template posted when a user joins.
     // Placeholders: {user}, {server}, {memberCount}
     defaultWelcomeMessage:
-      "Welcome {user} to {server}! We now have {memberCount} members!",
+      "Chào mừng {user} đến với {server}! Máy chủ hiện có {memberCount} thành viên!",
     // Goodbye template posted when a user leaves.
     // Placeholders: {user}, {memberCount}
     defaultGoodbyeMessage:
-      "{user} has left the server. We now have {memberCount} members.",
+      "{user} đã rời khỏi máy chủ. Máy chủ hiện có {memberCount} thành viên.",
     // Channel ID for welcome messages.
     defaultWelcomeChannel: null,
     // Channel ID for goodbye messages.
@@ -389,8 +389,8 @@ export const botConfig = {
   counters: {
     defaults: {
       // Default naming/description templates for counter entries.
-      name: "{name} Counter",
-      description: "Server {name} counter",
+      name: "Bộ đếm {name}",
+      description: "Bộ đếm {name} của máy chủ",
       // Channel type used for counters (typically "voice").
       type: "voice",
       // Channel name format. `{count}` is replaced automatically.
@@ -404,26 +404,26 @@ export const botConfig = {
     },
     messages: {
       // Default response messages for counter actions.
-      created: "✅ Created counter **{name}**",
-      deleted: "🗑️ Deleted counter **{name}**",
-      updated: "🔄 Updated counter **{name}**",
+      created: "✅ Đã tạo bộ đếm **{name}**",
+      deleted: "🗑️ Đã xóa bộ đếm **{name}**",
+      updated: "🔄 Đã cập nhật bộ đếm **{name}**",
     },
     types: {
       // Built-in counter types and how each count is calculated.
       members: {
-        name: "👥 Members",
-        description: "Total members in the server",
+        name: "👥 Thành viên",
+        description: "Tổng số thành viên trong máy chủ",
         getCount: (guild) => guild.memberCount.toString(),
       },
       bots: {
-        name: "🤖 Bots",
-        description: "Total bot accounts in the server",
+        name: "🤖 Bot",
+        description: "Tổng số tài khoản bot trong máy chủ",
         getCount: (guild) =>
           guild.members.cache.filter((m) => m.user.bot).size.toString(),
       },
       members_only: {
-        name: "👤 Humans",
-        description: "Total human members (non-bots)",
+        name: "👤 Người dùng",
+        description: "Tổng số thành viên là người (không phải bot)",
         getCount: (guild) =>
           guild.members.cache.filter((m) => !m.user.bot).size.toString(),
       },
@@ -434,13 +434,13 @@ export const botConfig = {
   // GENERIC BOT MESSAGES
   // =========================
   messages: {
-    noPermission: "You do not have permission to use this command.",
-    cooldownActive: "Please wait {time} before using this command again.",
-    errorOccurred: "An error occurred while executing this command.",
+    noPermission: "Bạn không có quyền sử dụng lệnh này.",
+    cooldownActive: "Vui lòng đợi {time} trước khi sử dụng lệnh này lần nữa.",
+    errorOccurred: "Đã xảy ra lỗi khi thực hiện lệnh này.",
     missingPermissions:
-      "I am missing required permissions to perform this action.",
-    commandDisabled: "This command has been disabled.",
-    maintenanceMode: "The bot is currently in maintenance mode.",
+      "Mình đang thiếu quyền cần thiết để thực hiện hành động này.",
+    commandDisabled: "Lệnh này đã bị tắt.",
+    maintenanceMode: "Bot hiện đang trong chế độ bảo trì.",
   },
 
   // =========================

@@ -14,7 +14,7 @@ const BACK_BUTTON_ID = "help-back-to-main";
 const ALL_COMMANDS_ID = "help-all-commands";
 const PAGINATION_PREFIX = "help-page";
 const CATEGORY_SELECT_ID = "help-category-select";
-const FOOTER_TEXT = "Made with ❤️";
+const FOOTER_TEXT = "Được tạo với ❤️";
 const SUBCOMMAND_TYPE = 1;
 const SUBCOMMAND_GROUP_TYPE = 2;
 
@@ -172,8 +172,8 @@ async function createCategoryCommandsMenu(category, client) {
     const embed = createEmbed({
         title: `${icon} ${categoryName} Commands`,
         description: categoryCommands.length > 0
-            ? `Click any command mention below to use it.`
-            : `No commands found in the **${categoryName}** category.`
+            ? `Nhấn vào bất kỳ lệnh nào bên dưới để sử dụng nó.`
+            : `Không tìm thấy lệnh nào trong danh mục **${categoryName}**.`
     });
 
     if (categoryCommands.length > 0) {
@@ -190,7 +190,7 @@ async function createCategoryCommandsMenu(category, client) {
         const maxLength = 1000;
         if (commandMentions.length <= maxLength) {
             embed.addFields({
-                name: "Commands",
+                name: "Lệnh",
                 value: commandMentions,
                 inline: false,
             });
@@ -211,7 +211,7 @@ async function createCategoryCommandsMenu(category, client) {
 
             chunks.forEach((chunk, index) => {
                 embed.addFields({
-                    name: `Commands (Part ${index + 1})`,
+                    name: `Lệnh (Phần ${index + 1})`,
                     value: chunk,
                     inline: false,
                 });
@@ -224,7 +224,7 @@ async function createCategoryCommandsMenu(category, client) {
 
     const backButton = createButton(
         BACK_BUTTON_ID,
-        "Back",
+        "Quay Lại",
         "primary",
         "⬅️",
         false,
@@ -307,8 +307,8 @@ export async function createAllCommandsMenu(page = 1, client) {
     const pageCommands = allCommands.slice(startIndex, endIndex);
 
     const embed = createEmbed({
-        title: "📋 All Commands",
-        description: `Browse every available command in one list. Use the page buttons below to move through the full set.`
+        title: "📋 Tất Cả Lệnh",
+        description: `Xem tất cả lệnh có sẵn trong một danh sách. Dùng các nút chuyển trang bên dưới để xem toàn bộ.`
     });
 
     embed.setFooter({ text: FOOTER_TEXT });
@@ -334,7 +334,7 @@ export async function createAllCommandsMenu(page = 1, client) {
             if (!chunk) continue;
 
             embed.addFields({
-                name: i === 0 ? `Commands (Page ${page})` : "Commands (cont.)",
+                name: i === 0 ? `Lệnh (Trang ${page})` : "Lệnh (tiếp)",
                 value: chunk,
                 inline: columnCount > 1,
             });
@@ -354,7 +354,7 @@ export async function createAllCommandsMenu(page = 1, client) {
 
     const backButton = createButton(
         BACK_BUTTON_ID,
-        "Back",
+        "Quay Lại",
         "primary",
         "⬅️",
         false,

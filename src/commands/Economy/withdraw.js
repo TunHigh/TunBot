@@ -7,11 +7,11 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('withdraw')
-        .setDescription('Withdraw money from your bank to your wallet')
+        .setDescription('Rút tiền từ ngân hàng về ví tiền')
         .addIntegerOption(option =>
             option
                 .setName('amount')
-                .setDescription('Amount to withdraw')
+                .setDescription('Số tiền muốn rút')
                 .setRequired(true)
                 .setMinValue(1)
         ),
@@ -40,7 +40,7 @@ export default {
                 throw createError(
                     "Invalid withdrawal amount",
                     ErrorTypes.VALIDATION,
-                    "You must withdraw a positive amount.",
+                    "Bạn phải rút một số tiền dương.",
                     { amount: withdrawAmount, userId }
                 );
             }
@@ -53,7 +53,7 @@ export default {
                 throw createError(
                     "Empty bank account",
                     ErrorTypes.VALIDATION,
-                    "Your bank account is empty.",
+                    "Tài khoản ngân hàng của bạn đang trống.",
                     { userId, bankBalance: userData.bank }
                 );
             }
@@ -64,17 +64,17 @@ export default {
             await setEconomyData(client, guildId, userId, userData);
 
             const embed = successEmbed(
-                'Withdrawal Successful',
-                `You successfully withdrew **$${withdrawAmount.toLocaleString()}** from your bank.`
+                'Rút Tiền Thành Công',
+                `Bạn đã rút **$${withdrawAmount.toLocaleString()}** từ ngân hàng thành công.`
             )
                 .addFields(
                     {
-                        name: "New Cash Balance",
+                        name: "Số dư tiền mặt mới",
                         value: `$${userData.wallet.toLocaleString()}`,
                         inline: true,
                     },
                     {
-                        name: "New Bank Balance",
+                        name: "Số dư ngân hàng mới",
                         value: `$${userData.bank.toLocaleString()}`,
                         inline: true,
                     },

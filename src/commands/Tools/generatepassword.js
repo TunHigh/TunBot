@@ -8,24 +8,24 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('generatepassword')
-        .setDescription('Generate a strong, random password')
+        .setDescription('Tạo một mật khẩu mạnh, ngẫu nhiên')
         .addIntegerOption(option =>
             option.setName('length')
-                .setDescription('Password length (default: 16, max: 50)')
+                .setDescription('Độ dài mật khẩu (mặc định: 16, tối đa: 50)')
                 .setMinValue(8)
                 .setMaxValue(50)
                 .setRequired(false))
         .addBooleanOption(option =>
             option.setName('uppercase')
-                .setDescription('Include uppercase letters (A-Z)')
+                .setDescription('Bao gồm chữ in hoa (A-Z)')
                 .setRequired(false))
         .addBooleanOption(option =>
             option.setName('numbers')
-                .setDescription('Include numbers (0-9)')
+                .setDescription('Bao gồm chữ số (0-9)')
                 .setRequired(false))
         .addBooleanOption(option =>
             option.setName('symbols')
-                .setDescription('Include symbols (!@#$%^&*)')
+                .setDescription('Bao gồm ký tự đặc biệt (!@#$%^&*)')
                 .setRequired(false)),
 
     async execute(interaction) {
@@ -48,7 +48,7 @@ export default {
         const includeSymbols = interaction.options.getBoolean('symbols') ?? true;
 
         if (length < 8 || length > 50) {
-            await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: `Password must be 8-50 characters. You provided: ${length}` });
+            await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: `Mật khẩu phải dài 8-50 ký tự. Bạn đã cung cấp: ${length}` });
             return;
         }
 
@@ -89,7 +89,7 @@ export default {
             password = password.substring(0, randomIndex) + randomSymbol + password.substring(randomIndex + 1);
         }
 
-        let strength = 'Weak';
+        let strength = 'Yếu';
         let strengthEmoji = '🔴';
         let strengthColor = getColor('error');
 
@@ -114,29 +114,29 @@ export default {
         if (hasSymbol) score *= 1.3;
 
         if (score > 80) {
-            strength = 'Very Strong';
+            strength = 'Rất Mạnh';
             strengthEmoji = '🟢';
             strengthColor = getColor('success');
         } else if (score > 60) {
-            strength = 'Strong';
+            strength = 'Mạnh';
             strengthEmoji = '🟢';
             strengthColor = getColor('success');
         } else if (score > 40) {
-            strength = 'Good';
+            strength = 'Khá';
             strengthEmoji = '🟡';
             strengthColor = getColor('warning');
         } else if (score > 20) {
-            strength = 'Weak';
+            strength = 'Yếu';
             strengthEmoji = '🟠';
             strengthColor = getColor('warning');
         }
 
         const embed = successEmbed(
-            '🔑 Generated Password',
-            `**Password:** ||\`${password}\`||\n` +
-            `**Length:** ${password.length} characters\n` +
-            `**Strength:** ${strengthEmoji} ${strength}\n` +
-            `**Contains:** ${hasLower ? 'Lowercase' : ''}${hasUpper ? ', Uppercase' : ''}${hasNumber ? ', Numbers' : ''}${hasSymbol ? ', Symbols' : ''}`
+            '🔑 Mật Khẩu Đã Tạo',
+            `**Mật khẩu:** ||\`${password}\`||\n` +
+            `**Độ dài:** ${password.length} ký tự\n` +
+            `**Độ mạnh:** ${strengthEmoji} ${strength}\n` +
+            `**Gồm có:** ${hasLower ? 'Chữ thường' : ''}${hasUpper ? ', Chữ hoa' : ''}${hasNumber ? ', Chữ số' : ''}${hasSymbol ? ', Ký tự đặc biệt' : ''}`
         ).setColor(strengthColor);
 
         await InteractionHelper.safeEditReply(interaction, {

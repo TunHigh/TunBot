@@ -29,7 +29,7 @@ function requireTicket(ticketData, channel) {
   if (!ticketData) {
     ticketUserError(
       'Not a ticket channel',
-      'This is not a ticket channel.',
+      'Đây không phải là kênh ticket.',
       ErrorTypes.VALIDATION,
       { channelId: channel?.id, guildId: channel?.guild?.id }
     );
@@ -53,18 +53,18 @@ function buildTicketControlRow({ claimedBy = null } = {}) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('ticket_claim')
-      .setLabel(claimedBy ? 'Claimed' : 'Claim')
+      .setLabel(claimedBy ? 'Đã nhận' : 'Nhận')
       .setStyle(claimedBy ? ButtonStyle.Secondary : ButtonStyle.Primary)
       .setEmoji('🙋')
       .setDisabled(!!claimedBy),
     new ButtonBuilder()
       .setCustomId('ticket_pin')
-      .setLabel('Pin')
+      .setLabel('Ghim')
       .setStyle(ButtonStyle.Secondary)
       .setEmoji('📌'),
     new ButtonBuilder()
       .setCustomId('ticket_close')
-      .setLabel('Close')
+      .setLabel('Đóng')
       .setStyle(ButtonStyle.Danger)
       .setEmoji('🔒'),
   );
@@ -75,11 +75,11 @@ export const getUserTicketCount = wrapServiceBoundary(async function getUserTick
 }, {
   service: TICKET_SERVICE,
   operation: 'getUserTicketCount',
-  userMessage: 'Failed to count open tickets.',
+  userMessage: 'Không thể đếm số ticket đang mở.',
   context: {},
 });
 
-export async function createTicket(guild, member, categoryId, reason = 'No reason provided', priority = 'none') {
+export async function createTicket(guild, member, categoryId, reason = 'Không có lý do', priority = 'none') {
   try {
     const config = await getGuildConfig(guild.client, guild.id);
     const ticketConfig = config.tickets || {};
@@ -90,7 +90,7 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
     if (currentTicketCount >= maxTicketsPerUser) {
       ticketUserError(
         `Max open tickets reached for ${member.id}`,
-        `You have reached the maximum number of open tickets (${maxTicketsPerUser}). Please close your existing tickets before creating a new one.`,
+        `Bạn đã đạt giới hạn số ticket đang mở (${maxTicketsPerUser}). Vui lòng đóng các ticket hiện tại trước khi tạo ticket mới.`,
         ErrorTypes.VALIDATION,
         { guildId: guild.id, userId: member.id, operation: 'createTicket' }
       );
@@ -174,12 +174,12 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
     
     const embed = createEmbed({
       title: `Ticket #${ticketNumber}`,
-      description: `${member.toString()}, thanks for creating a ticket!\n\n**Reason:** ${reason}\n**Priority:** ${priorityInfo.emoji} ${priorityInfo.label}`,
+      description: `${member.toString()}, cảm ơn bạn đã tạo ticket!\n\n**Lý do:** ${reason}\n**Ưu tiên:** ${priorityInfo.emoji} ${priorityInfo.label}`,
       color: priorityInfo.color,
       fields: [
-        { name: 'Status', value: '🟢 Open', inline: true },
-        { name: 'Claimed By', value: 'Not claimed', inline: true },
-        { name: 'Created', value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: true },
+        { name: 'Status', value: '🟢 Đang mở', inline: true },
+        { name: 'Claimed By', value: 'Chưa có ai nhận', inline: true },
+        { name: 'Tạo lúc', value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: true },
       ],
     });
     
@@ -189,12 +189,12 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
       row.addComponents(
         new ButtonBuilder()
           .setCustomId('ticket_priority:low')
-          .setLabel('Low')
+          .setLabel('Thấp')
           .setStyle(ButtonStyle.Secondary)
           .setEmoji('🔵'),
         new ButtonBuilder()
           .setCustomId('ticket_priority:high')
-          .setLabel('High')
+          .setLabel('Cao')
           .setStyle(ButtonStyle.Danger)
           .setEmoji('🔴')
       );
@@ -232,11 +232,11 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
     return { channel, ticketData };
     
   } catch (error) {
-    rethrowTicketError(error, 'createTicket', 'Failed to create ticket. Please try again in a moment.', { guildId: guild?.id, userId: member?.id });
+    rethrowTicketError(error, 'createTicket', 'Không thể tạo ticket. Vui lòng thử lại sau ít phút nữa.', { guildId: guild?.id, userId: member?.id });
   }
 }
 
-export async function closeTicket(channel, closer, reason = 'No reason provided') {
+export async function closeTicket(channel, closer, reason = 'Không có lý do') {
   try {
     const ticketData = requireTicket(await getTicketData(channel.guild.id, channel.id), channel);
     
@@ -273,20 +273,20 @@ export async function closeTicket(channel, closer, reason = 'No reason provided'
         const ticketCreator = await channel.client.users.fetch(ticketData.userId).catch(() => null);
         if (ticketCreator) {
           const dmEmbed = createEmbed({
-            title: '🎫 Your Ticket Has Been Closed',
-            description: `Your ticket **${channel.name}** has been closed.\n\n**Reason:** ${reason}\n**Closed by:** ${closer.tag}\n**Closed at:** <t:${Math.floor(Date.now() / 1000)}:F>\n\nThank you for using our support system! If you have any further questions, feel free to create a new ticket.`,
+            title: '🎫 Ticket Của Bạn Đã Được Đóng',
+            description: `Ticket **${channel.name}** của bạn đã được đóng.\n\n**Lý do:** ${reason}\n**Người đóng:** ${closer.tag}\n**Thời gian đóng:** <t:${Math.floor(Date.now() / 1000)}:F>\n\nCảm ơn bạn đã sử dụng hệ thống hỗ trợ của chúng tôi! Nếu còn thắc mắc gì, hãy tạo một ticket mới nhé.`,
             color: '#e74c3c',
-            footer: { text: `Ticket ID: ${ticketData.id}` }
+            footer: { text: `Mã Ticket: ${ticketData.id}` }
           });
 
           await ticketCreator.send({ embeds: [dmEmbed] });
 
           try {
             const feedbackEmbed = createEmbed({
-              title: '⭐ How was your support experience?',
-              description: `We'd love to know how we did with **${channel.name}**.\nSelect a rating below — it only takes a second!`,
+              title: '⭐ Bạn thấy trải nghiệm hỗ trợ của chúng tôi thế nào?',
+              description: `Chúng tôi rất muốn biết bạn đánh giá thế nào về **${channel.name}**.\nHãy chọn số sao bên dưới — chỉ mất vài giây thôi!`,
               color: '#F1C40F',
-              footer: { text: 'Your feedback helps us improve.' },
+              footer: { text: 'Ý kiến của bạn giúp chúng tôi cải thiện hơn.' },
             });
 
             const base = `ticket_feedback:${channel.guild.id}:${channel.id}`;
@@ -300,11 +300,11 @@ export async function closeTicket(channel, closer, reason = 'No reason provided'
             const declineRow = new ActionRowBuilder().addComponents(
               new ButtonBuilder()
                 .setCustomId(`ticket_feedback_comment:${channel.guild.id}:${channel.id}`)
-                .setLabel('✍️ Add Comment')
+                .setLabel('✍️ Thêm bình luận')
                 .setStyle(ButtonStyle.Secondary),
               new ButtonBuilder()
                 .setCustomId(`ticket_feedback_decline:${channel.guild.id}:${channel.id}`)
-                .setLabel('❌ No thanks')
+                .setLabel('❌ Không, cảm ơn')
                 .setStyle(ButtonStyle.Secondary),
             );
 
@@ -354,12 +354,12 @@ export async function closeTicket(channel, closer, reason = 'No reason provided'
       const statusField = embed.fields?.find(f => f.name === 'Status');
       
       if (statusField) {
-        statusField.value = '🔴 Closed';
+        statusField.value = '🔴 Đã đóng';
       }
       
       const updatedEmbed = createEmbed({
         title: embed.title || 'Ticket',
-        description: embed.description || 'Ticket discussion',
+        description: embed.description || 'Nội dung ticket',
         color: '#e74c3c',
         fields: embed.fields || [],
         footer: embed.footer
@@ -373,20 +373,20 @@ components: []
     
     const closeEmbed = createEmbed({
       title: 'Ticket Closed',
-      description: `This ticket has been closed by ${closer}.\n**Reason:** ${reason}${dmOnClose ? '\n\n📩 A DM has been sent to the ticket creator.' : ''}`,
+      description: `Ticket này đã được đóng bởi ${closer}.\n**Lý do:** ${reason}${dmOnClose ? '\n\n📩 Bot đã gửi tin nhắn riêng cho người tạo ticket.' : ''}`,
       color: '#e74c3c',
-      footer: { text: `Ticket ID: ${ticketData.id}` }
+      footer: { text: `Mã Ticket: ${ticketData.id}` }
     });
     
     const controlRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('ticket_reopen')
-        .setLabel('Reopen Ticket')
+        .setLabel('Mở Lại Ticket')
         .setStyle(ButtonStyle.Success)
         .setEmoji('🔓'),
       new ButtonBuilder()
         .setCustomId('ticket_delete')
-        .setLabel('Delete Ticket')
+        .setLabel('Xóa Ticket')
         .setStyle(ButtonStyle.Danger)
         .setEmoji('🗑️')
     );
@@ -414,7 +414,7 @@ components: []
     return ticketData;
     
   } catch (error) {
-    rethrowTicketError(error, 'closeTicket', 'Failed to close ticket. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, closerId: closer?.id });
+    rethrowTicketError(error, 'closeTicket', 'Không thể đóng ticket. Vui lòng thử lại sau ít phút nữa.', { guildId: channel?.guild?.id, channelId: channel?.id, closerId: closer?.id });
   }
 }
 
@@ -425,7 +425,7 @@ export async function claimTicket(channel, claimer) {
     if (ticketData.claimedBy) {
       ticketUserError(
         'Ticket already claimed',
-        `This ticket is already claimed by <@${ticketData.claimedBy}>`,
+        `Ticket này đã được nhận bởi <@${ticketData.claimedBy}>`,
         ErrorTypes.VALIDATION,
         { channelId: channel.id, claimedBy: ticketData.claimedBy, operation: 'claimTicket' }
       );
@@ -460,14 +460,14 @@ export async function claimTicket(channel, claimer) {
     
     const claimEmbed = createEmbed({
       title: 'Ticket Claimed',
-      description: `🎉 ${claimer} has claimed this ticket!`,
+      description: `🎉 ${claimer} đã nhận ticket này!`,
       color: '#2ecc71'
     });
     
     const unclaimRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('ticket_unclaim')
-        .setLabel('Unclaim')
+        .setLabel('Hủy nhận')
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('🔓')
     );
@@ -501,7 +501,7 @@ export async function claimTicket(channel, claimer) {
     return ticketData;
     
   } catch (error) {
-    rethrowTicketError(error, 'claimTicket', 'Failed to claim ticket. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, claimerId: claimer?.id });
+    rethrowTicketError(error, 'claimTicket', 'Không thể nhận ticket. Vui lòng thử lại sau ít phút nữa.', { guildId: channel?.guild?.id, channelId: channel?.id, claimerId: claimer?.id });
   }
 }
 
@@ -512,7 +512,7 @@ export async function reopenTicket(channel, reopener) {
     if (ticketData.status !== 'closed') {
       ticketUserError(
         'Ticket not closed',
-        'This ticket is not currently closed.',
+        'Ticket này hiện không ở trạng thái đóng.',
         ErrorTypes.VALIDATION,
         { channelId: channel.id, operation: 'reopenTicket' }
       );
@@ -573,7 +573,7 @@ export async function reopenTicket(channel, reopener) {
       const statusField = embed.fields?.find(f => f.name === 'Status');
       
       if (statusField) {
-        statusField.value = '🟢 Open';
+        statusField.value = '🟢 Đang mở';
       }
       
       const row = buildTicketControlRow({ claimedBy: ticketData.claimedBy });
@@ -585,8 +585,8 @@ export async function reopenTicket(channel, reopener) {
     }
     
     const reopenEmbed = createEmbed({
-      title: 'Ticket Reopened',
-      description: `🔓 ${reopener} has reopened this ticket!`,
+      title: 'Ticket Đã Mở Lại',
+      description: `🔓 ${reopener} đã mở lại ticket này!`,
       color: '#2ecc71'
     });
 
@@ -606,7 +606,7 @@ export async function reopenTicket(channel, reopener) {
     return { ticketData, movedToOpenCategory, openCategoryMoveFailed };
     
   } catch (error) {
-    rethrowTicketError(error, 'reopenTicket', 'Failed to reopen ticket. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, reopenerId: reopener?.id });
+    rethrowTicketError(error, 'reopenTicket', 'Không thể mở lại ticket. Vui lòng thử lại sau ít phút nữa.', { guildId: channel?.guild?.id, channelId: channel?.id, reopenerId: reopener?.id });
   }
 }
 
@@ -648,8 +648,8 @@ async function generateTranscript(channel) {
 
     const rows = messages.map((msg) => {
       const ts = new Date(msg.createdTimestamp).toISOString().replace('T', ' ').slice(0, 19);
-      const author = escape(msg.author?.tag ?? msg.author?.username ?? 'Unknown');
-      const content = escape(msg.content || (msg.embeds.length ? '[embed]' : '[attachment]'));
+      const author = escape(msg.author?.tag ?? msg.author?.username ?? 'Không xác định');
+      const content = escape(msg.content || (msg.embeds.length ? '[tin nhắn nhúng]' : '[tệp đính kèm]'));
       return `<tr><td class="ts">${ts}</td><td class="author">${author}</td><td class="msg">${content}</td></tr>`;
     }).join('\n');
 
@@ -658,7 +658,7 @@ async function generateTranscript(channel) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transcript – #${escape(channel.name)}</title>
+<title>Lịch sử ticket – #${escape(channel.name)}</title>
 <style>
 body{font-family:sans-serif;background:#36393f;color:#dcddde;margin:0;padding:16px}
 h1{color:#fff;font-size:1.2rem;margin-bottom:8px}
@@ -671,10 +671,10 @@ td{padding:4px 8px;border-bottom:1px solid #40444b;vertical-align:top}
 </style>
 </head>
 <body>
-<h1>📜 Transcript – #${escape(channel.name)}</h1>
-<p style="color:#72767d">${messages.length} message(s) exported on ${new Date().toUTCString()}</p>
+<h1>📜 Lịch sử ticket – #${escape(channel.name)}</h1>
+<p style="color:#72767d">${messages.length} tin nhắn được xuất lúc ${new Date().toUTCString()}</p>
 <table>
-<thead><tr><th>Timestamp (UTC)</th><th>Author</th><th>Message</th></tr></thead>
+<thead><tr><th>Thời gian (UTC)</th><th>Người gửi</th><th>Tin nhắn</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>
@@ -710,10 +710,10 @@ export async function deleteTicket(channel, deleter) {
     const ticketData = requireTicket(await getTicketData(channel.guild.id, channel.id), channel);
     
     const deleteEmbed = createEmbed({
-      title: 'Ticket Deleted',
-      description: `🗑️ This ticket will be permanently deleted in ${TICKET_DELETE_DELAY_SECONDS} seconds.`,
+      title: 'Ticket Đã Xóa',
+      description: `🗑️ Ticket này sẽ bị xóa vĩnh viễn sau ${TICKET_DELETE_DELAY_SECONDS} giây.`,
       color: '#e74c3c',
-      footer: { text: `Ticket ID: ${ticketData.id}` }
+      footer: { text: `Mã Ticket: ${ticketData.id}` }
     });
     
     await channel.send({ embeds: [deleteEmbed] });
@@ -787,14 +787,14 @@ export async function deleteTicket(channel, deleter) {
                 
                 const transcriptEmbed = buildStandardLogEmbed({
                   color: 0x3498db,
-                  title: 'Ticket Transcript',
+                  title: 'Lịch Sử Ticket',
                   description: [
                     formatLogLine('Ticket', `#${ticketData.id}`),
-                    formatLogLine('Channel', `#${channel.name}`),
-                    formatLogLine('Generated', `<t:${Math.floor(Date.now() / 1000)}:F>`),
+                    formatLogLine('Kênh', `#${channel.name}`),
+                    formatLogLine('Tạo lúc', `<t:${Math.floor(Date.now() / 1000)}:F>`),
                   ].join('\n'),
                   footer: deleter?.username
-                    ? { text: `Deleted by ${deleter.username}`, iconURL: deleter.displayAvatarURL?.() }
+                    ? { text: `Đã xóa bởi ${deleter.username}`, iconURL: deleter.displayAvatarURL?.() }
                     : undefined,
                   timestamp: true,
                 });
@@ -852,7 +852,7 @@ export async function deleteTicket(channel, deleter) {
     return ticketData;
     
   } catch (error) {
-    rethrowTicketError(error, 'deleteTicket', 'Failed to delete ticket. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, deleterId: deleter?.id });
+    rethrowTicketError(error, 'deleteTicket', 'Không thể xóa ticket. Vui lòng thử lại sau ít phút nữa.', { guildId: channel?.guild?.id, channelId: channel?.id, deleterId: deleter?.id });
   }
 }
 
@@ -863,7 +863,7 @@ export async function unclaimTicket(channel, unclaimer) {
     if (!ticketData.claimedBy) {
       ticketUserError(
         'Ticket not claimed',
-        'This ticket is not currently claimed.',
+        'Ticket này hiện chưa được nhận.',
         ErrorTypes.VALIDATION,
         { channelId: channel.id, operation: 'unclaimTicket' }
       );
@@ -872,7 +872,7 @@ export async function unclaimTicket(channel, unclaimer) {
     if (ticketData.claimedBy !== unclaimer.id && !unclaimer.permissions.has(PermissionFlagsBits.ManageChannels)) {
       ticketUserError(
         'Cannot unclaim ticket',
-        'You can only unclaim your own tickets or need Manage Channels permission.',
+        'Bạn chỉ có thể hủy nhận ticket của chính mình hoặc cần quyền Quản lý Kênh.',
         ErrorTypes.PERMISSION,
         { channelId: channel.id, operation: 'unclaimTicket' }
       );
@@ -895,7 +895,7 @@ export async function unclaimTicket(channel, unclaimer) {
       const claimedField = embed.fields?.find(f => f.name === 'Claimed By');
       
       if (claimedField) {
-        claimedField.value = 'Not claimed';
+        claimedField.value = 'Chưa có ai nhận';
       }
       
       const row = buildTicketControlRow();
@@ -914,7 +914,7 @@ export async function unclaimTicket(channel, unclaimer) {
     if (claimMessage) {
       const unclaimEmbed = createEmbed({
         title: 'Ticket Unclaimed',
-        description: `🔓 ${unclaimer} has unclaimed this ticket!`,
+        description: `🔓 ${unclaimer} đã hủy nhận ticket này!`,
         color: '#f39c12'
       });
       
@@ -925,7 +925,7 @@ export async function unclaimTicket(channel, unclaimer) {
     } else {
       const unclaimEmbed = createEmbed({
         title: 'Ticket Unclaimed',
-        description: `🔓 ${unclaimer} has unclaimed this ticket!`,
+        description: `🔓 ${unclaimer} đã hủy nhận ticket này!`,
         color: '#f39c12'
       });
       
@@ -950,7 +950,7 @@ export async function unclaimTicket(channel, unclaimer) {
     return ticketData;
     
   } catch (error) {
-    rethrowTicketError(error, 'unclaimTicket', 'Failed to unclaim ticket. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, unclaimerId: unclaimer?.id });
+    rethrowTicketError(error, 'unclaimTicket', 'Không thể hủy nhận ticket. Vui lòng thử lại sau ít phút nữa.', { guildId: channel?.guild?.id, channelId: channel?.id, unclaimerId: unclaimer?.id });
   }
 }
 
@@ -966,7 +966,7 @@ export async function updateTicketPriority(channel, priority, updater) {
     if (!priorityInfo) {
       ticketUserError(
       'Invalid priority level',
-      'Invalid priority level.',
+      'Mức ưu tiên không hợp lệ.',
       ErrorTypes.VALIDATION,
       { channelId: channel.id, priority, operation: 'updateTicketPriority' }
     );
@@ -1005,7 +1005,7 @@ export async function updateTicketPriority(channel, priority, updater) {
       
       const updatedEmbed = createEmbed({
         title: embed.title || 'Ticket',
-        description: embed.description?.split('\n**Priority:**')[0] + `\n**Priority:** ${priorityInfo.emoji} ${priorityInfo.label}`,
+        description: embed.description?.split('\n**Ưu tiên:**')[0] + `\n**Ưu tiên:** ${priorityInfo.emoji} ${priorityInfo.label}`,
         color: priorityInfo.color,
         fields: embed.fields || [],
         footer: embed.footer
@@ -1015,8 +1015,8 @@ export async function updateTicketPriority(channel, priority, updater) {
     }
     
     const updateEmbed = createEmbed({
-      title: 'Priority Updated',
-      description: `📊 Ticket priority updated to **${priorityInfo.emoji} ${priorityInfo.label}** by ${updater}`,
+      title: 'Đã Cập Nhật Ưu Tiên',
+      description: `📊 Ưu tiên của ticket đã được cập nhật thành **${priorityInfo.emoji} ${priorityInfo.label}** bởi ${updater}`,
       color: priorityInfo.color
     });
     
@@ -1042,6 +1042,6 @@ export async function updateTicketPriority(channel, priority, updater) {
     return ticketData;
     
   } catch (error) {
-    rethrowTicketError(error, 'updateTicketPriority', 'Failed to update ticket priority. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, updaterId: updater?.id, priority });
+    rethrowTicketError(error, 'updateTicketPriority', 'Không thể cập nhật ưu tiên ticket. Vui lòng thử lại sau ít phút nữa.', { guildId: channel?.guild?.id, channelId: channel?.id, updaterId: updater?.id, priority });
   }
 }

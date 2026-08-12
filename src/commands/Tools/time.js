@@ -6,10 +6,10 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('time')
-        .setDescription('Get the current time in different timezones')
+        .setDescription('Xem giờ hiện tại ở các múi giờ khác nhau')
         .addStringOption(option =>
             option.setName('timezone')
-                .setDescription('The timezone to display (e.g., UTC, America/New_York)')
+                .setDescription('Múi giờ muốn xem (vd: UTC, America/New_York)')
                 .setRequired(false)),
 
     async execute(interaction) {
@@ -35,7 +35,7 @@ export default {
                     logger.warn(`Invalid timezone requested: ${timezone}`);
                     await replyUserError(interaction, {
                         type: ErrorTypes.VALIDATION,
-                        message: 'Invalid timezone. Please use a valid timezone identifier (e.g., UTC, America/New_York, Europe/London)',
+                        message: 'Múi giờ không hợp lệ. Vui lòng dùng mã múi giờ đúng (vd: UTC, America/New_York, Europe/London)',
                     });
                     return;
                 }
@@ -44,7 +44,7 @@ export default {
                 const unixTimestamp = Math.floor(now.getTime() / 1000);
 
                 const embed = successEmbed(
-                    '🕒 Current Time',
+                    '🕒 Giờ Hiện Tại',
                     `**${timezone}:** ${timeString}\n` +
                     `**Unix Timestamp:** \`${unixTimestamp}\`\n` +
                     `**ISO String:** \`${now.toISOString()}\``
@@ -52,7 +52,7 @@ export default {
 
                 await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
             },
-            'Failed to get current time. Please try again.',
+            'Không thể lấy giờ hiện tại. Vui lòng thử lại.',
             {
                 autoDefer: true,
                 deferOptions: { flags: MessageFlags.Ephemeral }

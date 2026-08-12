@@ -32,7 +32,7 @@ export function validateChannelNameTemplate(template) {
         throw new TitanBotError(
             'Invalid channel template: must be a non-empty string',
             ErrorTypes.VALIDATION,
-            'Channel name template must be valid text.'
+            'Mẫu tên kênh phải là văn bản hợp lệ.'
         );
     }
 
@@ -42,7 +42,7 @@ export function validateChannelNameTemplate(template) {
         throw new TitanBotError(
             'Channel template exceeds maximum length',
             ErrorTypes.VALIDATION,
-            `Channel name template cannot exceed ${CHANNEL_NAME_MAX_LENGTH} characters.`
+            `Mẫu tên kênh không được vượt quá ${CHANNEL_NAME_MAX_LENGTH} ký tự.`
         );
     }
 
@@ -50,7 +50,7 @@ export function validateChannelNameTemplate(template) {
         throw new TitanBotError(
             'Channel template contains forbidden characters',
             ErrorTypes.VALIDATION,
-            'Channel template cannot contain @, #, :, or backtick characters.'
+            'Mẫu tên kênh không được chứa các ký tự @, #, : hoặc backtick.'
         );
     }
 
@@ -60,7 +60,7 @@ export function validateChannelNameTemplate(template) {
             throw new TitanBotError(
                 'Channel template contains unknown placeholders',
                 ErrorTypes.VALIDATION,
-                `Unknown placeholder: ${placeholder}. Allowed placeholders are ${Array.from(ALLOWED_TEMPLATE_PLACEHOLDERS).join(', ')}`
+                `Placeholder không hợp lệ: ${placeholder}. Các placeholder được phép là ${Array.from(ALLOWED_TEMPLATE_PLACEHOLDERS).join(', ')}`
             );
         }
     }
@@ -75,7 +75,7 @@ export function validateBitrate(bitrate) {
         throw new TitanBotError(
             'Bitrate must be a valid number',
             ErrorTypes.VALIDATION,
-            'Please enter a valid number for bitrate.'
+            'Vui lòng nhập một số hợp lệ cho bitrate.'
         );
     }
 
@@ -83,7 +83,7 @@ export function validateBitrate(bitrate) {
         throw new TitanBotError(
             'Bitrate out of valid range',
             ErrorTypes.VALIDATION,
-            'Bitrate must be between 8 and 384 kbps.'
+            'Bitrate phải nằm trong khoảng từ 8 đến 384 kbps.'
         );
     }
 
@@ -97,7 +97,7 @@ export function validateUserLimit(limit) {
         throw new TitanBotError(
             'User limit must be a valid number',
             ErrorTypes.VALIDATION,
-            'Please enter a valid number for user limit.'
+            'Vui lòng nhập một số hợp lệ cho giới hạn người dùng.'
         );
     }
 
@@ -105,7 +105,7 @@ export function validateUserLimit(limit) {
         throw new TitanBotError(
             'User limit out of valid range',
             ErrorTypes.VALIDATION,
-            'User limit must be between 0 (no limit) and 99.'
+            'Giới hạn người dùng phải nằm trong khoảng từ 0 (không giới hạn) đến 99.'
         );
     }
 
@@ -127,7 +127,7 @@ export function formatChannelName(template, variables) {
         const sanitized = {};
         for (const [key, value] of Object.entries(variables)) {
             if (value === null || value === undefined) {
-                sanitized[key] = 'Unknown';
+                sanitized[key] = 'Không xác định';
             } else {
                 
                 sanitized[key] = String(value)
@@ -140,14 +140,14 @@ export function formatChannelName(template, variables) {
         }
 
         const replacements = {
-            '{username}': sanitized.username || 'User',
-            '{user_tag}': sanitized.userTag || 'User#0000',
-            '{displayName}': sanitized.displayName || 'User',
-            '{display_name}': sanitized.displayName || 'User',
+            '{username}': sanitized.username || 'Người dùng',
+            '{user_tag}': sanitized.userTag || 'Người dùng#0000',
+            '{displayName}': sanitized.displayName || 'Người dùng',
+            '{display_name}': sanitized.displayName || 'Người dùng',
             '{guildName}': sanitized.guildName || 'Server',
             '{guild_name}': sanitized.guildName || 'Server',
-            '{channelName}': sanitized.channelName || 'Voice Channel',
-            '{channel_name}': sanitized.channelName || 'Voice Channel',
+            '{channelName}': sanitized.channelName || 'Kênh thoại',
+            '{channel_name}': sanitized.channelName || 'Kênh thoại',
         };
 
         let formatted = safeTemplate;
@@ -163,7 +163,7 @@ export function formatChannelName(template, variables) {
             .trim();
 
         if (formatted.length === 0) {
-            formatted = 'Voice Channel';
+            formatted = 'Kênh thoại';
         } else if (formatted.length > CHANNEL_NAME_MAX_LENGTH) {
             formatted = formatted.substring(0, CHANNEL_NAME_MAX_LENGTH);
         }
@@ -183,7 +183,7 @@ export async function initializeJoinToCreate(client, guildId, channelId, options
             throw new TitanBotError(
                 'Database service not available',
                 ErrorTypes.DATABASE,
-                'System error occurred. Please try again.'
+                'Đã xảy ra lỗi hệ thống. Vui lòng thử lại.'
             );
         }
 
@@ -191,7 +191,7 @@ export async function initializeJoinToCreate(client, guildId, channelId, options
             throw new TitanBotError(
                 'Missing required guild or channel ID',
                 ErrorTypes.VALIDATION,
-                'Invalid guild or channel information provided.'
+                'Thông tin máy chủ hoặc kênh không hợp lệ.'
             );
         }
 
@@ -211,7 +211,7 @@ export async function initializeJoinToCreate(client, guildId, channelId, options
             throw new TitanBotError(
                 'Channel already configured as Join to Create trigger',
                 ErrorTypes.VALIDATION,
-                'This channel is already set up as a Join to Create trigger.'
+                'Kênh này đã được thiết lập làm kênh Join to Create rồi.'
             );
         }
 
@@ -219,7 +219,7 @@ export async function initializeJoinToCreate(client, guildId, channelId, options
             throw new TitanBotError(
                 'Guild already has a Join to Create trigger configured',
                 ErrorTypes.VALIDATION,
-                'This server already has a Join to Create channel configured. Use `/jointocreate dashboard` to modify it, or remove it before creating a new one.',
+                'Máy chủ này đã có một kênh Join to Create được cấu hình. Hãy dùng `/jointocreate dashboard` để chỉnh sửa, hoặc gỡ bỏ kênh cũ trước khi tạo kênh mới.',
                 {
                     guildId,
                     existingTriggerChannelId: config.triggerChannels[0],
@@ -250,7 +250,7 @@ export async function initializeJoinToCreate(client, guildId, channelId, options
             throw new TitanBotError(
                 'Failed to save Join to Create configuration',
                 ErrorTypes.DATABASE,
-                'Failed to set up Join to Create system. Please try again.'
+                'Không thể thiết lập hệ thống Join to Create. Vui lòng thử lại.'
             );
         }
 
@@ -265,7 +265,7 @@ export async function initializeJoinToCreate(client, guildId, channelId, options
         throw new TitanBotError(
             `Failed to initialize Join to Create: ${error.message}`,
             ErrorTypes.DATABASE,
-            'Failed to set up Join to Create system.'
+            'Không thể thiết lập hệ thống Join to Create.'
         );
     }
 }
@@ -276,7 +276,7 @@ export async function updateChannelConfig(client, guildId, channelId, updates) {
             throw new TitanBotError(
                 'Database service not available',
                 ErrorTypes.DATABASE,
-                'Database service is currently unavailable. Please try again later.'
+                'Dịch vụ cơ sở dữ liệu hiện không khả dụng. Vui lòng thử lại sau.'
             );
         }
 
@@ -286,7 +286,7 @@ export async function updateChannelConfig(client, guildId, channelId, updates) {
             throw new TitanBotError(
                 'Channel is not configured as a Join to Create trigger',
                 ErrorTypes.VALIDATION,
-                'This channel is not set up as a Join to Create trigger.'
+                'Kênh này chưa được thiết lập làm kênh Join to Create.'
             );
         }
 
@@ -325,7 +325,7 @@ export async function updateChannelConfig(client, guildId, channelId, updates) {
         throw new TitanBotError(
             `Failed to update channel config: ${error.message}`,
             ErrorTypes.DATABASE,
-            'Failed to update configuration.'
+            'Không thể cập nhật cấu hình.'
         );
     }
 }
@@ -336,7 +336,7 @@ export async function removeTriggerChannel(client, guildId, channelId) {
             throw new TitanBotError(
                 'Database service not available',
                 ErrorTypes.DATABASE,
-                'Database service is currently unavailable. Please try again later.'
+                'Dịch vụ cơ sở dữ liệu hiện không khả dụng. Vui lòng thử lại sau.'
             );
         }
 
@@ -347,7 +347,7 @@ export async function removeTriggerChannel(client, guildId, channelId) {
             throw new TitanBotError(
                 'Channel not found in Join to Create triggers',
                 ErrorTypes.VALIDATION,
-                'This channel is not configured as a Join to Create trigger.'
+                'Kênh này không được cấu hình làm kênh Join to Create.'
             );
         }
 
@@ -379,7 +379,7 @@ export async function removeTriggerChannel(client, guildId, channelId) {
         throw new TitanBotError(
             `Failed to remove trigger channel: ${error.message}`,
             ErrorTypes.DATABASE,
-            'Failed to remove trigger channel.'
+            'Không thể gỡ bỏ kênh kích hoạt.'
         );
     }
 }
@@ -390,7 +390,7 @@ export async function getConfiguration(client, guildId) {
             throw new TitanBotError(
                 'Database service not available',
                 ErrorTypes.DATABASE,
-                'Database service is currently unavailable. Please try again later.'
+                'Dịch vụ cơ sở dữ liệu hiện không khả dụng. Vui lòng thử lại sau.'
             );
         }
 
@@ -403,7 +403,7 @@ export async function getConfiguration(client, guildId) {
         throw new TitanBotError(
             `Failed to retrieve configuration: ${error.message}`,
             ErrorTypes.DATABASE,
-            'Failed to retrieve settings.'
+            'Không thể tải cài đặt.'
         );
     }
 }
@@ -426,7 +426,7 @@ export async function getChannelConfiguration(client, guildId, channelId) {
             throw new TitanBotError(
                 'Channel is not a valid Join to Create trigger',
                 ErrorTypes.VALIDATION,
-                'This channel is not set up as a Join to Create trigger.'
+                'Kênh này chưa được thiết lập làm kênh Join to Create.'
             );
         }
 
@@ -442,7 +442,7 @@ export async function getChannelConfiguration(client, guildId, channelId) {
         throw new TitanBotError(
             `Failed to get channel configuration: ${error.message}`,
             ErrorTypes.DATABASE,
-            'Failed to retrieve channel configuration. Please try again.'
+            'Không thể tải cấu hình kênh. Vui lòng thử lại.'
         );
     }
 }
@@ -466,10 +466,10 @@ export async function logConfigurationChange(client, guildId, userId, action, de
             guildId,
             eventType: EVENT_TYPES.COUNTER_CONFIG,
             data: {
-                title: 'Join to Create Updated',
+                title: 'Join to Create Đã Cập Nhật',
                 lines: [
-                    formatLogLine('Action', action),
-                    formatLogLine('Details', typeof details === 'string' ? details : JSON.stringify(details)),
+                    formatLogLine('Thao tác', action),
+                    formatLogLine('Chi tiết', typeof details === 'string' ? details : JSON.stringify(details)),
                 ],
                 userId,
             },
@@ -505,7 +505,7 @@ export async function createTemporaryChannel(guild, member, options = {}) {
             validateBitrate(bitrate / 1000);
         }
 
-        const channelName = formatChannelName(nameTemplate || '{username}\'s Room', {
+        const channelName = formatChannelName(nameTemplate || 'Phòng của {username}', {
             username: member.user.username,
             displayName: member.displayName,
             userTag: member.user.tag,
@@ -545,7 +545,7 @@ export async function createTemporaryChannel(guild, member, options = {}) {
         throw new TitanBotError(
             `Failed to create temporary channel: ${error.message}`,
             ErrorTypes.DISCORD_API,
-            'Failed to create your temporary voice channel. Please contact an administrator.'
+            'Không thể tạo kênh thoại tạm thời của bạn. Vui lòng liên hệ quản trị viên.'
         );
     }
 }

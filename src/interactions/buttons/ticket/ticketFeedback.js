@@ -6,11 +6,11 @@ import { logTicketFeedback } from '../../../utils/ticket/ticketLogging.js';
 import { InteractionHelper } from '../../../utils/interactionHelper.js';
 
 const STAR_LABELS = {
-    '1': '⭐ 1 — Poor',
-    '2': '⭐ 2 — Below Average',
-    '3': '⭐ 3 — Average',
-    '4': '⭐ 4 — Good',
-    '5': '⭐ 5 — Excellent',
+    '1': '⭐ 1 — Kém',
+    '2': '⭐ 2 — Dưới trung bình',
+    '3': '⭐ 3 — Trung bình',
+    '4': '⭐ 4 — Tốt',
+    '5': '⭐ 5 — Xuất sắc',
 };
 
 const feedbackHandler = {
@@ -24,8 +24,8 @@ const feedbackHandler = {
             await InteractionHelper.safeReply(interaction, {
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('⚠️ Invalid Feedback Link')
-                        .setDescription('This feedback link appears to be malformed.')
+                        .setTitle('⚠️ Liên kết phản hồi không hợp lệ')
+                        .setDescription('Liên kết phản hồi này có vẻ bị lỗi.')
                         .setColor(getColor('error')),
                 ],
                 components: [],
@@ -51,8 +51,8 @@ const feedbackHandler = {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('⚠️ Ticket Not Found')
-                        .setDescription('Could not find the ticket associated with this survey.')
+                        .setTitle('⚠️ Không tìm thấy Ticket')
+                        .setDescription('Không thể tìm thấy ticket liên quan đến khảo sát này.')
                         .setColor(getColor('error')),
                 ],
                 components: [],
@@ -64,8 +64,8 @@ const feedbackHandler = {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('❌ Not Allowed')
-                        .setDescription('Only the ticket creator can submit feedback for this ticket.')
+                        .setTitle('❌ Không được phép')
+                        .setDescription('Chỉ người tạo ticket mới có thể gửi phản hồi cho ticket này.')
                         .setColor(getColor('error')),
                 ],
                 components: [],
@@ -77,8 +77,8 @@ const feedbackHandler = {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('✅ Already Submitted')
-                        .setDescription(`You already rated this ticket **${STAR_LABELS[String(ticketData.feedback.rating)]}**.\nThank you for your feedback!`)
+                    .setTitle('✅ Đã gửi phản hồi')
+                    .setDescription(`Bạn đã đánh giá ticket này **${STAR_LABELS[String(ticketData.feedback.rating)]}**.\nCảm ơn phản hồi của bạn!`)
                         .setColor(getColor('success')),
                 ],
                 components: [],
@@ -87,7 +87,7 @@ const feedbackHandler = {
         }
 
         const rating = parseInt(ratingStr, 10);
-        const ratingLabel = STAR_LABELS[String(rating)] ?? `${rating} stars`;
+        const ratingLabel = STAR_LABELS[String(rating)] ?? `${rating} sao`;
 
         try {
             ticketData.feedback = {
@@ -115,10 +115,10 @@ const feedbackHandler = {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 new EmbedBuilder()
-                    .setTitle('✅ Thanks for your feedback!')
-                    .setDescription(`You rated your support experience **${ratingLabel}**.\n\nYour feedback has been recorded and helps us improve!`)
+                    .setTitle('✅ Cảm ơn phản hồi của bạn!')
+                    .setDescription(`Bạn đã đánh giá trải nghiệm hỗ trợ **${ratingLabel}**.\n\nPhản hồi của bạn đã được ghi nhận và giúp chúng tôi cải thiện dịch vụ!`)
                     .setColor(getColor('success'))
-                    .setFooter({ text: 'Thank you for using our support system.' })
+                    .setFooter({ text: 'Cảm ơn bạn đã sử dụng hệ thống hỗ trợ của chúng tôi.' })
                     .setTimestamp(),
             ],
             components: [],
@@ -143,8 +143,8 @@ const commentHandler = {
             await interaction.update({
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('⚠️ Invalid Feedback Link')
-                        .setDescription('This feedback action appears to be malformed.')
+                        .setTitle('⚠️ Liên kết phản hồi không hợp lệ')
+                        .setDescription('Hành động phản hồi này có vẻ bị lỗi.')
                         .setColor(getColor('error')),
                 ],
                 components: [],
@@ -154,13 +154,13 @@ const commentHandler = {
 
         const modal = new ModalBuilder()
             .setCustomId(`ticket_feedback_comment_modal:${guildId}:${channelId}`)
-            .setTitle('Add Ticket Feedback');
+            .setTitle('Thêm phản hồi ticket');
 
         const commentInput = new TextInputBuilder()
             .setCustomId('feedback_comment')
-            .setLabel('Your feedback')
+            .setLabel('Phản hồi của bạn')
             .setStyle(TextInputStyle.Paragraph)
-            .setPlaceholder('Share what went well or how we can improve...')
+            .setPlaceholder('Chia sẻ điều bạn thấy tốt hoặc cách chúng tôi có thể cải thiện...')
             .setRequired(true)
             .setMaxLength(1000);
 
@@ -177,8 +177,8 @@ const declineHandler = {
         await interaction.update({
             embeds: [
                 new EmbedBuilder()
-                    .setTitle('👋 No problem!')
-                    .setDescription('You can always reach out again if you need further support.')
+                    .setTitle('👋 Không sao đâu!')
+                    .setDescription('Bạn luôn có thể liên hệ lại nếu cần thêm hỗ trợ nhé.')
                     .setColor(getColor('default')),
             ],
             components: [],

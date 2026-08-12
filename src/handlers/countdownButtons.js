@@ -7,11 +7,11 @@ function createControlButtons(countdownId, isPaused = false) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(`countdown_pause:${countdownId}`)
-            .setLabel(isPaused ? "▶️ Resume" : "⏸️ Pause")
+            .setLabel(isPaused ? "▶️ Tiếp Tục" : "⏸️ Tạm Dừng")
             .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId(`countdown_cancel:${countdownId}`)
-            .setLabel("❌ Cancel")
+            .setLabel("❌ Hủy")
             .setStyle(ButtonStyle.Danger),
     );
 }
@@ -51,7 +51,7 @@ function startCountdown(countdownId, countdownData, activeCountdowns) {
 
                 const embed = successEmbed(
                     `⏱️ ${countdownData.title}`,
-                    `Time remaining: **${formatTime(Math.ceil(remaining / 1000))}**`,
+                    `Thời gian còn lại: **${formatTime(Math.ceil(remaining / 1000))}**`,
                 );
 
                 try {
@@ -73,8 +73,8 @@ function startCountdown(countdownId, countdownData, activeCountdowns) {
                 clearInterval(countdownData.interval);
 
                 const finishedEmbed = successEmbed(
-                    `⏱️ ${countdownData.title} (Finished!)`,
-                    "⏰ Time's up!",
+                    `⏱️ ${countdownData.title} (Đã Kết Thúc!)`,
+                    "⏰ Hết giờ!",
                 );
 
                 await countdownData.message.edit({
@@ -108,14 +108,14 @@ async function countdownButtonHandler(interaction, client, args) {
         const countdownData = activeCountdowns.get(countdownId);
         if (!countdownData) {
             return await interaction.reply({
-                content: "This countdown has expired or was cancelled.",
+                content: "Đếm ngược này đã hết hạn hoặc bị hủy.",
                 flags: ["Ephemeral"],
             });
         }
 
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
             return await interaction.reply({
-                content: 'You need the "Manage Messages" permission to control countdowns.',
+                content: 'Bạn cần quyền "Quản Lý Tin Nhắn" để điều khiển đếm ngược.',
                 flags: ["Ephemeral"],
             });
         }
@@ -134,7 +134,7 @@ async function countdownButtonHandler(interaction, client, args) {
                     });
 
                     await interaction.reply({
-                        content: "▶️ Countdown resumed!",
+                        content: "▶️ Đã tiếp tục đếm ngược!",
                         flags: ["Ephemeral"],
                     });
                 } else {
@@ -149,7 +149,7 @@ async function countdownButtonHandler(interaction, client, args) {
                     });
 
                     await interaction.reply({
-                        content: "⏸️ Countdown paused!",
+                        content: "⏸️ Đã tạm dừng đếm ngược!",
                         flags: ["Ephemeral"],
                     });
                 }
@@ -159,8 +159,8 @@ async function countdownButtonHandler(interaction, client, args) {
                 clearInterval(countdownData.interval);
 
                 const embed = successEmbed(
-                    `⏱️ ${countdownData.title} (Cancelled)`,
-                    "The countdown was cancelled.",
+                    `⏱️ ${countdownData.title} (Đã Hủy)`,
+                    "Đếm ngược đã bị hủy.",
                 );
 
                 await countdownData.message.edit({
@@ -171,7 +171,7 @@ async function countdownButtonHandler(interaction, client, args) {
                 cleanupCountdown(countdownId, activeCountdowns);
 
                 await interaction.reply({
-                    content: "❌ Countdown cancelled!",
+                    content: "❌ Đã hủy đếm ngược!",
                     flags: ["Ephemeral"],
                 });
                 break;
@@ -180,7 +180,7 @@ async function countdownButtonHandler(interaction, client, args) {
         logger.error('Countdown button handler error:', error);
         try {
             if (!interaction.replied && !interaction.deferred) {
-                await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred controlling the countdown.' });
+                await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Đã xảy ra lỗi khi điều khiển đếm ngược.' });
             }
         } catch (err) {
             logger.error('Failed to send error message:', err);

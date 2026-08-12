@@ -50,67 +50,67 @@ async function sendEphemeralFollowUp(interaction, payload) {
 }
 
 function buildDashboardEmbed(cfg, guild) {
-    const welcomeChannel = cfg.channelId ? `<#${cfg.channelId}>` : '`Not set`';
-    const goodbyeChannel = cfg.goodbyeChannelId ? `<#${cfg.goodbyeChannelId}>` : '`Not set`';
+    const welcomeChannel = cfg.channelId ? `<#${cfg.channelId}>` : '`Chưa đặt`';
+    const goodbyeChannel = cfg.goodbyeChannelId ? `<#${cfg.goodbyeChannelId}>` : '`Chưa đặt`';
 
-    const rawWelcome = cfg.welcomeMessage || 'Welcome {user} to {server}!';
-    const rawGoodbye = cfg.leaveMessage || '{user.tag} has left the server.';
+    const rawWelcome = cfg.welcomeMessage || 'Chào mừng {user} đến với {server}!';
+    const rawGoodbye = cfg.leaveMessage || '{user.tag} đã rời khỏi server.';
     const welcomePreview = `\`${rawWelcome.length > 55 ? rawWelcome.substring(0, 55) + '…' : rawWelcome}\``;
     const goodbyePreview = `\`${rawGoodbye.length > 55 ? rawGoodbye.substring(0, 55) + '…' : rawGoodbye}\``;
 
     return new EmbedBuilder()
-        .setTitle('👋 Greet System Dashboard')
+        .setTitle('👋 Bảng điều khiển hệ thống Chào mừng & Tạm biệt')
         .setDescription(
-            `Manage welcome & goodbye settings for **${guild.name}**.\nUse the toggles to enable/disable each side, then select an option to edit.`,
+            `Quản lý cài đặt chào mừng & tạm biệt cho **${guild.name}**.\nDùng các nút để bật/tắt từng phần, sau đó chọn một tùy chọn để chỉnh sửa.`,
         )
         .setColor(getColor('info'))
         .addFields(
-            { name: 'Welcome Channel', value: welcomeChannel, inline: true },
-            { name: 'Welcome Status', value: cfg.enabled ? 'Enabled' : 'Disabled', inline: true },
-            { name: 'Welcome Ping', value: cfg.welcomePing ? 'On' : 'Off', inline: true },
-            { name: 'Goodbye Channel', value: goodbyeChannel, inline: true },
-            { name: 'Goodbye Status', value: cfg.goodbyeEnabled ? 'Enabled' : 'Disabled', inline: true },
-            { name: 'Goodbye Ping', value: cfg.goodbyePing ? 'On' : 'Off', inline: true },
-            { name: 'Welcome Message', value: welcomePreview, inline: false },
-            { name: 'Goodbye Message', value: goodbyePreview, inline: false },
+            { name: 'Kênh chào mừng', value: welcomeChannel, inline: true },
+            { name: 'Trạng thái chào mừng', value: cfg.enabled ? 'Đã bật' : 'Đã tắt', inline: true },
+            { name: 'Ping chào mừng', value: cfg.welcomePing ? 'Bật' : 'Tắt', inline: true },
+            { name: 'Kênh tạm biệt', value: goodbyeChannel, inline: true },
+            { name: 'Trạng thái tạm biệt', value: cfg.goodbyeEnabled ? 'Đã bật' : 'Đã tắt', inline: true },
+            { name: 'Ping tạm biệt', value: cfg.goodbyePing ? 'Bật' : 'Tắt', inline: true },
+            { name: 'Tin nhắn chào mừng', value: welcomePreview, inline: false },
+            { name: 'Tin nhắn tạm biệt', value: goodbyePreview, inline: false },
         )
-        .setFooter({ text: 'Dashboard closes after 10 minutes of inactivity' })
+        .setFooter({ text: 'Bảng điều khiển tự đóng sau 10 phút không hoạt động' })
         .setTimestamp();
 }
 
 function buildSelectMenu(guildId) {
     return new StringSelectMenuBuilder()
         .setCustomId(`greet_cfg_${guildId}`)
-        .setPlaceholder('Select a setting to configure...')
+        .setPlaceholder('Chọn một cài đặt để cấu hình...')
         .addOptions(
             new StringSelectMenuOptionBuilder()
-                .setLabel('Welcome Channel')
-                .setDescription('Set the channel where welcome messages are sent')
+                .setLabel('Kênh chào mừng')
+                .setDescription('Đặt kênh gửi tin nhắn chào mừng')
                 .setValue('welcome_channel')
                 .setEmoji('🟢'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Welcome Message')
-                .setDescription('Edit the text shown when a member joins')
+                .setLabel('Tin nhắn chào mừng')
+                .setDescription('Chỉnh sửa nội dung hiển thị khi có thành viên vào server')
                 .setValue('welcome_message')
                 .setEmoji('💬'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Welcome Image')
-                .setDescription('Set the image for welcome messages')
+                .setLabel('Hình ảnh chào mừng')
+                .setDescription('Đặt hình ảnh cho tin nhắn chào mừng')
                 .setValue('welcome_image')
                 .setEmoji('🖼️'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Goodbye Channel')
-                .setDescription('Set the channel where goodbye messages are sent')
+                .setLabel('Kênh tạm biệt')
+                .setDescription('Đặt kênh gửi tin nhắn tạm biệt')
                 .setValue('goodbye_channel')
                 .setEmoji('🔴'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Goodbye Message')
-                .setDescription('Edit the text shown when a member leaves')
+                .setLabel('Tin nhắn tạm biệt')
+                .setDescription('Chỉnh sửa nội dung hiển thị khi có thành viên rời server')
                 .setValue('goodbye_message')
                 .setEmoji('💬'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('Goodbye Image')
-                .setDescription('Set the image for goodbye messages')
+                .setLabel('Hình ảnh tạm biệt')
+                .setDescription('Đặt hình ảnh cho tin nhắn tạm biệt')
                 .setValue('goodbye_image')
                 .setEmoji('🖼️'),
         );
@@ -126,13 +126,13 @@ function buildButtonRow(cfg, guildId, disabled = false) {
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId(`greet_cfg_toggle_welcome_${guildId}`)
-                .setLabel('Welcome')
+                .setLabel('Chào mừng')
                 .setStyle(welcomeOn ? ButtonStyle.Success : ButtonStyle.Danger)
                 .setEmoji('🟢')
                 .setDisabled(disabled),
             new ButtonBuilder()
                 .setCustomId(`greet_cfg_toggle_goodbye_${guildId}`)
-                .setLabel('Goodbye')
+                .setLabel('Tạm biệt')
                 .setStyle(goodbyeOn ? ButtonStyle.Success : ButtonStyle.Danger)
                 .setEmoji('🔴')
                 .setDisabled(disabled),
@@ -140,13 +140,13 @@ function buildButtonRow(cfg, guildId, disabled = false) {
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId(`greet_cfg_ping_welcome_${guildId}`)
-                .setLabel('Ping Welcome')
+                .setLabel('Ping chào mừng')
                 .setStyle(welcomePingOn ? ButtonStyle.Primary : ButtonStyle.Secondary)
                 .setEmoji('🔔')
                 .setDisabled(disabled),
             new ButtonBuilder()
                 .setCustomId(`greet_cfg_ping_goodbye_${guildId}`)
-                .setLabel('Ping Goodbye')
+                .setLabel('Ping tạm biệt')
                 .setStyle(goodbyePingOn ? ButtonStyle.Primary : ButtonStyle.Secondary)
                 .setEmoji('🔔')
                 .setDisabled(disabled),
@@ -180,7 +180,7 @@ export default {
                 throw new TitanBotError(
                     'Greet system not configured',
                     ErrorTypes.CONFIGURATION,
-                    'Neither Welcome nor Goodbye has been set up yet. Run `/welcome setup` or `/goodbye setup` first.',
+                    'Cả chào mừng lẫn tạm biệt đều chưa được thiết lập. Hãy chạy `/welcome setup` hoặc `/goodbye setup` trước.',
                 );
             }
 
@@ -238,8 +238,8 @@ export default {
 
                     const errorMessage =
                         error instanceof TitanBotError
-                            ? error.userMessage || 'An error occurred while processing your selection.'
-                            : 'An unexpected error occurred while updating the configuration.';
+                            ? error.userMessage || 'Đã xảy ra lỗi khi xử lý lựa chọn của bạn.'
+                            : 'Đã xảy ra lỗi không mong muốn khi cập nhật cấu hình.';
 
                     if (!selectInteraction.replied && !selectInteraction.deferred) {
                         await selectInteraction.deferUpdate().catch(() => {});
@@ -277,8 +277,8 @@ export default {
                         await sendEphemeralFollowUp(btnInteraction, {
                             embeds: [
                                 successEmbed(
-                                    '✅ Welcome Updated',
-                                    `Welcome messages are now **${cfg.enabled ? 'enabled' : 'disabled'}**.`,
+                                    '✅ Đã cập nhật chào mừng',
+                                    `Tin nhắn chào mừng hiện đã **${cfg.enabled ? 'bật' : 'tắt'}**.`,
                                 ),
                             ],
                         });
@@ -288,8 +288,8 @@ export default {
                         await sendEphemeralFollowUp(btnInteraction, {
                             embeds: [
                                 successEmbed(
-                                    '✅ Goodbye Updated',
-                                    `Goodbye messages are now **${cfg.goodbyeEnabled ? 'enabled' : 'disabled'}**.`,
+                                    '✅ Đã cập nhật tạm biệt',
+                                    `Tin nhắn tạm biệt hiện đã **${cfg.goodbyeEnabled ? 'bật' : 'tắt'}**.`,
                                 ),
                             ],
                         });
@@ -299,8 +299,8 @@ export default {
                         await sendEphemeralFollowUp(btnInteraction, {
                             embeds: [
                                 successEmbed(
-                                    '✅ Welcome Ping Updated',
-                                    `Joining users will${cfg.welcomePing ? '' : ' **not**'} be pinged in the welcome message.`,
+                                    '✅ Đã cập nhật ping chào mừng',
+                                    `Người vào server sẽ${cfg.welcomePing ? '' : ' **không**'} được nhắc đến trong tin nhắn chào mừng.`,
                                 ),
                             ],
                         });
@@ -310,8 +310,8 @@ export default {
                         await sendEphemeralFollowUp(btnInteraction, {
                             embeds: [
                                 successEmbed(
-                                    '✅ Goodbye Ping Updated',
-                                    `Leaving users will${cfg.goodbyePing ? '' : ' **not**'} be pinged in the goodbye message.`,
+                                    '✅ Đã cập nhật ping tạm biệt',
+                                    `Người rời server sẽ${cfg.goodbyePing ? '' : ' **không**'} được nhắc đến trong tin nhắn tạm biệt.`,
                                 ),
                             ],
                         });
@@ -330,8 +330,8 @@ export default {
                         await InteractionHelper.safeEditReply(interaction, {
                             embeds: [
                                 new EmbedBuilder()
-                                    .setTitle('Dashboard Timed Out')
-                                    .setDescription('This dashboard has been closed due to inactivity. Please run the command again to continue.')
+                                    .setTitle('Bảng điều khiển hết thời gian')
+                                    .setDescription('Bảng điều khiển đã đóng do không hoạt động. Vui lòng chạy lại lệnh để tiếp tục.')
                                     .setColor(getColor('error'))
                             ],
                             components: [],
@@ -347,7 +347,7 @@ export default {
             throw new TitanBotError(
                 `Greet dashboard failed: ${error.message}`,
                 ErrorTypes.UNKNOWN,
-                'Failed to open the greet dashboard.',
+                'Không thể mở bảng điều khiển chào mừng & tạm biệt.',
             );
         }
     },
@@ -360,16 +360,16 @@ async function handleWelcomeChannel(selectInteraction, rootInteraction, cfg, gui
 
     const channelSelect = new ChannelSelectMenuBuilder()
         .setCustomId('greet_cfg_welcome_channel')
-        .setPlaceholder('Select a text channel...')
+        .setPlaceholder('Chọn một kênh văn bản...')
         .addChannelTypes(ChannelType.GuildText)
         .setMaxValues(1);
 
     await sendEphemeralFollowUp(selectInteraction, {
         embeds: [
             new EmbedBuilder()
-                .setTitle('🟢 Welcome Channel')
+                .setTitle('🟢 Kênh chào mừng')
                 .setDescription(
-                    `**Current:** ${cfg.channelId ?`<#${cfg.channelId}>`: '`Not set`'}\n\nSelect the channel where welcome messages will be sent.`,
+                    `**Hiện tại:** ${cfg.channelId ?`<#${cfg.channelId}>`: '`Chưa đặt`'}\n\nChọn kênh sẽ gửi tin nhắn chào mừng.`,
                 )
                 .setColor(getColor('info')),
         ],
@@ -393,7 +393,7 @@ async function handleWelcomeChannel(selectInteraction, rootInteraction, cfg, gui
         if (!botHasPermission(channel, ['ViewChannel', 'SendMessages', 'EmbedLinks'])) {
             await replyUserError(chanInteraction, {
                 type: ErrorTypes.PERMISSION,
-                message: `I need **View Channel**, **Send Messages**, and **Embed Links** in ${channel}.`,
+                message: `Tôi cần quyền **View Channel**, **Send Messages** và **Embed Links** trong ${channel}.`,
             });
             return;
         }
@@ -402,7 +402,7 @@ async function handleWelcomeChannel(selectInteraction, rootInteraction, cfg, gui
         await saveWelcomeConfig(client, guildId, cfg);
 
         await sendEphemeralFollowUp(chanInteraction, {
-            embeds: [successEmbed('Channel Updated', `Welcome messages will now be sent in ${channel}.`)],
+            embeds: [successEmbed('Đã cập nhật kênh', `Tin nhắn chào mừng sẽ được gửi tại ${channel}.`)],
         });
 
         await refreshDashboard(rootInteraction, cfg, guildId);
@@ -412,7 +412,7 @@ async function handleWelcomeChannel(selectInteraction, rootInteraction, cfg, gui
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No channel was selected. The setting was not changed.',
+                message: 'Không có kênh nào được chọn. Cài đặt không thay đổi.',
             }).catch(() => {});
         }
     });
@@ -421,14 +421,14 @@ async function handleWelcomeChannel(selectInteraction, rootInteraction, cfg, gui
 async function handleWelcomeMessage(selectInteraction, rootInteraction, cfg, guildId, client) {
     const modal = new ModalBuilder()
         .setCustomId('greet_cfg_welcome_message')
-        .setTitle('Edit Welcome Message')
+        .setTitle('Chỉnh sửa tin nhắn chào mừng')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('message_input')
-                    .setLabel('Message (variables: {user}, {server}, etc)')
+                    .setLabel('Tin nhắn (biến: {user}, {server}, v.v.)')
                     .setStyle(TextInputStyle.Paragraph)
-                    .setValue(cfg.welcomeMessage || 'Welcome {user} to {server}!')
+                    .setValue(cfg.welcomeMessage || 'Chào mừng {user} đến với {server}!')
                     .setMaxLength(2000)
                     .setMinLength(1)
                     .setRequired(true),
@@ -455,7 +455,7 @@ async function handleWelcomeMessage(selectInteraction, rootInteraction, cfg, gui
     await saveWelcomeConfig(client, guildId, cfg);
 
     await submitted.reply({
-        embeds: [successEmbed('Welcome Message Updated', 'The welcome message has been saved.')],
+        embeds: [successEmbed('Đã cập nhật tin nhắn chào mừng', 'Tin nhắn chào mừng đã được lưu.')],
         flags: MessageFlags.Ephemeral,
     });
 
@@ -465,13 +465,13 @@ async function handleWelcomeMessage(selectInteraction, rootInteraction, cfg, gui
 async function handleWelcomeImage(selectInteraction, rootInteraction, cfg, guildId, client) {
     const modal = new ModalBuilder()
         .setCustomId('greet_cfg_welcome_image')
-        .setTitle('Set Welcome Image');
+        .setTitle('Đặt hình ảnh chào mừng');
 
     const imageHint = new TextDisplayBuilder()
-        .setContent('Provide a direct image URL **or** upload a file below. If both are given, the uploaded file takes priority. Leave the URL blank and skip the upload to remove the image.');
+        .setContent('Cung cấp URL hình ảnh trực tiếp **hoặc** tải file lên bên dưới. Nếu có cả hai, file tải lên sẽ được ưu tiên. Để trống URL và bỏ qua tải file để xóa hình ảnh.');
 
     const urlLabel = new LabelBuilder()
-        .setLabel('Image URL (optional)')
+        .setLabel('URL hình ảnh (tùy chọn)')
         .setTextInputComponent(
             new TextInputBuilder()
                 .setCustomId('image_input')
@@ -482,7 +482,7 @@ async function handleWelcomeImage(selectInteraction, rootInteraction, cfg, guild
         );
 
     const uploadLabel = new LabelBuilder()
-        .setLabel('Or upload an image file (optional)')
+        .setLabel('Hoặc tải lên file hình ảnh (tùy chọn)')
         .setFileUploadComponent(
             new FileUploadBuilder()
                 .setCustomId('image_upload')
@@ -516,11 +516,11 @@ async function handleWelcomeImage(selectInteraction, rootInteraction, cfg, guild
         try {
             new URL(imageUrl);
             if (!['http:', 'https:'].includes(new URL(imageUrl).protocol)) {
-                await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Image URL must start with `http://` or `https://`.' });
+                await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'URL hình ảnh phải bắt đầu bằng `http://` hoặc `https://`.' });
                 return;
             }
         } catch {
-            await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Please provide a valid image URL.' });
+            await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Vui lòng cung cấp URL hình ảnh hợp lệ.' });
             return;
         }
     }
@@ -529,7 +529,7 @@ async function handleWelcomeImage(selectInteraction, rootInteraction, cfg, guild
     await saveWelcomeConfig(client, guildId, cfg);
 
     await submitted.reply({
-        embeds: [successEmbed('Welcome Image Updated', `Image ${imageUrl ? 'updated' : 'removed'} successfully.`)],
+        embeds: [successEmbed('Đã cập nhật hình ảnh chào mừng', `Đã ${imageUrl ? 'cập nhật' : 'xóa'} hình ảnh thành công.`)],
         flags: MessageFlags.Ephemeral,
     });
 
@@ -547,8 +547,8 @@ async function handleWelcomePing(selectInteraction, rootInteraction, cfg, guildI
     await sendEphemeralFollowUp(selectInteraction, {
         embeds: [
             successEmbed(
-                '✅ Welcome Ping Updated',
-                `Joining users will${cfg.welcomePing ? '' : ' **not**'} be pinged in the welcome message.`,
+                '✅ Đã cập nhật ping chào mừng',
+                `Người vào server sẽ${cfg.welcomePing ? '' : ' **không**'} được nhắc đến trong tin nhắn chào mừng.`,
             ),
         ],
     });
@@ -563,16 +563,16 @@ async function handleGoodbyeChannel(selectInteraction, rootInteraction, cfg, gui
 
     const channelSelect = new ChannelSelectMenuBuilder()
         .setCustomId('greet_cfg_goodbye_channel')
-        .setPlaceholder('Select a text channel...')
+        .setPlaceholder('Chọn một kênh văn bản...')
         .addChannelTypes(ChannelType.GuildText)
         .setMaxValues(1);
 
     await sendEphemeralFollowUp(selectInteraction, {
         embeds: [
             new EmbedBuilder()
-                .setTitle('🔴 Goodbye Channel')
+                .setTitle('🔴 Kênh tạm biệt')
                 .setDescription(
-                    `**Current:** ${cfg.goodbyeChannelId ?`<#${cfg.goodbyeChannelId}>`: '`Not set`'}\n\nSelect the channel where goodbye messages will be sent.`,
+                    `**Hiện tại:** ${cfg.goodbyeChannelId ?`<#${cfg.goodbyeChannelId}>`: '`Chưa đặt`'}\n\nChọn kênh sẽ gửi tin nhắn tạm biệt.`,
                 )
                 .setColor(getColor('info')),
         ],
@@ -596,7 +596,7 @@ async function handleGoodbyeChannel(selectInteraction, rootInteraction, cfg, gui
         if (!botHasPermission(channel, ['ViewChannel', 'SendMessages', 'EmbedLinks'])) {
             await replyUserError(chanInteraction, {
                 type: ErrorTypes.PERMISSION,
-                message: `I need **View Channel**, **Send Messages**, and **Embed Links** in ${channel}.`,
+                message: `Tôi cần quyền **View Channel**, **Send Messages** và **Embed Links** trong ${channel}.`,
             });
             return;
         }
@@ -605,7 +605,7 @@ async function handleGoodbyeChannel(selectInteraction, rootInteraction, cfg, gui
         await saveWelcomeConfig(client, guildId, cfg);
 
         await sendEphemeralFollowUp(chanInteraction, {
-            embeds: [successEmbed('Channel Updated', `Goodbye messages will now be sent in ${channel}.`)],
+            embeds: [successEmbed('Đã cập nhật kênh', `Tin nhắn tạm biệt sẽ được gửi tại ${channel}.`)],
         });
 
         await refreshDashboard(rootInteraction, cfg, guildId);
@@ -615,7 +615,7 @@ async function handleGoodbyeChannel(selectInteraction, rootInteraction, cfg, gui
         if (reason === 'time' && collected.size === 0) {
             replyUserError(selectInteraction, {
                 type: ErrorTypes.RATE_LIMIT,
-                message: 'No channel was selected. The setting was not changed.',
+                message: 'Không có kênh nào được chọn. Cài đặt không thay đổi.',
             }).catch(() => {});
         }
     });
@@ -624,14 +624,14 @@ async function handleGoodbyeChannel(selectInteraction, rootInteraction, cfg, gui
 async function handleGoodbyeMessage(selectInteraction, rootInteraction, cfg, guildId, client) {
     const modal = new ModalBuilder()
         .setCustomId('greet_cfg_goodbye_message')
-        .setTitle('Edit Goodbye Message')
+        .setTitle('Chỉnh sửa tin nhắn tạm biệt')
         .addComponents(
             new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                     .setCustomId('message_input')
-                    .setLabel('Message (variables: {user}, {server}, etc)')
+                    .setLabel('Tin nhắn (biến: {user}, {server}, v.v.)')
                     .setStyle(TextInputStyle.Paragraph)
-                    .setValue(cfg.leaveMessage || '{user.tag} has left the server.')
+                    .setValue(cfg.leaveMessage || '{user.tag} đã rời khỏi server.')
                     .setMaxLength(2000)
                     .setMinLength(1)
                     .setRequired(true),
@@ -658,7 +658,7 @@ async function handleGoodbyeMessage(selectInteraction, rootInteraction, cfg, gui
     await saveWelcomeConfig(client, guildId, cfg);
 
     await submitted.reply({
-        embeds: [successEmbed('Goodbye Message Updated', 'The goodbye message has been saved.')],
+        embeds: [successEmbed('Đã cập nhật tin nhắn tạm biệt', 'Tin nhắn tạm biệt đã được lưu.')],
         flags: MessageFlags.Ephemeral,
     });
 
@@ -668,13 +668,13 @@ async function handleGoodbyeMessage(selectInteraction, rootInteraction, cfg, gui
 async function handleGoodbyeImage(selectInteraction, rootInteraction, cfg, guildId, client) {
     const modal = new ModalBuilder()
         .setCustomId('greet_cfg_goodbye_image')
-        .setTitle('Set Goodbye Image');
+        .setTitle('Đặt hình ảnh tạm biệt');
 
     const imageHint = new TextDisplayBuilder()
-        .setContent('Provide a direct image URL **or** upload a file below. If both are given, the uploaded file takes priority. Leave the URL blank and skip the upload to remove the image.');
+        .setContent('Cung cấp URL hình ảnh trực tiếp **hoặc** tải file lên bên dưới. Nếu có cả hai, file tải lên sẽ được ưu tiên. Để trống URL và bỏ qua tải file để xóa hình ảnh.');
 
     const urlLabel = new LabelBuilder()
-        .setLabel('Image URL (optional)')
+        .setLabel('URL hình ảnh (tùy chọn)')
         .setTextInputComponent(
             new TextInputBuilder()
                 .setCustomId('image_input')
@@ -689,7 +689,7 @@ async function handleGoodbyeImage(selectInteraction, rootInteraction, cfg, guild
         );
 
     const uploadLabel = new LabelBuilder()
-        .setLabel('Or upload an image file (optional)')
+        .setLabel('Hoặc tải lên file hình ảnh (tùy chọn)')
         .setFileUploadComponent(
             new FileUploadBuilder()
                 .setCustomId('image_upload')
@@ -723,11 +723,11 @@ async function handleGoodbyeImage(selectInteraction, rootInteraction, cfg, guild
         try {
             new URL(imageUrl);
             if (!['http:', 'https:'].includes(new URL(imageUrl).protocol)) {
-                await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Image URL must start with `http://` or `https://`.' });
+                await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'URL hình ảnh phải bắt đầu bằng `http://` hoặc `https://`.' });
                 return;
             }
         } catch {
-            await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Please provide a valid image URL.' });
+            await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'Vui lòng cung cấp URL hình ảnh hợp lệ.' });
             return;
         }
     }
@@ -743,7 +743,7 @@ async function handleGoodbyeImage(selectInteraction, rootInteraction, cfg, guild
     await saveWelcomeConfig(client, guildId, cfg);
 
     await submitted.reply({
-        embeds: [successEmbed('Goodbye Image Updated', `Image ${imageUrl ? 'updated' : 'removed'} successfully.`)],
+        embeds: [successEmbed('Đã cập nhật hình ảnh tạm biệt', `Đã ${imageUrl ? 'cập nhật' : 'xóa'} hình ảnh thành công.`)],
         flags: MessageFlags.Ephemeral,
     });
 
@@ -761,8 +761,8 @@ async function handleGoodbyePing(selectInteraction, rootInteraction, cfg, guildI
     await sendEphemeralFollowUp(selectInteraction, {
         embeds: [
             successEmbed(
-                '✅ Goodbye Ping Updated',
-                `Leaving users will${cfg.goodbyePing ? '' : ' **not**'} be pinged in the goodbye message.`,
+                '✅ Đã cập nhật ping tạm biệt',
+                `Người rời server sẽ${cfg.goodbyePing ? '' : ' **không**'} được nhắc đến trong tin nhắn tạm biệt.`,
             ),
         ],
     });

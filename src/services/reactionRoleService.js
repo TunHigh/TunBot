@@ -21,7 +21,7 @@ function validateGuildId(guildId) {
         throw createError(
             `Invalid guild ID: ${guildId}`,
             ErrorTypes.VALIDATION,
-            'Invalid server ID provided.',
+            'ID máy chủ không hợp lệ.',
             { guildId }
         );
     }
@@ -32,7 +32,7 @@ function validateMessageId(messageId) {
         throw createError(
             `Invalid message ID: ${messageId}`,
             ErrorTypes.VALIDATION,
-            'Invalid message ID provided.',
+            'ID tin nhắn không hợp lệ.',
             { messageId }
         );
     }
@@ -43,7 +43,7 @@ function validateRoleId(roleId) {
         throw createError(
             `Invalid role ID: ${roleId}`,
             ErrorTypes.VALIDATION,
-            'Invalid role ID provided.',
+            'ID vai trò không hợp lệ.',
             { roleId }
         );
     }
@@ -66,7 +66,7 @@ async function validateRoleSafety(client, guildId, roleId) {
         throw createError(
             `Guild not found for role validation: ${guildId}`,
             ErrorTypes.VALIDATION,
-            'Server not found while validating reaction roles.',
+            'Không tìm thấy máy chủ khi kiểm tra reaction roles.',
             { guildId, roleId }
         );
     }
@@ -76,7 +76,7 @@ async function validateRoleSafety(client, guildId, roleId) {
         throw createError(
             `Role not found: ${roleId}`,
             ErrorTypes.VALIDATION,
-            'One or more selected roles no longer exist.',
+            'Một hoặc nhiều vai trò đã chọn không còn tồn tại.',
             { guildId, roleId }
         );
     }
@@ -85,7 +85,7 @@ async function validateRoleSafety(client, guildId, roleId) {
         throw createError(
             `Dangerous role permission detected: ${roleId}`,
             ErrorTypes.PERMISSION,
-            'For security reasons, high-privilege roles cannot be assigned through reaction roles.',
+            'Vì lý do bảo mật, các vai trò có quyền cao không thể được gán thông qua reaction roles.',
             { guildId, roleId, roleName: role.name, dangerousPermissions: DANGEROUS_PERMISSIONS }
         );
     }
@@ -95,7 +95,7 @@ async function validateRoleSafety(client, guildId, roleId) {
         throw createError(
             `Role above bot hierarchy: ${roleId}`,
             ErrorTypes.PERMISSION,
-            'I cannot assign this role because it is equal to or above my highest role.',
+            'Tôi không thể gán vai trò này vì nó bằng hoặc cao hơn vai trò cao nhất của tôi.',
             { guildId, roleId, rolePosition: role.position, botRolePosition: botHighestRole?.position }
         );
     }
@@ -117,7 +117,7 @@ export async function getReactionRoleMessage(client, guildId, messageId) {
         throw createError(
             `Database error retrieving reaction role message`,
             ErrorTypes.DATABASE,
-            'Failed to retrieve reaction role data. Please try again.',
+            'Không thể tải dữ liệu reaction role. Vui lòng thử lại.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -132,7 +132,7 @@ export async function createReactionRoleMessage(client, guildId, channelId, mess
             throw createError(
                 `Invalid channel ID: ${channelId}`,
                 ErrorTypes.VALIDATION,
-                'Invalid channel ID provided.',
+                'ID kênh không hợp lệ.',
                 { channelId }
             );
         }
@@ -141,7 +141,7 @@ export async function createReactionRoleMessage(client, guildId, channelId, mess
             throw createError(
                 'No roles provided',
                 ErrorTypes.VALIDATION,
-                'You must provide at least one role.',
+                'Bạn phải cung cấp ít nhất một vai trò.',
                 { roleIds }
             );
         }
@@ -150,7 +150,7 @@ export async function createReactionRoleMessage(client, guildId, channelId, mess
             throw createError(
                 `Too many roles: ${roleIds.length}`,
                 ErrorTypes.VALIDATION,
-                `You can only add up to ${MAX_ROLES_PER_MESSAGE} roles per reaction role message.`,
+                `Bạn chỉ có thể thêm tối đa ${MAX_ROLES_PER_MESSAGE} vai trò cho mỗi tin nhắn reaction role.`,
                 { roleIds, limit: MAX_ROLES_PER_MESSAGE }
             );
         }
@@ -181,7 +181,7 @@ export async function createReactionRoleMessage(client, guildId, channelId, mess
         throw createError(
             `Database error creating reaction role message`,
             ErrorTypes.DATABASE,
-            'Failed to save reaction role data. Please try again.',
+            'Không thể lưu dữ liệu reaction role. Vui lòng thử lại.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -215,7 +215,7 @@ export async function addReactionRole(client, guildId, messageId, emoji, roleId)
         throw createError(
             `Database error adding reaction role`,
             ErrorTypes.DATABASE,
-            'Failed to add reaction role. Please try again.',
+            'Không thể thêm reaction role. Vui lòng thử lại.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -246,7 +246,7 @@ export async function deleteReactionRoleMessage(client, guildId, messageId) {
         throw createError(
             `Database error deleting reaction role message`,
             ErrorTypes.DATABASE,
-            'Failed to delete reaction role message. Please try again.',
+            'Không thể xóa tin nhắn reaction role. Vui lòng thử lại.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -283,7 +283,7 @@ export async function removeReactionRole(client, guildId, messageId, emoji) {
         throw createError(
             `Database error removing reaction role`,
             ErrorTypes.DATABASE,
-            'Failed to remove reaction role. Please try again.',
+            'Không thể gỡ reaction role. Vui lòng thử lại.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -323,7 +323,7 @@ export async function getAllReactionRoleMessages(client, guildId) {
             throw createError(
                 'Database error listing reaction roles',
                 ErrorTypes.DATABASE,
-                'Failed to retrieve reaction role list. Please try again.',
+                'Không thể tải danh sách reaction role. Vui lòng thử lại.',
                 { guildId, originalError: listError.message }
             );
         }
@@ -369,7 +369,7 @@ export async function getAllReactionRoleMessages(client, guildId) {
         throw createError(
             'Database error retrieving reaction roles',
             ErrorTypes.DATABASE,
-            'Failed to retrieve reaction role messages. Please try again.',
+            'Không thể tải các tin nhắn reaction role. Vui lòng thử lại.',
             { guildId, originalError: error.message }
         );
     }
@@ -384,7 +384,7 @@ export async function setReactionRoleChannel(client, guildId, messageId, channel
             throw createError(
                 `Invalid channel ID: ${channelId}`,
                 ErrorTypes.VALIDATION,
-                'Invalid channel ID provided.',
+                'ID kênh không hợp lệ.',
                 { channelId }
             );
         }
@@ -409,7 +409,7 @@ export async function setReactionRoleChannel(client, guildId, messageId, channel
         throw createError(
             `Database error setting reaction role channel`,
             ErrorTypes.DATABASE,
-            'Failed to update reaction role channel. Please try again.',
+            'Không thể cập nhật kênh reaction role. Vui lòng thử lại.',
             { guildId, messageId, channelId, originalError: error.message }
         );
     }
