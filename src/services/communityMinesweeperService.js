@@ -34,9 +34,9 @@ const CELL_TYPES = {
 // Cell type distribution for 25 cells (5x5)
 const CELL_DISTRIBUTION = {
   [CELL_TYPES.BOMB]: 8,      // 8 bombs
-  [CELL_TYPES.MONEY]: 8,     // 8 money cells
+  [CELL_TYPES.MONEY]: 3,     // 3 money reward cells
   [CELL_TYPES.SPIN]: 2,      // 2 spin cells
-  [CELL_TYPES.EMPTY]: 7,     // 7 empty cells
+  [CELL_TYPES.EMPTY]: 12,    // 12 empty cells
 };
 
 export const activeGames = new Map();
@@ -489,7 +489,7 @@ function getSafeCellsRevealed(game) {
 function buildEmbed(game, status = null, finished = false) {
   return new EmbedBuilder()
     .setColor(finished ? '#95A5A6' : '#F1C40F')
-    .setTitle('💣 Dò Mìn Cộng Đồng')
+    .setTitle('💥💥 Dò Mìn Tới Rồi Cả Nhà💥💥')
     .setDescription(
       [
         '\u{1F4A3} = Bomb (8 quả)',
