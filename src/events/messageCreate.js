@@ -18,7 +18,7 @@ import {
   isValidCountingMessage,
   recordCorrectCount,
 } from '../services/countingGameService.js';
-import { getCommunityMinesweeperConfig, startCommunityMinesweeper } from '../services/communityMinesweeperService.js';
+import { getCommunityMinesweeperConfig, startCommunityMinesweeper, activeGames } from '../services/communityMinesweeperService.js';
 
 const MESSAGE_XP_RATE_LIMIT_ATTEMPTS = 12;
 const MESSAGE_XP_RATE_LIMIT_WINDOW_MS = 10000;
@@ -302,7 +302,6 @@ async function handleGiftBoxSystem(message, client) {
 async function triggerMinesweeperGame(channel, client, guildId, config) {
   try {
     // Check if there's already an active game in this guild
-    const { activeGames } = await import('../services/communityMinesweeperService.js');
     if (activeGames.has(guildId)) {
       return;
     }

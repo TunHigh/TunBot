@@ -13,14 +13,11 @@ import {
   formatMinesweeperInterval,
   getCommunityMinesweeperConfig,
   isValidMinesweeperMineCount,
-  isValidMinesweeperReward,
   isValidMinesweeperMessageThreshold,
 } from '../../services/communityMinesweeperService.js';
 
 const MIN_MINE_COUNT = 1;
 const MAX_MINE_COUNT = 24;
-const MIN_TOTAL_REWARD = 100;
-const MAX_TOTAL_REWARD = 100_000_000;
 const MIN_MESSAGE_THRESHOLD = 1;
 const MAX_MESSAGE_THRESHOLD = 1000;
 
@@ -33,7 +30,7 @@ export default {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('setup')
-        .setDescription('Đặt kênh, số mìn, tổng thưởng và ngưỡng tin nhắn')
+        .setDescription('Đặt kênh, số mìn và ngưỡng tin nhắn')
         .addChannelOption((option) =>
           option
             .setName('channel')
@@ -47,14 +44,6 @@ export default {
             .setDescription('Số mìn trên bảng 5x5')
             .setMinValue(MIN_MINE_COUNT)
             .setMaxValue(MAX_MINE_COUNT)
-            .setRequired(true),
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName('reward')
-            .setDescription('Tổng tiền thưởng của mỗi lượt')
-            .setMinValue(MIN_TOTAL_REWARD)
-            .setMaxValue(MAX_TOTAL_REWARD)
             .setRequired(true),
         )
         .addIntegerOption((option) =>
@@ -89,7 +78,6 @@ export default {
     if (subcommand === 'setup') {
       const channel = interaction.options.getChannel('channel');
       const mineCount = interaction.options.getInteger('mines');
-      const totalReward = interaction.options.getInteger('reward');
       const messageThreshold = interaction.options.getInteger('messages') || 10;
 
       if (!channel?.isTextBased?.() || channel.type !== ChannelType.GuildText) {
@@ -103,13 +91,6 @@ export default {
         return replyUserError(interaction, {
           type: ErrorTypes.VALIDATION,
           message: `Số mìn phải từ **${MIN_MINE_COUNT}** đến **${MAX_MINE_COUNT}**.`,
-        });
-      }
-
-      if (!isValidMinesweeperReward(totalReward)) {
-        return replyUserError(interaction, {
-          type: ErrorTypes.VALIDATION,
-          message: `Tổng thưởng phải từ **$${MIN_TOTAL_REWARD.toLocaleString('en-US')}** đến **$${MAX_TOTAL_REWARD.toLocaleString('en-US')}**.`,
         });
       }
 
@@ -128,7 +109,7 @@ export default {
         channel.id,
         intervalMs,
         mineCount,
-        totalReward,
+        0, // totalReward is now ignored, using random 1k-40k per cell
         messageThreshold,
       );
 
@@ -139,7 +120,7 @@ export default {
             [
               `Kênh trò chơi: ${channel}`,
               `Số mìn: **${mineCount}**`,
-              `Tổng thưởng mỗi lượt: **$${totalReward.toLocaleString('en-US')}**`,
+              `Thưởng mỗi ô tiền: **$1.000 - $40.000** (ngẫu nhiên)`,
               `Số tin nhắn để chạy game: **${messageThreshold}**`,
               'Người chơi chỉ được cộng wallet khi mở hết ô an toàn. Dẫm mìn sẽ hủy toàn bộ thưởng của lượt đó.',
               'Game sẽ tự động chạy khi đủ số tin nhắn trong kênh.',
@@ -172,7 +153,7 @@ export default {
           [
             `Kênh: <#${config.channelId}>`,
             `Số mìn: **${config.mineCount}**`,
-            `Tổng thưởng mỗi lượt: **$${config.totalReward.toLocaleString('en-US')}**`,
+            `Thưởng mỗi ô tiền: **$1.000 - $40.000** (ngẫu nhiên)`,
             `Số tin nhắn để chạy game: **${config.messageThreshold}**`,
             'Dẫm mìn sẽ kết thúc lượt và hủy toàn bộ thưởng tạm giữ.',
           ].join('\n'),

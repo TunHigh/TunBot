@@ -11,16 +11,17 @@ import { logger } from '../utils/logger.js';
 const BOARD_SIZE = 5;
 const TOTAL_CELLS = BOARD_SIZE * BOARD_SIZE;
 const DEFAULT_MINE_COUNT = 8;
-const DEFAULT_TOTAL_REWARD = 20_000;
 const MIN_MINE_COUNT = 1;
 const MAX_MINE_COUNT = TOTAL_CELLS - 1;
-const MIN_TOTAL_REWARD = 100;
-const MAX_TOTAL_REWARD = 100_000_000;
 const GAME_TIMEOUT_MS = 5 * 60 * 1000;
 const MIN_INTERVAL_MS = 60 * 1000;
 const DEFAULT_MESSAGE_THRESHOLD = 10;
 const MIN_MESSAGE_THRESHOLD = 1;
 const MAX_MESSAGE_THRESHOLD = 1000;
+
+// Money range for money cells
+const MONEY_MIN = 1000;
+const MONEY_MAX = 40000;
 
 // Cell types
 const CELL_TYPES = {
@@ -38,11 +39,7 @@ const CELL_DISTRIBUTION = {
   [CELL_TYPES.EMPTY]: 7,     // 7 empty cells
 };
 
-// Money range for money cells
-const MONEY_MIN = 1000;
-const MONEY_MAX = 40000;
-
-const activeGames = new Map();
+export const activeGames = new Map();
 
 export function parseMinesweeperInterval(value) {
   if (typeof value !== 'string') return null;
@@ -72,10 +69,6 @@ export function isValidMinesweeperMineCount(value) {
   return Number.isInteger(value) && value >= MIN_MINE_COUNT && value <= MAX_MINE_COUNT;
 }
 
-export function isValidMinesweeperReward(value) {
-  return Number.isInteger(value) && value >= MIN_TOTAL_REWARD && value <= MAX_TOTAL_REWARD;
-}
-
 export function isValidMinesweeperMessageThreshold(value) {
   return Number.isInteger(value) && value >= MIN_MESSAGE_THRESHOLD && value <= MAX_MESSAGE_THRESHOLD;
 }
@@ -86,7 +79,7 @@ export async function configureCommunityMinesweeper(
   channelId,
   intervalMs,
   mineCount,
-  totalReward,
+  totalReward, // kept for backward compatibility but ignored
   messageThreshold = DEFAULT_MESSAGE_THRESHOLD,
 ) {
   if (!Number.isInteger(intervalMs) || intervalMs < MIN_INTERVAL_MS) {
@@ -95,10 +88,6 @@ export async function configureCommunityMinesweeper(
 
   if (!isValidMinesweeperMineCount(mineCount)) {
     throw new Error(`Số mìn phải từ ${MIN_MINE_COUNT} đến ${MAX_MINE_COUNT}.`);
-  }
-
-  if (!isValidMinesweeperReward(totalReward)) {
-    throw new Error(`Tổng thưởng phải từ $${MIN_TOTAL_REWARD.toLocaleString('en-US')} đến $${MAX_TOTAL_REWARD.toLocaleString('en-US')}.`);
   }
 
   if (!isValidMinesweeperMessageThreshold(messageThreshold)) {
@@ -112,7 +101,7 @@ export async function configureCommunityMinesweeper(
       channelId,
       intervalMs,
       mineCount,
-      totalReward,
+      totalReward: 0, // Not used anymore, rewards are random per cell
       messageThreshold,
       nextGameAt,
     },
@@ -150,9 +139,7 @@ export async function getCommunityMinesweeperConfig(client, guildId) {
     mineCount: isValidMinesweeperMineCount(gameConfig.mineCount)
       ? gameConfig.mineCount
       : DEFAULT_MINE_COUNT,
-    totalReward: isValidMinesweeperReward(gameConfig.totalReward)
-      ? gameConfig.totalReward
-      : DEFAULT_TOTAL_REWARD,
+    totalReward: 0, // Not used anymore, rewards are random per cell
     messageThreshold: isValidMinesweeperMessageThreshold(gameConfig.messageThreshold)
       ? gameConfig.messageThreshold
       : DEFAULT_MESSAGE_THRESHOLD,
@@ -361,7 +348,7 @@ function getDisabledConfig() {
     channelId: null,
     intervalMs: null,
     mineCount: DEFAULT_MINE_COUNT,
-    totalReward: DEFAULT_TOTAL_REWARD,
+    totalReward: 0,
     messageThreshold: DEFAULT_MESSAGE_THRESHOLD,
     nextGameAt: null,
   };
@@ -401,6 +388,8 @@ function createGame(guildId, config) {
   const spinCells = new Set();
   const emptyCells = new Set();
   
+  let totalPotentialReward = 0;
+  
   cellTypes.forEach((type, index) => {
     cellTypeMap.set(index, type);
     switch (type) {
@@ -408,7 +397,9 @@ function createGame(guildId, config) {
         mines.add(index);
         break;
       case CELL_TYPES.MONEY:
-        moneyCells.set(index, Math.floor(Math.random() * (MONEY_MAX - MONEY_MIN + 1)) + MONEY_MIN);
+        const amount = Math.floor(Math.random() * (MONEY_MAX - MONEY_MIN + 1)) + MONEY_MIN;
+        moneyCells.set(index, amount);
+        totalPotentialReward += amount;
         break;
       case CELL_TYPES.SPIN:
         spinCells.add(index);
@@ -427,7 +418,7 @@ function createGame(guildId, config) {
     guildId,
     mineCount: mines.size,
     safeCellCount: safeIndexes.length,
-    totalReward: config.totalReward,
+    totalReward: totalPotentialReward, // Show actual potential reward
     mines,
     cellTypeMap,
     moneyCells,
