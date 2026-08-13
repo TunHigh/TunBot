@@ -10,14 +10,11 @@ import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import {
   configureCommunityMinesweeper,
   disableCommunityMinesweeper,
-  formatMinesweeperInterval,
   getCommunityMinesweeperConfig,
-  isValidMinesweeperMineCount,
   isValidMinesweeperMessageThreshold,
 } from '../../services/communityMinesweeperService.js';
 
-const MIN_MINE_COUNT = 1;
-const MAX_MINE_COUNT = 24;
+const DEFAULT_MINE_COUNT = 8;
 const MIN_MESSAGE_THRESHOLD = 1;
 const MAX_MESSAGE_THRESHOLD = 1000;
 
@@ -30,21 +27,13 @@ export default {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('setup')
-        .setDescription('Đặt kênh, số mìn và ngưỡng tin nhắn')
+        .setDescription('Đặt kênh và số tin nhắn')
         .addChannelOption((option) =>
           option
             .setName('channel')
             .setDescription('Kênh văn bản để bot đăng trò chơi')
             .setRequired(true)
             .addChannelTypes(ChannelType.GuildText),
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName('mines')
-            .setDescription('Số mìn trên bảng 5x5')
-            .setMinValue(MIN_MINE_COUNT)
-            .setMaxValue(MAX_MINE_COUNT)
-            .setRequired(true),
         )
         .addIntegerOption((option) =>
           option
@@ -77,20 +66,13 @@ export default {
 
     if (subcommand === 'setup') {
       const channel = interaction.options.getChannel('channel');
-      const mineCount = interaction.options.getInteger('mines');
+      const mineCount = DEFAULT_MINE_COUNT;
       const messageThreshold = interaction.options.getInteger('messages') || 10;
 
       if (!channel?.isTextBased?.() || channel.type !== ChannelType.GuildText) {
         return replyUserError(interaction, {
           type: ErrorTypes.VALIDATION,
           message: 'Vui lòng chọn một kênh văn bản hợp lệ.',
-        });
-      }
-
-      if (!isValidMinesweeperMineCount(mineCount)) {
-        return replyUserError(interaction, {
-          type: ErrorTypes.VALIDATION,
-          message: `Số mìn phải từ **${MIN_MINE_COUNT}** đến **${MAX_MINE_COUNT}**.`,
         });
       }
 
@@ -122,7 +104,7 @@ export default {
               `Số mìn: **${mineCount}**`,
               `Thưởng mỗi ô tiền: **$1.000 - $40.000** (ngẫu nhiên)`,
               `Số tin nhắn để chạy game: **${messageThreshold}**`,
-              'Người chơi chỉ được cộng wallet khi mở hết ô an toàn. Dẫm mìn sẽ hủy toàn bộ thưởng của lượt đó.',
+              'Người đầu tiên mở ô tiền hoặc lượt quay sẽ nhận kết quả và hòm quà đóng lại. Dẫm mìn sẽ hủy toàn bộ phần thưởng.',
               'Game sẽ tự động chạy khi đủ số tin nhắn trong kênh.',
             ].join('\n'),
           ),
@@ -152,10 +134,10 @@ export default {
           'Săn Mìn Cộng Đồng',
           [
             `Kênh: <#${config.channelId}>`,
-            `Số mìn: **${config.mineCount}**`,
+            `Số mìn: **${DEFAULT_MINE_COUNT}**`,
             `Thưởng mỗi ô tiền: **$1.000 - $40.000** (ngẫu nhiên)`,
             `Số tin nhắn để chạy game: **${config.messageThreshold}**`,
-            'Dẫm mìn sẽ kết thúc lượt và hủy toàn bộ thưởng tạm giữ.',
+            'Người đầu tiên mở ô tiền hoặc lượt quay sẽ nhận kết quả và hòm quà đóng lại. Dẫm mìn sẽ hủy toàn bộ phần thưởng.',
           ].join('\n'),
         ),
       ],
