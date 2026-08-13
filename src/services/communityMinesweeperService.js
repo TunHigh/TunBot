@@ -617,7 +617,7 @@ function buildComponents(game, disabled = false, revealAll = false) {
             buttonLabel = formatMoneyDisplay(game.moneyCells.get(index));
             break;
           case CELL_TYPES.SPIN:
-            buttonStyle = ButtonStyle.Success;
+            buttonStyle = ButtonStyle.Primary;
             buttonEmoji = '\u{26AA}';
             break;
           case CELL_TYPES.EMPTY:
