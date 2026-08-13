@@ -14,13 +14,15 @@ import {
   getCommunityMinesweeperConfig,
   isValidMinesweeperMineCount,
   isValidMinesweeperReward,
-  parseMinesweeperInterval,
+  isValidMinesweeperMessageThreshold,
 } from '../../services/communityMinesweeperService.js';
 
 const MIN_MINE_COUNT = 1;
 const MAX_MINE_COUNT = 24;
 const MIN_TOTAL_REWARD = 100;
 const MAX_TOTAL_REWARD = 100_000_000;
+const MIN_MESSAGE_THRESHOLD = 1;
+const MAX_MESSAGE_THRESHOLD = 1000;
 
 export default {
   data: new SlashCommandBuilder()
@@ -31,19 +33,13 @@ export default {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('setup')
-        .setDescription('Đặt kênh, chu kỳ, số mìn và tổng thưởng')
+        .setDescription('Đặt kênh, số mìn, tổng thưởng và ngưỡng tin nhắn')
         .addChannelOption((option) =>
           option
             .setName('channel')
             .setDescription('Kênh văn bản để bot đăng trò chơi')
             .setRequired(true)
             .addChannelTypes(ChannelType.GuildText),
-        )
-        .addStringOption((option) =>
-          option
-            .setName('time')
-            .setDescription('Chu kỳ HH:MM:SS, tối thiểu 00:01:00')
-            .setRequired(true),
         )
         .addIntegerOption((option) =>
           option
@@ -60,6 +56,14 @@ export default {
             .setMinValue(MIN_TOTAL_REWARD)
             .setMaxValue(MAX_TOTAL_REWARD)
             .setRequired(true),
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName('messages')
+            .setDescription('Số tin nhắn để tự động chạy game (mặc định 10)')
+            .setMinValue(MIN_MESSAGE_THRESHOLD)
+            .setMaxValue(MAX_MESSAGE_THRESHOLD)
+            .setRequired(false),
         ),
     )
     .addSubcommand((subcommand) =>
@@ -84,22 +88,14 @@ export default {
 
     if (subcommand === 'setup') {
       const channel = interaction.options.getChannel('channel');
-      const time = interaction.options.getString('time');
       const mineCount = interaction.options.getInteger('mines');
       const totalReward = interaction.options.getInteger('reward');
-      const intervalMs = parseMinesweeperInterval(time);
+      const messageThreshold = interaction.options.getInteger('messages') || 10;
 
       if (!channel?.isTextBased?.() || channel.type !== ChannelType.GuildText) {
         return replyUserError(interaction, {
           type: ErrorTypes.VALIDATION,
           message: 'Vui lòng chọn một kênh văn bản hợp lệ.',
-        });
-      }
-
-      if (!intervalMs) {
-        return replyUserError(interaction, {
-          type: ErrorTypes.VALIDATION,
-          message: 'Thời gian phải theo dạng **HH:MM:SS** và ít nhất là **00:01:00**.',
         });
       }
 
@@ -117,6 +113,15 @@ export default {
         });
       }
 
+      if (!isValidMinesweeperMessageThreshold(messageThreshold)) {
+        return replyUserError(interaction, {
+          type: ErrorTypes.VALIDATION,
+          message: `Số tin nhắn phải từ **${MIN_MESSAGE_THRESHOLD}** đến **${MAX_MESSAGE_THRESHOLD}**.`,
+        });
+      }
+
+      // Use a default interval of 1 hour since we're not using time-based scheduling anymore
+      const intervalMs = 60 * 60 * 1000; // 1 hour default
       const { nextGameAt } = await configureCommunityMinesweeper(
         interaction.client,
         interaction.guildId,
@@ -124,6 +129,7 @@ export default {
         intervalMs,
         mineCount,
         totalReward,
+        messageThreshold,
       );
 
       return InteractionHelper.safeEditReply(interaction, {
@@ -132,11 +138,11 @@ export default {
             'Đã Cài Đặt Săn Mìn Cộng Đồng',
             [
               `Kênh trò chơi: ${channel}`,
-              `Chu kỳ: **${formatMinesweeperInterval(intervalMs)}**`,
               `Số mìn: **${mineCount}**`,
               `Tổng thưởng mỗi lượt: **$${totalReward.toLocaleString('en-US')}**`,
+              `Số tin nhắn để chạy game: **${messageThreshold}**`,
               'Người chơi chỉ được cộng wallet khi mở hết ô an toàn. Dẫm mìn sẽ hủy toàn bộ thưởng của lượt đó.',
-              `Lượt đầu tiên sẽ xuất hiện <t:${Math.floor(nextGameAt / 1000)}:R>.`,
+              'Game sẽ tự động chạy khi đủ số tin nhắn trong kênh.',
             ].join('\n'),
           ),
         ],
@@ -165,12 +171,9 @@ export default {
           'Săn Mìn Cộng Đồng',
           [
             `Kênh: <#${config.channelId}>`,
-            `Chu kỳ: **${formatMinesweeperInterval(config.intervalMs)}**`,
             `Số mìn: **${config.mineCount}**`,
             `Tổng thưởng mỗi lượt: **$${config.totalReward.toLocaleString('en-US')}**`,
-            config.nextGameAt
-              ? `Lượt tiếp theo: <t:${Math.floor(config.nextGameAt / 1000)}:R>`
-              : 'Lượt tiếp theo đang được lên lịch.',
+            `Số tin nhắn để chạy game: **${config.messageThreshold}**`,
             'Dẫm mìn sẽ kết thúc lượt và hủy toàn bộ thưởng tạm giữ.',
           ].join('\n'),
         ),

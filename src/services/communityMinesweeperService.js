@@ -18,6 +18,9 @@ const MIN_TOTAL_REWARD = 100;
 const MAX_TOTAL_REWARD = 100_000_000;
 const GAME_TIMEOUT_MS = 5 * 60 * 1000;
 const MIN_INTERVAL_MS = 60 * 1000;
+const DEFAULT_MESSAGE_THRESHOLD = 10;
+const MIN_MESSAGE_THRESHOLD = 1;
+const MAX_MESSAGE_THRESHOLD = 1000;
 
 // Cell types
 const CELL_TYPES = {
@@ -73,6 +76,10 @@ export function isValidMinesweeperReward(value) {
   return Number.isInteger(value) && value >= MIN_TOTAL_REWARD && value <= MAX_TOTAL_REWARD;
 }
 
+export function isValidMinesweeperMessageThreshold(value) {
+  return Number.isInteger(value) && value >= MIN_MESSAGE_THRESHOLD && value <= MAX_MESSAGE_THRESHOLD;
+}
+
 export async function configureCommunityMinesweeper(
   client,
   guildId,
@@ -80,6 +87,7 @@ export async function configureCommunityMinesweeper(
   intervalMs,
   mineCount,
   totalReward,
+  messageThreshold = DEFAULT_MESSAGE_THRESHOLD,
 ) {
   if (!Number.isInteger(intervalMs) || intervalMs < MIN_INTERVAL_MS) {
     throw new Error('Khoảng thời gian không hợp lệ.');
@@ -93,6 +101,10 @@ export async function configureCommunityMinesweeper(
     throw new Error(`Tổng thưởng phải từ $${MIN_TOTAL_REWARD.toLocaleString('en-US')} đến $${MAX_TOTAL_REWARD.toLocaleString('en-US')}.`);
   }
 
+  if (!isValidMinesweeperMessageThreshold(messageThreshold)) {
+    throw new Error(`Ngưỡng tin nhắn phải từ ${MIN_MESSAGE_THRESHOLD} đến ${MAX_MESSAGE_THRESHOLD}.`);
+  }
+
   const nextGameAt = Date.now() + intervalMs;
   await patchGuildConfig(client, guildId, {
     communityMinesweeper: {
@@ -101,6 +113,7 @@ export async function configureCommunityMinesweeper(
       intervalMs,
       mineCount,
       totalReward,
+      messageThreshold,
       nextGameAt,
     },
   }, { source: 'caidatmin' });
@@ -116,6 +129,7 @@ export async function disableCommunityMinesweeper(client, guildId) {
       intervalMs: null,
       mineCount: null,
       totalReward: null,
+      messageThreshold: null,
       nextGameAt: null,
     },
   }, { source: 'caidatmin' });
@@ -139,6 +153,9 @@ export async function getCommunityMinesweeperConfig(client, guildId) {
     totalReward: isValidMinesweeperReward(gameConfig.totalReward)
       ? gameConfig.totalReward
       : DEFAULT_TOTAL_REWARD,
+    messageThreshold: isValidMinesweeperMessageThreshold(gameConfig.messageThreshold)
+      ? gameConfig.messageThreshold
+      : DEFAULT_MESSAGE_THRESHOLD,
     nextGameAt: Number.isInteger(gameConfig.nextGameAt) ? gameConfig.nextGameAt : null,
   };
 }
@@ -345,6 +362,7 @@ function getDisabledConfig() {
     intervalMs: null,
     mineCount: DEFAULT_MINE_COUNT,
     totalReward: DEFAULT_TOTAL_REWARD,
+    messageThreshold: DEFAULT_MESSAGE_THRESHOLD,
     nextGameAt: null,
   };
 }
@@ -495,6 +513,15 @@ function buildEmbed(game, status = null, finished = false) {
     .setTimestamp();
 }
 
+function formatMoneyDisplay(amount) {
+  if (amount >= 1000000) {
+    return `${(amount / 1000000).toFixed(1)}M`;
+  } else if (amount >= 1000) {
+    return `${(amount / 1000).toFixed(1)}k`;
+  }
+  return amount.toString();
+}
+
 function buildComponents(game, disabled = false) {
   const rows = [];
 
@@ -517,7 +544,7 @@ function buildComponents(game, disabled = false) {
             break;
           case CELL_TYPES.MONEY:
             buttonStyle = ButtonStyle.Success;
-            buttonLabel = `💰$${game.moneyCells.get(index).toLocaleString('en-US')}`;
+            buttonLabel = `💰$${formatMoneyDisplay(game.moneyCells.get(index))}`;
             break;
           case CELL_TYPES.SPIN:
             buttonStyle = ButtonStyle.Success;
