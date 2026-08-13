@@ -213,77 +213,63 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
         return;
       }
 
-      if (game.finished || game.revealed.has(index) || game.processing.has(index)) {
+      if (game.finished || game.resolved || game.revealed.has(index) || game.processing.has(index)) {
         await interaction.deferUpdate().catch(() => {});
         return;
       }
 
+      const cellType = game.cellTypeMap.get(index);
       game.processing.add(index);
+
+      // Lock a money, spin, or bomb result before awaiting Discord's API.
+      // The first special-cell interaction received by the bot owns the round.
+      if (cellType !== CELL_TYPES.EMPTY) {
+        game.resolved = true;
+        game.revealed.add(index);
+      }
 
       try {
         await interaction.deferUpdate();
 
-        const cellType = game.cellTypeMap.get(index);
-        
-        if (cellType === CELL_TYPES.BOMB) {
+        if (cellType === CELL_TYPES.EMPTY) {
           game.revealed.add(index);
-          game.mineTriggeredBy = interaction.user;
-          game.outcome = 'mine';
-          collector.stop('mine');
 
-          await channel.send({
-            embeds: [
-              new EmbedBuilder()
-                .setColor('#E74C3C')
-                .setTitle('\u{1F4A5}\u{1F4A5}\u{1F4A5} BOOM! \u{1F4A5}\u{1F4A5}\u{1F4A5}')
-                .setDescription(
-                  `\u{1F6A8} ${interaction.user} ĐÃ DẪM PHẢI BOMB!\n`
-                  + '\u{274C} Tất cả phần thưởng đã bị vô hiệu hóa!',
-                )
-                .setTimestamp(),
-            ],
-          }).catch(() => {});
+          await game.message.edit({
+            embeds: [buildEmbed(game)],
+            components: buildComponents(game),
+          });
 
           return;
         }
 
-        let reward = 0;
-        let rewardMessage = '';
-        
-        switch (cellType) {
-          case CELL_TYPES.MONEY:
-            reward = game.moneyCells.get(index);
-            game.pendingReward += reward;
-            game.winners.push({ userId: interaction.user.id, reward });
-            rewardMessage = `💰 ${interaction.user} đã mở ô chứa **$${reward.toLocaleString('en-US')}**. Tiền đang được giữ tạm; chỉ được cộng vào wallet nếu cả cộng đồng mở hết ô an toàn mà không dẫm mìn.`;
-            break;
-          case CELL_TYPES.SPIN:
-            reward = 0; // Spin doesn't give direct money, gives spin chance
-            game.winners.push({ userId: interaction.user.id, reward: 0, spin: true });
-            rewardMessage = `⚪ ${interaction.user} đã mở ô **Lượt Quay**! Bạn nhận được 1 lượt quay may mắn.`;
-            break;
-          case CELL_TYPES.EMPTY:
-            reward = 0;
-            break;
-        }
-        
-        game.revealed.add(index);
+        if (cellType === CELL_TYPES.BOMB) {
+          game.mineTriggeredBy = interaction.user;
+          game.outcome = 'mine';
+          collector.stop('mine');
 
-        if (rewardMessage) {
-          await interaction.followUp({
-            content: rewardMessage,
-            ephemeral: false,
-          }).catch(() => {});
+          await sendGameResultReply(game, 'mine', interaction.user);
+          return;
         }
 
-        await game.message.edit({
-          embeds: [buildEmbed(game)],
-          components: buildComponents(game),
-        });
+        if (cellType === CELL_TYPES.MONEY) {
+          const reward = game.moneyCells.get(index);
+          game.pendingReward = reward;
+          game.winners.push({ userId: interaction.user.id, reward });
+          game.winningUser = interaction.user;
+          game.outcome = 'money';
+          collector.stop('money');
 
-        if (getSafeCellsRevealed(game) === game.safeCellCount) {
-          game.outcome = 'completed';
-          collector.stop('completed');
+          await sendGameResultReply(game, 'money', interaction.user, reward);
+          return;
+        }
+
+        if (cellType === CELL_TYPES.SPIN) {
+          game.winners.push({ userId: interaction.user.id, reward: 0, spin: true });
+          game.winningUser = interaction.user;
+          game.outcome = 'spin';
+          collector.stop('spin');
+
+          await sendGameResultReply(game, 'spin', interaction.user);
         }
       } catch (error) {
         logger.error('[COMMUNITY_MINESWEEPER] Failed to process board cell', {
@@ -307,18 +293,17 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
       activeGames.delete(guild.id);
 
       let status;
-      if (reason === 'completed' && game.outcome === 'completed') {
-        const paidReward = await payPendingRewards(client, guild.id, game);
-        status = paidReward === game.totalReward
-          ? `🎉 Đã mở hết ô an toàn! **$${paidReward.toLocaleString('en-US')}** đã được cộng vào wallet của người chơi.`
-          : `⚠️ Đã mở hết ô an toàn, nhưng chỉ cộng được **$${paidReward.toLocaleString('en-US')}** / **$${game.totalReward.toLocaleString('en-US')}**. Hãy kiểm tra log bot.`;
-      } else if (reason === 'mine' || game.outcome === 'mine') {
-        status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn. Toàn bộ **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng đã bị hủy.`;
-      } else {
+      if (reason === 'money' && game.outcome === 'money') {
         const paidReward = await payPendingRewards(client, guild.id, game);
         status = paidReward === game.pendingReward
-          ? `⌛ Hết giờ! Không có ai dẫm bom nên **$${paidReward.toLocaleString('en-US')}** từ các ô thưởng đã mở được cộng vào wallet.`
-          : `⚠️ Hết giờ! Đã cộng **$${paidReward.toLocaleString('en-US')}** / **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng đã mở. Hãy kiểm tra log bot.`;
+          ? `💸 ${game.winningUser} đã nhận **${paidReward.toLocaleString('en-US')} xu**. Hòm quà đã đóng lại!`
+          : `⚠️ Hòm quà đã đóng, nhưng chỉ cộng được **${paidReward.toLocaleString('en-US')}** / **${game.pendingReward.toLocaleString('en-US')} xu**.`;
+      } else if (reason === 'spin' && game.outcome === 'spin') {
+        status = `🎰✨ ${game.winningUser} nhận được **1 Lượt Quay Thưởng**. Hòm quà đã đóng lại!`;
+      } else if (reason === 'mine' || game.outcome === 'mine') {
+        status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn. Tất cả phần thưởng đã bị vô hiệu hóa!`;
+      } else {
+        status = '⌛ Hết giờ! Không có người chơi nào mở ô tiền hoặc lượt quay.';
       }
 
       await game.message.edit({
@@ -344,6 +329,50 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
     activeGames.delete(guild.id);
     throw error;
   }
+}
+
+async function sendGameResultReply(game, outcome, user, reward = 0) {
+  let embed;
+
+  switch (outcome) {
+    case 'money':
+      embed = new EmbedBuilder()
+        .setColor('#2ECC71')
+        .setDescription(
+          `💸 ${user} TRÚNG TIỀN!\n`
+          + `💰 Bạn nhận được: **${reward.toLocaleString('en-US')} xu**\n`
+          + 'Hòm quà đã đóng lại!',
+        );
+      break;
+    case 'spin':
+      embed = new EmbedBuilder()
+        .setColor('#9B59B6')
+        .setDescription(
+          `🎰✨ ${user} TRÚNG LƯỢT QUAY!\n`
+          + 'Bạn nhận được: **1 Lượt Quay Thưởng**\n'
+          + '🎊 Hòm quà đã đóng lại!',
+        );
+      break;
+    case 'mine':
+      embed = new EmbedBuilder()
+        .setColor('#E74C3C')
+        .setTitle('💥💥💥 BOOM! 💥💥💥')
+        .setDescription(
+          `🚨 ${user} ĐÃ DẪM PHẢI BOMB!\n`
+          + '❌ Tất cả phần thưởng đã bị vô hiệu hóa!',
+        );
+      break;
+    default:
+      return;
+  }
+
+  await game.message.reply({ embeds: [embed] }).catch((error) => {
+    logger.warn('[COMMUNITY_MINESWEEPER] Could not send game result reply', {
+      guildId: game.guildId,
+      outcome,
+      error: error.message,
+    });
+  });
 }
 
 function getDisabledConfig() {
@@ -444,6 +473,8 @@ function createGame(guildId, config) {
     outcome: null,
     mineTriggeredBy: null,
     finished: false,
+    resolved: false,
+    winningUser: null,
     message: null,
     collector: null,
   };
