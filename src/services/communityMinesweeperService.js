@@ -20,8 +20,8 @@ const MIN_MESSAGE_THRESHOLD = 1;
 const MAX_MESSAGE_THRESHOLD = 1000;
 
 // Money range for money cells
-const MONEY_MIN = 1000;
-const MONEY_MAX = 40000;
+const TOTAL_REWARD_MIN = 1000;
+const TOTAL_REWARD_MAX = 40000;
 
 // Cell types
 const CELL_TYPES = {
@@ -235,10 +235,10 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
             embeds: [
               new EmbedBuilder()
                 .setColor('#E74C3C')
-                .setTitle('💥 Dò Mìn — Trò Chơi Kết Thúc')
+                .setTitle('\u{1F4A5}\u{1F4A5}\u{1F4A5} BOOM! \u{1F4A5}\u{1F4A5}\u{1F4A5}')
                 .setDescription(
-                  `${interaction.user} đã dẫm trúng mìn.\n`
-                  + `Toàn bộ **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng đã mở bị hủy và **không ai được cộng wallet**.`,
+                  `\u{1F6A8} ${interaction.user} ĐÃ DẪM PHẢI BOMB!\n`
+                  + '\u{274C} Tất cả phần thưởng đã bị vô hiệu hóa!',
                 )
                 .setTimestamp(),
             ],
@@ -387,9 +387,8 @@ function createGame(guildId, config) {
   const moneyCells = new Map(); // index -> money amount
   const spinCells = new Set();
   const emptyCells = new Set();
-  
-  let totalPotentialReward = 0;
-  
+  const moneyIndexes = [];
+
   cellTypes.forEach((type, index) => {
     cellTypeMap.set(index, type);
     switch (type) {
@@ -397,9 +396,7 @@ function createGame(guildId, config) {
         mines.add(index);
         break;
       case CELL_TYPES.MONEY:
-        const amount = Math.floor(Math.random() * (MONEY_MAX - MONEY_MIN + 1)) + MONEY_MIN;
-        moneyCells.set(index, amount);
-        totalPotentialReward += amount;
+        moneyIndexes.push(index);
         break;
       case CELL_TYPES.SPIN:
         spinCells.add(index);
@@ -409,6 +406,15 @@ function createGame(guildId, config) {
         break;
     }
   });
+
+  const totalPotentialReward = Math.floor(
+    Math.random() * (TOTAL_REWARD_MAX - TOTAL_REWARD_MIN + 1),
+  ) + TOTAL_REWARD_MIN;
+  const distributedRewards = splitReward(totalPotentialReward, moneyIndexes);
+
+  for (const [index, amount] of distributedRewards) {
+    moneyCells.set(index, amount);
+  }
   
   const safeIndexes = Array.from({ length: TOTAL_CELLS }, (_, index) => index)
     .filter((index) => !mines.has(index));
@@ -486,13 +492,13 @@ function buildEmbed(game, status = null, finished = false) {
     .setTitle('💣 Dò Mìn Cộng Đồng')
     .setDescription(
       [
-        '💣 = Bomb (8 quả)',
-        '💰 = Tiền từ (1k-40k)',
-        '⚪ = Lượt quay (2 lượt)',
-        '❌ = Ô trống',
+        '\u{1F4A3} = Bomb (8 quả)',
+        '\u{1F4B0} = Tiền từ (1k-40k)',
+        '\u{26AA} = Lượt quay (2 lượt)',
+        '\u{274C} = Ô trống',
         '',
-        '💬 Tiếp tục chat để có hòm quà mới! Không SPAM.',
-        `💬 Mỗi **${game.messageThreshold}** tin nhắn sẽ tự động thả 1 hòm quà mới.`,
+        '\u{1F4AC} Tiếp tục chat để có hòm quà mới! Không SPAM.',
+        `\u{1F4AC} Mỗi **${game.messageThreshold}** tin nhắn sẽ tự động thả 1 hòm quà mới.`,
         status ? `\n${status}` : '',
       ].join('\n'),
     )
@@ -535,20 +541,20 @@ function buildComponents(game, disabled = false, revealAll = false) {
         switch (cellType) {
           case CELL_TYPES.BOMB:
             buttonStyle = ButtonStyle.Danger;
-            buttonEmoji = '💣';
+            buttonEmoji = '\u{1F4A3}';
             break;
           case CELL_TYPES.MONEY:
             buttonStyle = ButtonStyle.Success;
             buttonLabel = formatMoneyDisplay(game.moneyCells.get(index));
-            buttonEmoji = '💰';
+            buttonEmoji = '\u{1F4B0}';
             break;
           case CELL_TYPES.SPIN:
             buttonStyle = ButtonStyle.Success;
-            buttonEmoji = '⚪';
+            buttonEmoji = '\u{26AA}';
             break;
           case CELL_TYPES.EMPTY:
             buttonStyle = ButtonStyle.Secondary;
-            buttonEmoji = '❌';
+            buttonEmoji = '\u{274C}';
             break;
           default:
             buttonStyle = ButtonStyle.Success;
