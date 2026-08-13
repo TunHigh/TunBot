@@ -1,4 +1,4 @@
-import { Events } from 'discord.js';
+import { Events, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { getLevelingConfig, getUserLevelData } from '../services/leveling/leveling.js';
 import { addXp } from '../services/leveling/xpSystem.js';
@@ -18,9 +18,16 @@ import {
   isValidCountingMessage,
   recordCorrectCount,
 } from '../services/countingGameService.js';
+import { getCommunityMinesweeperConfig } from '../services/communityMinesweeperService.js';
+import EconomyService from '../services/economyService.js';
 
 const MESSAGE_XP_RATE_LIMIT_ATTEMPTS = 12;
 const MESSAGE_XP_RATE_LIMIT_WINDOW_MS = 10000;
+
+// Gift box system - track message counts per guild
+const guildMessageCounts = new Map();
+const GIFT_BOX_THRESHOLD = 10;
+const activeGiftBoxes = new Map(); // guildId -> { message, collector, timeout }
 
 export default {
   name: Events.MessageCreate,
@@ -38,6 +45,9 @@ export default {
       await handlePrefixCommand(message, client);
 
       await handleLeveling(message, client);
+      
+      // Handle gift box system
+      await handleGiftBoxSystem(message, client);
     } catch (error) {
       logger.error('Error in messageCreate event:', error);
     }
@@ -251,3 +261,165 @@ async function handleLeveling(message, client) {
     logger.error('Error handling leveling for message:', error);
   }
 }
+
+// Gift box system functions
+async function handleGiftBoxSystem(message, client) {
+  try {
+    const guildId = message.guild.id;
+    
+    // Skip if message is from bot or system
+    if (message.author.bot || message.system) return;
+    
+    // Skip if message is a command (starts with prefix or is slash command)
+    const guildConfig = await getGuildConfig(client, guildId);
+    const prefix = guildConfig?.prefix || getCommandPrefix();
+    if (message.content.startsWith(prefix)) return;
+    
+    // Increment message count for this guild
+    const currentCount = guildMessageCounts.get(guildId) || 0;
+    const newCount = currentCount + 1;
+    guildMessageCounts.set(guildId, newCount);
+    
+    // Check if we should spawn a gift box
+    if (newCount >= GIFT_BOX_THRESHOLD) {
+      guildMessageCounts.set(guildId, 0); // Reset counter
+      await spawnGiftBox(message.channel, client, guildId);
+    }
+  } catch (error) {
+    logger.error('Error in gift box system:', error);
+  }
+}
+
+async function spawnGiftBox(channel, client, guildId) {
+  try {
+    // Check if there's already an active gift box in this guild
+    if (activeGiftBoxes.has(guildId)) {
+      return;
+    }
+    
+    // Check if community minesweeper is enabled for this guild
+    const config = await getCommunityMinesweeperConfig(client, guildId);
+    if (!config.enabled) {
+      return;
+    }
+    
+    const giftBoxId = `giftbox_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    
+    const embed = new EmbedBuilder()
+      .setColor('#F1C40F')
+      .setTitle('🎁 Hòm Quà Bí Mật!')
+      .setDescription(
+        'Một hòm quà bí mật đã xuất hiện! Nhấn nút bên dưới để mở và nhận thưởng.\n' +
+        '⏰ Hòm quà sẽ biến mất sau 30 giây.'
+      )
+      .setFooter({ text: 'Mỗi 10 tin nhắn sẽ tự động thả 1 hòm quà mới' })
+      .setTimestamp();
+    
+    const openButton = new ButtonBuilder()
+      .setCustomId(`${giftBoxId}_open`)
+      .setLabel('Mở Hòm Quà')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🎁');
+    
+    const row = new ActionRowBuilder().addComponents(openButton);
+    
+    const giftBoxMessage = await channel.send({ embeds: [embed], components: [row] });
+    
+    // Create collector for the gift box
+    const collector = giftBoxMessage.createMessageComponentCollector({
+      time: 30000, // 30 seconds
+      filter: (interaction) => interaction.customId.startsWith(giftBoxId),
+    });
+    
+    // Store active gift box
+    const timeout = setTimeout(() => {
+      collector.stop('timeout');
+    }, 30000);
+    
+    activeGiftBoxes.set(guildId, { message: giftBoxMessage, collector, timeout });
+    
+    collector.on('collect', async (interaction) => {
+      try {
+        if (interaction.customId.endsWith('_open')) {
+          await interaction.deferUpdate();
+          
+          // Generate random reward
+          const rewards = [
+            { type: 'money', amount: Math.floor(Math.random() * 5000) + 1000, emoji: '💰', name: 'Tiền' },
+            { type: 'spin', amount: 1, emoji: '⚪', name: 'Lượt Quay' },
+            { type: 'xp', amount: Math.floor(Math.random() * 100) + 50, emoji: '✨', name: 'XP' },
+          ];
+          
+          const reward = rewards[Math.floor(Math.random() * rewards.length)];
+          
+          // Give reward to user
+          let rewardMessage = '';
+          switch (reward.type) {
+            case 'money':
+              await EconomyService.addMoney(client, guildId, interaction.user.id, reward.amount, 'gift_box');
+              rewardMessage = `🎉 ${interaction.user} đã mở hòm quà và nhận được **${reward.emoji} $${reward.amount.toLocaleString('en-US')}**!`;
+              break;
+            case 'spin':
+              // Add spin chance to user (you might need to implement this)
+              rewardMessage = `🎉 ${interaction.user} đã mở hòm quà và nhận được **${reward.emoji} ${reward.amount} Lượt Quay**!`;
+              break;
+            case 'xp':
+              // Add XP to user (you might need to implement this)
+              rewardMessage = `🎉 ${interaction.user} đã mở hòm quà và nhận được **${reward.emoji} ${reward.amount} XP**!`;
+              break;
+          }
+          
+          // Disable the button
+          const disabledRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId(`${giftBoxId}_open`)
+              .setLabel('Đã Mở')
+              .setStyle(ButtonStyle.Secondary)
+              .setDisabled(true)
+              .setEmoji('🎁')
+          );
+          
+          await giftBoxMessage.edit({ 
+            embeds: [embed.setDescription(`🎁 Hòm quà đã được mở bởi ${interaction.user}!\n${rewardMessage}`)], 
+            components: [disabledRow] 
+          });
+          
+          collector.stop('opened');
+        }
+      } catch (error) {
+        logger.error('Error handling gift box interaction:', error);
+      }
+    });
+    
+    collector.on('end', async (collected, reason) => {
+      activeGiftBoxes.delete(guildId);
+      clearTimeout(timeout);
+      
+      if (reason === 'timeout') {
+        try {
+          const disabledRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId(`${giftBoxId}_open`)
+              .setLabel('Hết Hạn')
+              .setStyle(ButtonStyle.Secondary)
+              .setDisabled(true)
+              .setEmoji('🎁')
+          );
+          
+          await giftBoxMessage.edit({ 
+            embeds: [embed.setDescription('⏰ Hòm quà đã hết hạn và biến mất!')], 
+            components: [disabledRow] 
+          });
+        } catch (error) {
+          logger.warn('Could not update expired gift box message:', error);
+        }
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Error spawning gift box:', error);
+  }
+}
+
+// Need to import EconomyService for gift box rewards
+import EconomyService from '../services/economyService.js';

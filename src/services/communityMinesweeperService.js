@@ -10,7 +10,7 @@ import { logger } from '../utils/logger.js';
 
 const BOARD_SIZE = 5;
 const TOTAL_CELLS = BOARD_SIZE * BOARD_SIZE;
-const DEFAULT_MINE_COUNT = 4;
+const DEFAULT_MINE_COUNT = 8;
 const DEFAULT_TOTAL_REWARD = 20_000;
 const MIN_MINE_COUNT = 1;
 const MAX_MINE_COUNT = TOTAL_CELLS - 1;
@@ -18,6 +18,26 @@ const MIN_TOTAL_REWARD = 100;
 const MAX_TOTAL_REWARD = 100_000_000;
 const GAME_TIMEOUT_MS = 5 * 60 * 1000;
 const MIN_INTERVAL_MS = 60 * 1000;
+
+// Cell types
+const CELL_TYPES = {
+  BOMB: 'bomb',           // 💣 - 8 bombs
+  MONEY: 'money',         // 💰 - Money 1k-40k
+  SPIN: 'spin',           // ⚪ - 2 spin chances
+  EMPTY: 'empty',         // ❌ - Empty cell
+};
+
+// Cell type distribution for 25 cells (5x5)
+const CELL_DISTRIBUTION = {
+  [CELL_TYPES.BOMB]: 8,      // 8 bombs
+  [CELL_TYPES.MONEY]: 8,     // 8 money cells
+  [CELL_TYPES.SPIN]: 2,      // 2 spin cells
+  [CELL_TYPES.EMPTY]: 7,     // 7 empty cells
+};
+
+// Money range for money cells
+const MONEY_MIN = 1000;
+const MONEY_MAX = 40000;
 
 const activeGames = new Map();
 
@@ -199,7 +219,9 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
       try {
         await interaction.deferUpdate();
 
-        if (game.mines.has(index)) {
+        const cellType = game.cellTypeMap.get(index);
+        
+        if (cellType === CELL_TYPES.BOMB) {
           game.revealed.add(index);
           game.mineTriggeredBy = interaction.user;
           game.outcome = 'mine';
@@ -221,13 +243,31 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
           return;
         }
 
-        const reward = game.rewards.get(index);
+        let reward = 0;
+        let rewardMessage = '';
+        
+        switch (cellType) {
+          case CELL_TYPES.MONEY:
+            reward = game.moneyCells.get(index);
+            game.pendingReward += reward;
+            game.winners.push({ userId: interaction.user.id, reward });
+            rewardMessage = `💰 ${interaction.user} đã mở ô chứa **$${reward.toLocaleString('en-US')}**. Tiền đang được giữ tạm; chỉ được cộng vào wallet nếu cả cộng đồng mở hết ô an toàn mà không dẫm mìn.`;
+            break;
+          case CELL_TYPES.SPIN:
+            reward = 0; // Spin doesn't give direct money, gives spin chance
+            game.winners.push({ userId: interaction.user.id, reward: 0, spin: true });
+            rewardMessage = `⚪ ${interaction.user} đã mở ô **Lượt Quay**! Bạn nhận được 1 lượt quay may mắn.`;
+            break;
+          case CELL_TYPES.EMPTY:
+            reward = 0;
+            rewardMessage = `❌ ${interaction.user} đã mở ô **Trống**. Ô này không có thưởng.`;
+            break;
+        }
+        
         game.revealed.add(index);
-        game.pendingReward += reward;
-        game.winners.push({ userId: interaction.user.id, reward });
 
         await interaction.followUp({
-          content: `💰 ${interaction.user} đã mở ô chứa **$${reward.toLocaleString('en-US')}**. Tiền đang được giữ tạm; chỉ được cộng vào wallet nếu cả cộng đồng mở hết ô an toàn mà không dẫm mìn.`,
+          content: rewardMessage,
           ephemeral: false,
         }).catch(() => {});
 
@@ -310,23 +350,72 @@ function getDisabledConfig() {
 }
 
 function createGame(guildId, config) {
-  const mines = new Set();
-
-  while (mines.size < config.mineCount) {
-    mines.add(Math.floor(Math.random() * TOTAL_CELLS));
+  // Create cell types array based on distribution
+  const cellTypes = [];
+  
+  // Add bombs (mines)
+  for (let i = 0; i < CELL_DISTRIBUTION[CELL_TYPES.BOMB]; i++) {
+    cellTypes.push(CELL_TYPES.BOMB);
   }
-
+  
+  // Add money cells
+  for (let i = 0; i < CELL_DISTRIBUTION[CELL_TYPES.MONEY]; i++) {
+    cellTypes.push(CELL_TYPES.MONEY);
+  }
+  
+  // Add spin cells
+  for (let i = 0; i < CELL_DISTRIBUTION[CELL_TYPES.SPIN]; i++) {
+    cellTypes.push(CELL_TYPES.SPIN);
+  }
+  
+  // Add empty cells
+  for (let i = 0; i < CELL_DISTRIBUTION[CELL_TYPES.EMPTY]; i++) {
+    cellTypes.push(CELL_TYPES.EMPTY);
+  }
+  
+  // Shuffle the cell types
+  shuffle(cellTypes);
+  
+  // Assign cell types to board positions
+  const cellTypeMap = new Map();
+  const mines = new Set();
+  const moneyCells = new Map(); // index -> money amount
+  const spinCells = new Set();
+  const emptyCells = new Set();
+  
+  cellTypes.forEach((type, index) => {
+    cellTypeMap.set(index, type);
+    switch (type) {
+      case CELL_TYPES.BOMB:
+        mines.add(index);
+        break;
+      case CELL_TYPES.MONEY:
+        moneyCells.set(index, Math.floor(Math.random() * (MONEY_MAX - MONEY_MIN + 1)) + MONEY_MIN);
+        break;
+      case CELL_TYPES.SPIN:
+        spinCells.add(index);
+        break;
+      case CELL_TYPES.EMPTY:
+        emptyCells.add(index);
+        break;
+    }
+  });
+  
   const safeIndexes = Array.from({ length: TOTAL_CELLS }, (_, index) => index)
     .filter((index) => !mines.has(index));
 
   return {
     id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
     guildId,
-    mineCount: config.mineCount,
+    mineCount: mines.size,
     safeCellCount: safeIndexes.length,
     totalReward: config.totalReward,
     mines,
-    rewards: splitReward(config.totalReward, safeIndexes),
+    cellTypeMap,
+    moneyCells,
+    spinCells,
+    emptyCells,
+    rewards: new Map(), // For backward compatibility
     revealed: new Set(),
     processing: new Set(),
     winners: [],
@@ -415,18 +504,40 @@ function buildComponents(game, disabled = false) {
     for (let column = 0; column < BOARD_SIZE; column += 1) {
       const index = row * BOARD_SIZE + column;
       const revealed = game.revealed.has(index);
-      const mine = game.mines.has(index);
+      const cellType = game.cellTypeMap.get(index);
+
+      let buttonStyle = ButtonStyle.Primary;
+      let buttonLabel = '\u200b';
+      
+      if (revealed) {
+        switch (cellType) {
+          case CELL_TYPES.BOMB:
+            buttonStyle = ButtonStyle.Danger;
+            buttonLabel = '💣';
+            break;
+          case CELL_TYPES.MONEY:
+            buttonStyle = ButtonStyle.Success;
+            buttonLabel = `💰$${game.moneyCells.get(index).toLocaleString('en-US')}`;
+            break;
+          case CELL_TYPES.SPIN:
+            buttonStyle = ButtonStyle.Success;
+            buttonLabel = '⚪';
+            break;
+          case CELL_TYPES.EMPTY:
+            buttonStyle = ButtonStyle.Secondary;
+            buttonLabel = '❌';
+            break;
+          default:
+            buttonStyle = ButtonStyle.Success;
+            buttonLabel = '❓';
+        }
+      }
 
       const button = new ButtonBuilder()
         .setCustomId(`community_mines_${game.id}_${index}`)
         .setDisabled(disabled || revealed)
-        .setStyle(revealed ? (mine ? ButtonStyle.Danger : ButtonStyle.Success) : ButtonStyle.Primary);
-
-      if (revealed) {
-        button.setLabel(mine ? '💣' : `$${game.rewards.get(index).toLocaleString('en-US')}`);
-      } else {
-        button.setLabel('\u200b');
-      }
+        .setStyle(buttonStyle)
+        .setLabel(buttonLabel);
 
       actionRow.addComponents(button);
     }
