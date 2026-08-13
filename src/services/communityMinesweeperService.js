@@ -296,12 +296,12 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
       if (reason === 'money' && game.outcome === 'money') {
         const paidReward = await payPendingRewards(client, guild.id, game);
         status = paidReward === game.pendingReward
-          ? `💸 ${game.winningUser} đã nhận **${paidReward.toLocaleString('en-US')} xu**. Hòm quà đã đóng lại!`
+          ? `💸 ${game.winningUser} đã nhận **${paidReward.toLocaleString('en-US')} xu**.\nHòm quà đã đóng lại!`
           : `⚠️ Hòm quà đã đóng, nhưng chỉ cộng được **${paidReward.toLocaleString('en-US')}** / **${game.pendingReward.toLocaleString('en-US')} xu**.`;
       } else if (reason === 'spin' && game.outcome === 'spin') {
         status = `🎰✨ ${game.winningUser} nhận được **1 Lượt Quay Thưởng**.\nHòm quà đã đóng lại!`;
       } else if (reason === 'mine' || game.outcome === 'mine') {
-        status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn. Tất cả phần thưởng đã bị vô hiệu hóa!`;
+        status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn.\nTất cả phần thưởng đã bị vô hiệu hóa!`;
       } else {
         status = '⌛ Hết giờ! Không có người chơi nào mở ô tiền hoặc lượt quay.';
       }
