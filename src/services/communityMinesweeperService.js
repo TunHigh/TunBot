@@ -27,7 +27,7 @@ const TOTAL_REWARD_MAX = 40000;
 const CELL_TYPES = {
   BOMB: 'bomb',           // 💣 - 8 bombs
   MONEY: 'money',         // 💰 - Money 1k-40k
-  SPIN: 'spin',           // ⚪ - 2 spin chances
+  SPIN: 'spin',           // ⚪ - 1 spin chances
   EMPTY: 'empty',         // ❌ - Empty cell
 };
 
@@ -299,7 +299,7 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
           ? `💸 ${game.winningUser} đã nhận **${paidReward.toLocaleString('en-US')} xu**. Hòm quà đã đóng lại!`
           : `⚠️ Hòm quà đã đóng, nhưng chỉ cộng được **${paidReward.toLocaleString('en-US')}** / **${game.pendingReward.toLocaleString('en-US')} xu**.`;
       } else if (reason === 'spin' && game.outcome === 'spin') {
-        status = `🎰✨ ${game.winningUser} nhận được **1 Lượt Quay Thưởng**. Hòm quà đã đóng lại!`;
+        status = `🎰✨ ${game.winningUser} nhận được **1 Lượt Quay Thưởng**.\nHòm quà đã đóng lại!`;
       } else if (reason === 'mine' || game.outcome === 'mine') {
         status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn. Tất cả phần thưởng đã bị vô hiệu hóa!`;
       } else {
@@ -568,7 +568,7 @@ function buildEmbed(game, status = null, finished = false) {
       [
         '\u{1F4A3} = Bomb (8 quả)',
         '\u{1F4B0} = Tiền từ (1k-40k)',
-        '\u{26AA} = Lượt quay (2 lượt)',
+        '\u{26AA} = Lượt quay (1 lượt)',
         '\u{274C} = Ô trống',
         '',
         finished
