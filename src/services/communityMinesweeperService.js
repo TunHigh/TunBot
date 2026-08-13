@@ -341,7 +341,7 @@ async function sendGameResultReply(game, outcome, user, reward = 0) {
         .setDescription(
           `💸 ${user} TRÚNG TIỀN!\n`
           + `💰 Bạn nhận được: **${reward.toLocaleString('en-US')} xu**\n`
-          + 'Hòm quà đã đóng lại!',
+          + '🎊 Hòm quà đã đóng lại!',
         );
       break;
     case 'spin':

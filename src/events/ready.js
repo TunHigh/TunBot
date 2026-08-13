@@ -1,3 +1,4 @@
+import { REST } from "@discordjs/rest";
 import { Events } from "discord.js";
 import { logger, startupLog } from "../utils/logger.js";
 import config from "../config/application.js";
@@ -6,6 +7,40 @@ import { reconcileTicketPanels, reconcileVerificationPanels, reconcileReactionRo
 import { reconcileLevelRoles } from "../services/leveling/levelRoleSyncService.js";
 import { initRiffyAfterReady } from "../services/music/riffySetup.js";
 
+async function applyBotDisplayCustomization(client) {
+  if (!config.bot.token) {
+    logger.warn("Skipped bot display customization because no bot token is configured.");
+    return;
+  }
+
+  const rest = new REST({ version: "10" }).setToken(config.bot.token);
+  let updatedGuilds = 0;
+  let failedGuilds = 0;
+
+  for (const guildId of client.guilds.cache.keys()) {
+    try {
+      await rest.patch(`/guilds/${guildId}/members/@me`, {
+        body: {
+          display_name_font_id: 10,
+          display_name_effect_id: 3,
+          display_name_colors: [16777215],
+        },
+      });
+      updatedGuilds += 1;
+    } catch (error) {
+      failedGuilds += 1;
+      logger.warn("Could not customize bot display profile for guild.", {
+        guildId,
+        error: error.message,
+      });
+    }
+  }
+
+  startupLog(
+    `Bot display customization: updated ${updatedGuilds} guild(s), failed ${failedGuilds} guild(s)`,
+  );
+}
+
 export default {
   name: Events.ClientReady,
   once: true,
@@ -13,6 +48,7 @@ export default {
   async execute(client) {
     try {
       client.user.setPresence(config.bot.presence);
+      await applyBotDisplayCustomization(client);
 
       startupLog(`Ready! Logged in as ${client.user.tag}`);
       startupLog(`Serving ${client.guilds.cache.size} guild(s)`);
