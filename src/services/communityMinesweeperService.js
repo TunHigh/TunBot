@@ -418,7 +418,8 @@ function createGame(guildId, config) {
     guildId,
     mineCount: mines.size,
     safeCellCount: safeIndexes.length,
-    totalReward: totalPotentialReward, // Show actual potential reward
+    totalReward: totalPotentialReward,
+    messageThreshold: config.messageThreshold || DEFAULT_MESSAGE_THRESHOLD,
     mines,
     cellTypeMap,
     moneyCells,
@@ -480,36 +481,38 @@ function getSafeCellsRevealed(game) {
 }
 
 function buildEmbed(game, status = null, finished = false) {
-  const safeCellsRevealed = getSafeCellsRevealed(game);
-  const remainingSafeCells = game.safeCellCount - safeCellsRevealed;
-
   return new EmbedBuilder()
     .setColor(finished ? '#95A5A6' : '#F1C40F')
-    .setTitle(`💣 Dò Mìn Cộng Đồng — Kho Báu $${game.totalReward.toLocaleString('en-US')}`)
+    .setTitle('💣 Dò Mìn Cộng Đồng')
     .setDescription(
       [
-        'Mở hết tất cả ô an toàn để nhận tiền. Nếu bất kỳ ai dẫm mìn, trò chơi kết thúc và toàn bộ thưởng đã mở bị hủy.',
+        '💣 = Bomb (8 quả)',
+        '💰 = Tiền từ (1k-40k)',
+        '⚪ = Lượt quay (2 lượt)',
+        '❌ = Ô trống',
         '',
-        `💣 Số mìn: **${game.mineCount}**`,
-        `💰 Thưởng đang tạm giữ: **$${game.pendingReward.toLocaleString('en-US')}**`,
-        `🧭 Ô an toàn chưa mở: **${remainingSafeCells}**`,
+        '💬 Tiếp tục chat để có hòm quà mới! Không SPAM.',
+        `💬 Mỗi **${game.messageThreshold}** tin nhắn sẽ tự động thả 1 hòm quà mới.`,
         status ? `\n${status}` : '',
       ].join('\n'),
     )
     .setFooter({
       text: finished
         ? 'Trò chơi đã kết thúc'
-        : 'Tiền chỉ vào ví khi mở hết ô an toàn mà không dẫm mìn',
+        : 'Mở ô an toàn, tránh bom và nhận tiền thưởng',
     })
     .setTimestamp();
 }
 
 function formatMoneyDisplay(amount) {
   if (amount >= 1000000) {
-    return `${(amount / 1000000).toFixed(1)}M`;
-  } else if (amount >= 1000) {
-    return `${(amount / 1000).toFixed(1)}k`;
+    return `${Math.floor(amount / 1000000)}M`;
   }
+
+  if (amount >= 1000) {
+    return `${Math.floor(amount / 1000)}k`;
+  }
+
   return amount.toString();
 }
 
@@ -535,7 +538,7 @@ function buildComponents(game, disabled = false) {
             break;
           case CELL_TYPES.MONEY:
             buttonStyle = ButtonStyle.Success;
-            buttonLabel = `💰$${formatMoneyDisplay(game.moneyCells.get(index))}`;
+            buttonLabel = `💰 ${formatMoneyDisplay(game.moneyCells.get(index))}`;
             break;
           case CELL_TYPES.SPIN:
             buttonStyle = ButtonStyle.Success;
