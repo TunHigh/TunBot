@@ -410,14 +410,14 @@ function createGame(guildId, config) {
     }
   });
 
-  const totalPotentialReward = Math.floor(
-    Math.random() * (TOTAL_REWARD_MAX - TOTAL_REWARD_MIN + 1),
-  ) + TOTAL_REWARD_MIN;
-  const distributedRewards = splitReward(totalPotentialReward, moneyIndexes);
+  const distributedRewards = createWeightedMoneyRewards(moneyIndexes);
 
   for (const [index, amount] of distributedRewards) {
     moneyCells.set(index, amount);
   }
+
+  const totalPotentialReward = [...moneyCells.values()]
+    .reduce((total, reward) => total + reward, 0);
   
   const safeIndexes = Array.from({ length: TOTAL_CELLS }, (_, index) => index)
     .filter((index) => !mines.has(index));
@@ -474,39 +474,54 @@ async function payPendingRewards(client, guildId, game) {
   return paidReward;
 }
 
-function splitReward(total, moneyIndexes) {
-  const cellCount = moneyIndexes.length;
+function createWeightedMoneyRewards(moneyIndexes) {
+  const rewards = new Map();
+  const usedDisplayedAmounts = new Set();
 
-  if (cellCount === 0) {
-    return new Map();
-  }
+  for (const index of moneyIndexes) {
+    let reward = 1000;
 
-  // Give every money cell a meaningful minimum amount, then randomly split
-  // the remaining reward. Re-roll if two labels would look identical on board.
-  const minimumPerCell = 100;
-  const distributable = Math.max(0, total - (minimumPerCell * cellCount));
-  let values = [];
+    // A board only has three money cells, so rerolling lets their K labels
+    // remain different while preserving the configured reward probabilities.
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const candidate = randomMoneyReward();
+      const displayedAmount = formatMoneyDisplay(candidate);
 
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    const cutPoints = Array.from(
-      { length: cellCount - 1 },
-      () => Math.floor(Math.random() * (distributable + 1)),
-    ).sort((first, second) => first - second);
-
-    const boundaries = [0, ...cutPoints, distributable];
-    values = boundaries
-      .slice(1)
-      .map((boundary, index) => (boundary - boundaries[index]) + minimumPerCell);
-
-    const visibleValues = values.map(formatMoneyDisplay);
-    if (new Set(visibleValues).size === visibleValues.length) {
-      break;
+      reward = candidate;
+      if (!usedDisplayedAmounts.has(displayedAmount)) {
+        usedDisplayedAmounts.add(displayedAmount);
+        break;
+      }
     }
+
+    rewards.set(index, reward);
   }
 
-  shuffle(values);
+  return rewards;
+}
 
-  return new Map(moneyIndexes.map((index, rewardIndex) => [index, values[rewardIndex]]));
+function randomMoneyReward() {
+  const roll = Math.random();
+  let minimum;
+  let maximum;
+
+  // 65%: 1K–8K, 25%: 9K–16K, 8%: 17K–24K, 2%: 25K–40K.
+  // This keeps low-value rewards common and makes high-value ones rare.
+  if (roll < 0.65) {
+    minimum = 1000;
+    maximum = 8999;
+  } else if (roll < 0.90) {
+    minimum = 9000;
+    maximum = 16999;
+  } else if (roll < 0.98) {
+    minimum = 17000;
+    maximum = 24999;
+  } else {
+    minimum = 25000;
+    maximum = 40000;
+  }
+
+  return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
 }
 
 function getSafeCellsRevealed(game) {
@@ -541,15 +556,7 @@ function buildEmbed(game, status = null, finished = false) {
 }
 
 function formatMoneyDisplay(amount) {
-  if (amount >= 1000000) {
-    return `${(amount / 1000000).toFixed(2).replace(/\.?0+$/, '')}M`;
-  }
-
-  if (amount >= 1000) {
-    return `${(amount / 1000).toFixed(2).replace(/\.?0+$/, '')}K`;
-  }
-
-  return amount.toLocaleString('en-US');
+  return `${Math.floor(amount / 1000)}K`;
 }
 
 function buildComponents(game, disabled = false, revealAll = false) {
