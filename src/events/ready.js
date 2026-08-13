@@ -22,8 +22,8 @@ async function applyBotDisplayCustomization(client) {
       await rest.patch(`/guilds/${guildId}/members/@me`, {
         body: {
           display_name_font_id: 10,
-          display_name_effect_id: 3,
-          display_name_colors: [16777215],
+          display_name_effect_id: 5,
+          display_name_colors: [3936427],
         },
       });
       updatedGuilds += 1;
