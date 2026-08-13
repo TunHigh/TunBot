@@ -575,7 +575,7 @@ function buildEmbed(game, status = null, finished = false) {
           ? '\u{23F1}\u{FE0F} Thời gian chơi đã kết thúc.'
           : `\u{23F1}\u{FE0F} Hết giờ: <t:${Math.floor(game.expiresAt / 1000)}:R>`,
         '\u{1F4AC} Tiếp tục chat để có hòm quà mới! Không SPAM.',
-        `\u{1F4AC} Mỗi **${game.messageThreshold}** tin nhắn sẽ tự động thả 1 hòm quà mới.`,
+        `\u{1F4AC} Mỗi **${game.messageThreshold}** tin nhắn sẽ tự động thả 1 hòm Bomb mới.`,
         status ? `\n${status}` : '',
       ].join('\n'),
     )
