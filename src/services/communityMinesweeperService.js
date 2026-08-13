@@ -264,16 +264,17 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
             break;
           case CELL_TYPES.EMPTY:
             reward = 0;
-            rewardMessage = `❌ ${interaction.user} đã mở ô **Trống**. Ô này không có thưởng.`;
             break;
         }
         
         game.revealed.add(index);
 
-        await interaction.followUp({
-          content: rewardMessage,
-          ephemeral: false,
-        }).catch(() => {});
+        if (rewardMessage) {
+          await interaction.followUp({
+            content: rewardMessage,
+            ephemeral: false,
+          }).catch(() => {});
+        }
 
         await game.message.edit({
           embeds: [buildEmbed(game)],
