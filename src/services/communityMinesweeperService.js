@@ -314,7 +314,10 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
       } else if (reason === 'mine' || game.outcome === 'mine') {
         status = `💥 ${game.mineTriggeredBy ?? 'Một người chơi'} đã dẫm mìn. Toàn bộ **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng đã bị hủy.`;
       } else {
-        status = `⌛ Hết giờ! **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng tạm giữ đã hết hiệu lực và không được cộng vào ví của bạn.`;
+        const paidReward = await payPendingRewards(client, guild.id, game);
+        status = paidReward === game.pendingReward
+          ? `⌛ Hết giờ! Không có ai dẫm bom nên **$${paidReward.toLocaleString('en-US')}** từ các ô thưởng đã mở được cộng vào wallet.`
+          : `⚠️ Hết giờ! Đã cộng **$${paidReward.toLocaleString('en-US')}** / **$${game.pendingReward.toLocaleString('en-US')}** tiền thưởng đã mở. Hãy kiểm tra log bot.`;
       }
 
       await game.message.edit({
@@ -425,6 +428,7 @@ function createGame(guildId, config) {
     mineCount: mines.size,
     safeCellCount: safeIndexes.length,
     totalReward: totalPotentialReward,
+    expiresAt: Date.now() + GAME_TIMEOUT_MS,
     messageThreshold: config.messageThreshold || DEFAULT_MESSAGE_THRESHOLD,
     mines,
     cellTypeMap,
@@ -470,16 +474,39 @@ async function payPendingRewards(client, guildId, game) {
   return paidReward;
 }
 
-function splitReward(total, safeIndexes) {
-  const values = Array(safeIndexes.length).fill(0);
+function splitReward(total, moneyIndexes) {
+  const cellCount = moneyIndexes.length;
 
-  for (let amount = total; amount > 0; amount -= 1) {
-    values[Math.floor(Math.random() * values.length)] += 1;
+  if (cellCount === 0) {
+    return new Map();
+  }
+
+  // Give every money cell a meaningful minimum amount, then randomly split
+  // the remaining reward. Re-roll if two labels would look identical on board.
+  const minimumPerCell = 100;
+  const distributable = Math.max(0, total - (minimumPerCell * cellCount));
+  let values = [];
+
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const cutPoints = Array.from(
+      { length: cellCount - 1 },
+      () => Math.floor(Math.random() * (distributable + 1)),
+    ).sort((first, second) => first - second);
+
+    const boundaries = [0, ...cutPoints, distributable];
+    values = boundaries
+      .slice(1)
+      .map((boundary, index) => (boundary - boundaries[index]) + minimumPerCell);
+
+    const visibleValues = values.map(formatMoneyDisplay);
+    if (new Set(visibleValues).size === visibleValues.length) {
+      break;
+    }
   }
 
   shuffle(values);
 
-  return new Map(safeIndexes.map((index, rewardIndex) => [index, values[rewardIndex]]));
+  return new Map(moneyIndexes.map((index, rewardIndex) => [index, values[rewardIndex]]));
 }
 
 function getSafeCellsRevealed(game) {
@@ -497,6 +524,9 @@ function buildEmbed(game, status = null, finished = false) {
         '\u{26AA} = Lượt quay (2 lượt)',
         '\u{274C} = Ô trống',
         '',
+        finished
+          ? '\u{23F1}\u{FE0F} Thời gian chơi đã kết thúc.'
+          : `\u{23F1}\u{FE0F} Hết giờ: <t:${Math.floor(game.expiresAt / 1000)}:R>`,
         '\u{1F4AC} Tiếp tục chat để có hòm quà mới! Không SPAM.',
         `\u{1F4AC} Mỗi **${game.messageThreshold}** tin nhắn sẽ tự động thả 1 hòm quà mới.`,
         status ? `\n${status}` : '',
@@ -512,14 +542,14 @@ function buildEmbed(game, status = null, finished = false) {
 
 function formatMoneyDisplay(amount) {
   if (amount >= 1000000) {
-    return `${Math.floor(amount / 1000000)}M`;
+    return `${(amount / 1000000).toFixed(2).replace(/\.?0+$/, '')}M`;
   }
 
   if (amount >= 1000) {
-    return `${Math.floor(amount / 1000)}k`;
+    return `${(amount / 1000).toFixed(2).replace(/\.?0+$/, '')}K`;
   }
 
-  return amount.toString();
+  return amount.toLocaleString('en-US');
 }
 
 function buildComponents(game, disabled = false, revealAll = false) {
@@ -546,7 +576,6 @@ function buildComponents(game, disabled = false, revealAll = false) {
           case CELL_TYPES.MONEY:
             buttonStyle = ButtonStyle.Success;
             buttonLabel = formatMoneyDisplay(game.moneyCells.get(index));
-            buttonEmoji = '\u{1F4B0}';
             break;
           case CELL_TYPES.SPIN:
             buttonStyle = ButtonStyle.Success;
