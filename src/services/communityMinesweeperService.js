@@ -319,7 +319,7 @@ export async function startCommunityMinesweeper(client, guild, channel, config) 
 
       await game.message.edit({
         embeds: [buildEmbed(game, status, true)],
-        components: buildComponents(game, true),
+        components: buildComponents(game, true, true),
       }).catch((error) => {
         logger.warn('[COMMUNITY_MINESWEEPER] Could not close game message', {
           guildId: guild.id,
@@ -516,7 +516,7 @@ function formatMoneyDisplay(amount) {
   return amount.toString();
 }
 
-function buildComponents(game, disabled = false) {
+function buildComponents(game, disabled = false, revealAll = false) {
   const rows = [];
 
   for (let row = 0; row < BOARD_SIZE; row += 1) {
@@ -524,33 +524,35 @@ function buildComponents(game, disabled = false) {
 
     for (let column = 0; column < BOARD_SIZE; column += 1) {
       const index = row * BOARD_SIZE + column;
-      const revealed = game.revealed.has(index);
+      const revealed = revealAll || game.revealed.has(index);
       const cellType = game.cellTypeMap.get(index);
 
       let buttonStyle = ButtonStyle.Primary;
       let buttonLabel = '\u200b';
-      
+      let buttonEmoji = null;
+
       if (revealed) {
         switch (cellType) {
           case CELL_TYPES.BOMB:
             buttonStyle = ButtonStyle.Danger;
-            buttonLabel = '💣';
+            buttonEmoji = '💣';
             break;
           case CELL_TYPES.MONEY:
             buttonStyle = ButtonStyle.Success;
-            buttonLabel = `💰 ${formatMoneyDisplay(game.moneyCells.get(index))}`;
+            buttonLabel = formatMoneyDisplay(game.moneyCells.get(index));
+            buttonEmoji = '💰';
             break;
           case CELL_TYPES.SPIN:
             buttonStyle = ButtonStyle.Success;
-            buttonLabel = '⚪';
+            buttonEmoji = '⚪';
             break;
           case CELL_TYPES.EMPTY:
             buttonStyle = ButtonStyle.Secondary;
-            buttonLabel = '❌';
+            buttonEmoji = '❌';
             break;
           default:
             buttonStyle = ButtonStyle.Success;
-            buttonLabel = '❓';
+            buttonEmoji = '❓';
         }
       }
 
@@ -559,6 +561,10 @@ function buildComponents(game, disabled = false) {
         .setDisabled(disabled || revealed)
         .setStyle(buttonStyle)
         .setLabel(buttonLabel);
+
+      if (buttonEmoji) {
+        button.setEmoji(buttonEmoji);
+      }
 
       actionRow.addComponents(button);
     }
