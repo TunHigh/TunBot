@@ -1,4 +1,5 @@
-import { createCanvas, loadImage, registerFont } from '@napi-rs/canvas';
+import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { registerFont } from 'canvas';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
