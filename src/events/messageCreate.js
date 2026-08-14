@@ -340,14 +340,24 @@ async function handleStreakTracking(message, client) {
     const prefix = guildConfig?.prefix || getCommandPrefix();
     if (message.content.startsWith(prefix)) return;
     
-    // Check for user mentions in the message
-    const mentionedUsers = message.mentions.users.filter(user => !user.bot && user.id !== message.author.id);
-    
-    if (mentionedUsers.size === 0) return;
-    
-    // Record streak for each mentioned user
-    for (const [, mentionedUser] of mentionedUsers) {
-      await recordMessage(client, message.guild.id, message.author.id, mentionedUser.id);
+    // An interaction can be a mention or a reply to the other person's message.
+    const targetUserIds = new Set(
+      message.mentions.users
+        .filter((user) => !user.bot && user.id !== message.author.id)
+        .map((user) => user.id),
+    );
+
+    if (message.reference?.messageId) {
+      const repliedMessage = await message.fetchReference().catch(() => null);
+      const repliedAuthor = repliedMessage?.author;
+
+      if (repliedAuthor && !repliedAuthor.bot && repliedAuthor.id !== message.author.id) {
+        targetUserIds.add(repliedAuthor.id);
+      }
+    }
+
+    for (const targetUserId of targetUserIds) {
+      await recordMessage(client, message.guild.id, message.author.id, targetUserId);
     }
   } catch (error) {
     logger.error('Error in streak tracking:', error);
