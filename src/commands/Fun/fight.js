@@ -57,6 +57,7 @@ export default {
         "tung một cú đấm hoang dã",
         "ra đòn chí mạng",
         "niệm một phép yếu",
+        "bắt con cọp",
         "đỡ đòn và phản công",
       ][rand(0, 3)];
       log.push(
