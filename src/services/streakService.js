@@ -4,6 +4,8 @@ import { logger } from '../utils/logger.js';
 const STREAK_KEY_PREFIX = 'guild:';
 const STREAK_KEY_SUFFIX = ':streaks';
 const VIETNAM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+export const MAX_STREAK_PARTNERS = 5;
+export const STREAK_MILESTONES = [1, 5, 15, 30, 60, 90, 120, 150, 180];
 
 function getDateKey(timestamp = Date.now()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -20,10 +22,6 @@ function getPreviousDate(dateKey) {
   return date.toISOString().slice(0, 10);
 }
 
-function getActivityForDate(streakData, dateKey) {
-  return streakData.dailyActivity?.[dateKey] || {};
-}
-
 function trimDailyActivity(dailyActivity, today) {
   const oldestAllowed = new Date(`${today}T12:00:00.000Z`);
   oldestAllowed.setUTCDate(oldestAllowed.getUTCDate() - 7);
@@ -34,13 +32,28 @@ function trimDailyActivity(dailyActivity, today) {
   );
 }
 
+function createUserActivity() {
+  return { messages: 0, replies: 0 };
+}
+
+export function getDailyRequirements(currentStreak = 0) {
+  // The requirement grows whenever the pair reaches the displayed streak milestones.
+  if (currentStreak >= 150) return { messages: 120, replies: 5 };
+  if (currentStreak >= 120) return { messages: 100, replies: 4 };
+  if (currentStreak >= 90) return { messages: 90, replies: 4 };
+  if (currentStreak >= 60) return { messages: 75, replies: 3 };
+  if (currentStreak >= 30) return { messages: 60, replies: 3 };
+  if (currentStreak >= 15) return { messages: 50, replies: 2 };
+  if (currentStreak >= 5) return { messages: 30, replies: 2 };
+  return { messages: 20, replies: 1 };
+}
+
 export function getStreakKey(guildId) {
   return `${STREAK_KEY_PREFIX}${guildId}${STREAK_KEY_SUFFIX}`;
 }
 
 export function getPairKey(userId1, userId2) {
-  const sorted = [userId1, userId2].sort();
-  return `${sorted[0]}:${sorted[1]}`;
+  return [userId1, userId2].sort().join(':');
 }
 
 export async function getStreakData(client, guildId, userId1, userId2) {
@@ -69,23 +82,79 @@ export async function saveStreakData(client, guildId, userId1, userId2, streakDa
   }
 }
 
-/**
- * Records an interaction from authorId to targetUserId.
- * A day is completed only after both people have interacted with the other
- * at least once during that Vietnam-calendar day.
- */
-export async function recordMessage(client, guildId, authorId, targetUserId) {
-  if (!guildId || !authorId || !targetUserId || authorId === targetUserId) {
-    return null;
+export async function getUserStreaks(client, guildId, userId) {
+  try {
+    const allStreaks = await getFromDb(getStreakKey(guildId), {});
+    return Object.entries(allStreaks)
+      .map(([pairKey, streakData]) => {
+        const [userId1, userId2] = pairKey.split(':');
+        if (userId1 !== userId && userId2 !== userId) return null;
+        return {
+          otherUserId: userId1 === userId ? userId2 : userId1,
+          ...streakData,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.currentStreak - a.currentStreak || b.updatedAt - a.updatedAt);
+  } catch (error) {
+    logger.error(`Error getting user streaks for guild ${guildId}:`, error);
+    return [];
   }
+}
+
+export async function getTopStreaks(client, guildId, limit = 10) {
+  try {
+    const allStreaks = await getFromDb(getStreakKey(guildId), {});
+    return Object.entries(allStreaks)
+      .map(([pairKey, streakData]) => {
+        const [userId1, userId2] = pairKey.split(':');
+        return { userId1, userId2, ...streakData };
+      })
+      .sort((a, b) => b.currentStreak - a.currentStreak)
+      .slice(0, limit);
+  } catch (error) {
+    logger.error(`Error getting top streaks for guild ${guildId}:`, error);
+    return [];
+  }
+}
+
+export function getTodayProgress(streakData, viewerId) {
+  const today = getDateKey();
+  const activity = streakData?.dailyActivity?.[today] || {};
+  const userId1 = streakData?.userId1;
+  const userId2 = streakData?.userId2;
+  const otherUserId = userId1 === viewerId ? userId2 : userId1;
+  const requirements = getDailyRequirements(streakData?.currentStreak || 0);
+
+  return {
+    requirements,
+    viewer: { ...createUserActivity(), ...(activity[viewerId] || {}) },
+    other: { ...createUserActivity(), ...(activity[otherUserId] || {}) },
+    date: today,
+  };
+}
+
+/**
+ * Records a directed interaction. A reply also counts as one message.
+ * The day completes only after both people reach that day's message/reply target.
+ */
+export async function recordMessage(client, guildId, authorId, targetUserId, { isReply = false } = {}) {
+  if (!guildId || !authorId || !targetUserId || authorId === targetUserId) return null;
 
   try {
     const now = Date.now();
     const today = getDateKey(now);
     const existingStreak = await getStreakData(client, guildId, authorId, targetUserId);
-    const pairKey = getPairKey(authorId, targetUserId);
-    const [userId1, userId2] = pairKey.split(':');
 
+    if (!existingStreak) {
+      const authorStreaks = await getUserStreaks(client, guildId, authorId);
+      const targetStreaks = await getUserStreaks(client, guildId, targetUserId);
+      if (authorStreaks.length >= MAX_STREAK_PARTNERS || targetStreaks.length >= MAX_STREAK_PARTNERS) {
+        return { limitReached: true, currentStreak: 0 };
+      }
+    }
+
+    const [userId1, userId2] = getPairKey(authorId, targetUserId).split(':');
     const baseData = existingStreak || {
       userId1,
       userId2,
@@ -97,17 +166,26 @@ export async function recordMessage(client, guildId, authorId, targetUserId) {
       dailyActivity: {},
     };
 
+    const requirements = getDailyRequirements(baseData.currentStreak || 0);
     const dailyActivity = trimDailyActivity(baseData.dailyActivity, today);
-    const todayActivity = {
-      ...getActivityForDate(baseData, today),
-      [authorId]: true,
+    const todayActivity = { ...(dailyActivity[today] || {}) };
+    const authorActivity = {
+      ...createUserActivity(),
+      ...(todayActivity[authorId] || {}),
+      messages: (todayActivity[authorId]?.messages || 0) + 1,
+      replies: (todayActivity[authorId]?.replies || 0) + (isReply ? 1 : 0),
     };
+    todayActivity[authorId] = authorActivity;
     dailyActivity[today] = todayActivity;
 
-    const bothUsersInteracted = Boolean(todayActivity[userId1] && todayActivity[userId2]);
+    const firstActivity = { ...createUserActivity(), ...(todayActivity[userId1] || {}) };
+    const secondActivity = { ...createUserActivity(), ...(todayActivity[userId2] || {}) };
+    const reachedTarget = (activity) =>
+      activity.messages >= requirements.messages && activity.replies >= requirements.replies;
+    const bothUsersCompleted = reachedTarget(firstActivity) && reachedTarget(secondActivity);
     const alreadyCompletedToday = baseData.lastCompletedDate === today;
 
-    const newStreakData = {
+    const nextData = {
       ...baseData,
       userId1,
       userId2,
@@ -117,67 +195,19 @@ export async function recordMessage(client, guildId, authorId, targetUserId) {
       totalInteractions: (baseData.totalInteractions || 0) + 1,
     };
 
-    if (bothUsersInteracted && !alreadyCompletedToday) {
-      const previousCompletedDate = baseData.lastCompletedDate || baseData.lastInteractionDate;
-      const isConsecutiveDay = previousCompletedDate === getPreviousDate(today);
+    if (bothUsersCompleted && !alreadyCompletedToday) {
+      const isConsecutiveDay = baseData.lastCompletedDate === getPreviousDate(today);
       const currentStreak = isConsecutiveDay ? (baseData.currentStreak || 0) + 1 : 1;
-
-      newStreakData.currentStreak = currentStreak;
-      newStreakData.longestStreak = Math.max(baseData.longestStreak || 0, currentStreak);
-      newStreakData.lastCompletedDate = today;
-
-      logger.debug(`Streak day completed for ${userId1} and ${userId2} in guild ${guildId}`, {
-        guildId,
-        userId1,
-        userId2,
-        currentStreak,
-      });
+      nextData.currentStreak = currentStreak;
+      nextData.longestStreak = Math.max(baseData.longestStreak || 0, currentStreak);
+      nextData.lastCompletedDate = today;
     }
 
-    await saveStreakData(client, guildId, authorId, targetUserId, newStreakData);
-    return newStreakData;
+    await saveStreakData(client, guildId, authorId, targetUserId, nextData);
+    return nextData;
   } catch (error) {
     logger.error(`Error recording streak interaction for guild ${guildId}:`, error);
     return null;
-  }
-}
-
-export async function getUserStreaks(client, guildId, userId) {
-  try {
-    const allStreaks = await getFromDb(getStreakKey(guildId), {});
-    const userStreaks = [];
-
-    for (const [pairKey, streakData] of Object.entries(allStreaks)) {
-      const [userId1, userId2] = pairKey.split(':');
-      if (userId1 === userId || userId2 === userId) {
-        userStreaks.push({
-          otherUserId: userId1 === userId ? userId2 : userId1,
-          ...streakData,
-        });
-      }
-    }
-
-    return userStreaks.sort((a, b) => b.currentStreak - a.currentStreak);
-  } catch (error) {
-    logger.error(`Error getting user streaks for guild ${guildId}:`, error);
-    return [];
-  }
-}
-
-export async function getTopStreaks(client, guildId, limit = 10) {
-  try {
-    const allStreaks = await getFromDb(getStreakKey(guildId), {});
-    const streaks = Object.entries(allStreaks).map(([pairKey, streakData]) => {
-      const [userId1, userId2] = pairKey.split(':');
-      return { userId1, userId2, ...streakData };
-    });
-
-    return streaks
-      .sort((a, b) => b.currentStreak - a.currentStreak)
-      .slice(0, limit);
-  } catch (error) {
-    logger.error(`Error getting top streaks for guild ${guildId}:`, error);
-    return [];
   }
 }
 
@@ -186,10 +216,7 @@ export async function resetStreak(client, guildId, userId1, userId2) {
     const key = getStreakKey(guildId);
     const allStreaks = await getFromDb(key, {});
     const pairKey = getPairKey(userId1, userId2);
-
-    if (!allStreaks[pairKey]) {
-      return false;
-    }
+    if (!allStreaks[pairKey]) return false;
 
     delete allStreaks[pairKey];
     await setInDb(key, allStreaks);

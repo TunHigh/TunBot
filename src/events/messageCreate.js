@@ -347,17 +347,19 @@ async function handleStreakTracking(message, client) {
         .map((user) => user.id),
     );
 
+    let isReply = false;
     if (message.reference?.messageId) {
       const repliedMessage = await message.fetchReference().catch(() => null);
       const repliedAuthor = repliedMessage?.author;
 
       if (repliedAuthor && !repliedAuthor.bot && repliedAuthor.id !== message.author.id) {
         targetUserIds.add(repliedAuthor.id);
+        isReply = true;
       }
     }
 
     for (const targetUserId of targetUserIds) {
-      await recordMessage(client, message.guild.id, message.author.id, targetUserId);
+      await recordMessage(client, message.guild.id, message.author.id, targetUserId, { isReply });
     }
   } catch (error) {
     logger.error('Error in streak tracking:', error);

@@ -63,6 +63,10 @@ export const commandAliases = {
     'fight': 'fight',
     'chuoi': 'chuoi',
     'streak': 'chuoi',
+    'st': 'streak-top',
+    'streak-top': 'streak-top',
+    'sr': 'streak-reset',
+    'streak-reset': 'streak-reset',
 
     'gcreate': 'gcreate',
     'gstart': 'gcreate',
