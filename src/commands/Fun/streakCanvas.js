@@ -468,7 +468,7 @@ function drawPillBadge(ctx, text, x, y, width, height, startColor, endColor) {
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    drawTextWithOutline(ctx, text, x, y + 1, 16, 'center', '#ffffff', 'transparent', 0);
+    drawTextWithOutline(ctx, text, x, y + 1, 20, 'center', '#ffffff', 'rgba(0,0,0,0.3)', 2);
     ctx.restore();
 }
 
@@ -482,18 +482,14 @@ function drawDualProgressBar(
     user1Val,
     user1Target,
     user2Val,
-    user2Target,
-    fishColor1 = '#ffa826',
-    fishColor2 = '#4da2ff'
+    user2Target
 ) {
-    const leftStartX = 190;
-    const rightEndX = 810;
+    const leftStartX = 185;
+    const rightEndX = 815;
     const centerX = 500;
-    const barHeight = 24;
-    const barRadius = 12;
-
-    const leftWidth = centerX - leftStartX - 10; // 300px
-    const rightWidth = rightEndX - centerX - 10; // 300px
+    const barHeight = 26;
+    const barRadius = 13;
+    const checkRadius = 20;
 
     const user1Ratio = Math.max(0, Math.min(1, user1Val / user1Target));
     const user2Ratio = Math.max(0, Math.min(1, user2Val / user2Target));
@@ -502,90 +498,105 @@ function drawDualProgressBar(
 
     ctx.save();
 
-    // 1. Background Tracks
-    // Left Track (Navy Background)
-    roundRect(ctx, leftStartX, y - barHeight / 2, leftWidth + 10, barHeight, barRadius);
-    ctx.fillStyle = 'rgba(10, 32, 65, 0.75)';
+    // ── Background Tracks ────────────────────────────────────────
+    // Left track
+    roundRect(ctx, leftStartX, y - barHeight / 2, centerX - leftStartX - checkRadius - 4, barHeight, barRadius);
+    ctx.fillStyle = 'rgba(8, 25, 55, 0.7)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // Right Track (Navy Background)
-    roundRect(ctx, centerX - 5, y - barHeight / 2, rightWidth + 15, barHeight, barRadius);
-    ctx.fillStyle = 'rgba(10, 32, 65, 0.75)';
+    // Right track
+    roundRect(ctx, centerX + checkRadius + 4, y - barHeight / 2, rightEndX - centerX - checkRadius - 4, barHeight, barRadius);
+    ctx.fillStyle = 'rgba(8, 25, 55, 0.7)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // 2. Left Fill Bar (Pink Gradient: #ff4b8b -> #ff7eb3)
+    // ── Left Fill Bar (pink → stops before center circle) ────────
     if (user1Ratio > 0) {
-        const fillW = Math.max(barRadius * 2, (leftWidth + 10) * user1Ratio);
-        const fillX = centerX - fillW;
+        const trackW = centerX - leftStartX - checkRadius - 4;
+        const fillW = Math.max(barRadius * 2, trackW * user1Ratio);
 
-        roundRect(ctx, fillX, y - barHeight / 2, fillW, barHeight, barRadius);
-        const grad1 = ctx.createLinearGradient(fillX, y, centerX, y);
-        grad1.addColorStop(0, '#ff4b8b');
+        // clip to track boundaries
+        ctx.save();
+        roundRect(ctx, leftStartX, y - barHeight / 2, trackW, barHeight, barRadius);
+        ctx.clip();
+
+        roundRect(ctx, centerX - checkRadius - 4 - fillW, y - barHeight / 2, fillW, barHeight, barRadius);
+        const grad1 = ctx.createLinearGradient(leftStartX, 0, centerX - checkRadius - 4, 0);
+        grad1.addColorStop(0, '#ff2d78');
         grad1.addColorStop(1, '#ff80b5');
         ctx.fillStyle = grad1;
         ctx.fill();
-
-        // Left Fish Icon at progress tip
-        drawFish(ctx, fillX + 5, y, 0.75, false, fishColor1);
-    } else {
-        drawFish(ctx, leftStartX + 10, y, 0.75, false, fishColor1);
+        ctx.restore();
     }
 
-    // 3. Right Fill Bar (Blue Gradient: #297eff -> #63b3ff)
+    // ── Right Fill Bar (sky-blue → extends right from center circle) ──
     if (user2Ratio > 0) {
-        const fillW = Math.max(barRadius * 2, (rightWidth + 10) * user2Ratio);
+        const trackX = centerX + checkRadius + 4;
+        const trackW = rightEndX - centerX - checkRadius - 4;
+        const fillW = Math.max(barRadius * 2, trackW * user2Ratio);
 
-        roundRect(ctx, centerX, y - barHeight / 2, fillW, barHeight, barRadius);
-        const grad2 = ctx.createLinearGradient(centerX, y, centerX + fillW, y);
-        grad2.addColorStop(0, '#297eff');
-        grad2.addColorStop(1, '#63b3ff');
+        ctx.save();
+        roundRect(ctx, trackX, y - barHeight / 2, trackW, barHeight, barRadius);
+        ctx.clip();
+
+        roundRect(ctx, trackX, y - barHeight / 2, fillW, barHeight, barRadius);
+        const grad2 = ctx.createLinearGradient(trackX, 0, trackX + trackW, 0);
+        grad2.addColorStop(0, '#3fc4ff');
+        grad2.addColorStop(1, '#79d8ff');
         ctx.fillStyle = grad2;
         ctx.fill();
-
-        // Right Fish Icon at progress tip
-        drawFish(ctx, centerX + fillW - 5, y, 0.75, true, fishColor2);
-    } else {
-        drawFish(ctx, rightEndX - 10, y, 0.75, true, fishColor2);
+        ctx.restore();
     }
 
-    // 4. Center Checkmark Circle Badge (✓)
-    const checkRadius = 18;
+    // ── Center Checkmark Circle ───────────────────────────────────
+    // Always draw a clean circle outline as a "slot"
+    ctx.save();
     ctx.beginPath();
     ctx.arc(centerX, y, checkRadius, 0, Math.PI * 2);
 
     if (bothCompleted) {
-        const checkGrad = ctx.createLinearGradient(centerX - checkRadius, y, centerX + checkRadius, y);
-        checkGrad.addColorStop(0, '#2ecc71');
-        checkGrad.addColorStop(1, '#27ae60');
-        ctx.fillStyle = checkGrad;
+        // Glowing green filled circle
+        const ckGrad = ctx.createRadialGradient(centerX - 4, y - 4, 2, centerX, y, checkRadius);
+        ckGrad.addColorStop(0, '#6effa0');
+        ckGrad.addColorStop(1, '#17c85a');
+        ctx.fillStyle = ckGrad;
         ctx.shadowColor = '#2ecc71';
-        ctx.shadowBlur = 14;
+        ctx.shadowBlur = 20;
         ctx.fill();
 
+        // White border ring
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
+        ctx.shadowBlur = 0;
         ctx.stroke();
 
-        // White Checkmark Icon ✓
-        drawTextWithOutline(ctx, '✓', centerX, y + 1, 20, 'center', '#ffffff', 'transparent', 0);
+        // Draw checkmark path manually (no text rendering issues)
+        ctx.beginPath();
+        ctx.moveTo(centerX - 8, y);
+        ctx.lineTo(centerX - 2, y + 7);
+        ctx.lineTo(centerX + 9, y - 7);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
     } else {
-        ctx.fillStyle = 'rgba(12, 40, 75, 0.9)';
+        // Empty dark slot with subtle ring
+        ctx.fillStyle = 'rgba(5, 18, 45, 0.85)';
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.lineWidth = 1.8;
         ctx.stroke();
-
-        // Muted Checkmark Icon ✓
-        drawTextWithOutline(ctx, '✓', centerX, y + 1, 18, 'center', 'rgba(255, 255, 255, 0.4)', 'transparent', 0);
     }
 
     ctx.restore();
+
+    ctx.restore(); // outer save
 }
 
 // ============================================================
@@ -616,12 +627,12 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
     // 4. Message Section (TIN NHẮN)
     const reqMessages = getRequiredMessages(streak.streakDays);
 
-    // Pill Badge
-    drawPillBadge(ctx, 'TIN NHẮN', WIDTH / 2, 210, 140, 36, '#ff4785', '#ff739d');
+    // Pill Badge (bigger)
+    drawPillBadge(ctx, 'TIN NHẮN', WIDTH / 2, 210, 160, 42, '#ff4785', '#ff739d');
 
-    // Numbers Text (Left & Right)
-    drawTextWithOutline(ctx, `${streak.user1Messages}/${reqMessages}`, 135, 255, 22, 'center', '#ffffff', '#000000', 4);
-    drawTextWithOutline(ctx, `${streak.user2Messages}/${reqMessages}`, 865, 255, 22, 'center', '#ffffff', '#000000', 4);
+    // Numbers Text (Left & Right) – bigger
+    drawTextWithOutline(ctx, `${streak.user1Messages}/${reqMessages}`, 130, 255, 26, 'center', '#ffffff', '#000000', 5);
+    drawTextWithOutline(ctx, `${streak.user2Messages}/${reqMessages}`, 870, 255, 26, 'center', '#ffffff', '#000000', 5);
 
     // Dual Progress Bar + Center Checkmark (Y: 255)
     drawDualProgressBar(
@@ -630,19 +641,16 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
         streak.user1Messages,
         reqMessages,
         streak.user2Messages,
-        reqMessages,
-        '#ffa826',
-        '#4da2ff'
+        reqMessages
     );
 
     // 5. Reply Section (REPLY)
-    // Pill Badge
-    drawPillBadge(ctx, 'REPLY', WIDTH / 2, 335, 140, 36, '#6b46e5', '#9866ff');
+    // Pill Badge (bigger)
+    drawPillBadge(ctx, 'REPLY', WIDTH / 2, 335, 160, 42, '#6b46e5', '#9866ff');
 
-    // Numbers Text (Left & Right) - Displaying userReplies/1 (or userReplies/2 if replies > 1)
-    const reqReplies = Math.max(1, Math.max(streak.user1Replies, streak.user2Replies));
-    drawTextWithOutline(ctx, `${streak.user1Replies}/${reqReplies}`, 135, 380, 22, 'center', '#ffffff', '#000000', 4);
-    drawTextWithOutline(ctx, `${streak.user2Replies}/${reqReplies}`, 865, 380, 22, 'center', '#ffffff', '#000000', 4);
+    // Numbers Text (Left & Right) – bigger
+    drawTextWithOutline(ctx, `${streak.user1Replies}/1`, 130, 380, 26, 'center', '#ffffff', '#000000', 5);
+    drawTextWithOutline(ctx, `${streak.user2Replies}/1`, 870, 380, 26, 'center', '#ffffff', '#000000', 5);
 
     // Dual Progress Bar + Center Checkmark (Y: 380)
     drawDualProgressBar(
@@ -651,9 +659,7 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
         streak.user1Replies,
         1,
         streak.user2Replies,
-        1,
-        '#ffa826',
-        '#4da2ff'
+        1
     );
 
     // 6. Bottom Milestones Panel Section (Y: 480 to 680)
@@ -679,7 +685,7 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
             `${day} days`,
             mx,
             textY,
-            13,
+            15,
             'center',
             reached ? '#ffffff' : 'rgba(255, 255, 255, 0.4)',
             'transparent',
@@ -693,11 +699,11 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
         `${streak.streakDays} NGÀY`,
         WIDTH / 2,
         595,
-        24,
+        30,
         'center',
         '#ffee55',
-        '#b35900',
-        3
+        '#7a3a00',
+        4
     );
 
     // Milestone Progress Slider Track Bar (Y: 635)
