@@ -110,154 +110,252 @@ function drawStarPath(ctx, cx, cy, spikes, outerRadius, innerRadius) {
     ctx.closePath();
 }
 
-function drawSparkleDots(ctx, x, y, color = '#ffeb7a') {
+// Draw 4-point sparkle star at (sx, sy) with given arm length
+function draw4PointStar(ctx, sx, sy, size, color) {
     ctx.save();
-    ctx.fillStyle = color;
-    const offsets = [
-        [-16, -14, 2], [16, -14, 1.8], [-18, 10, 1.5], [18, 12, 2],
-        [-8, -20, 1.5], [8, -20, 1.5]
-    ];
-    for (const [ox, oy, r] of offsets) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8;
+    ctx.lineCap = 'round';
+    // long arms
+    for (let i = 0; i < 2; i++) {
+        const ang = (i * Math.PI) / 2;
         ctx.beginPath();
-        ctx.arc(x + ox, y + oy, r, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(sx + Math.cos(ang) * size * 0.28, sy + Math.sin(ang) * size * 0.28);
+        ctx.lineTo(sx + Math.cos(ang) * size, sy + Math.sin(ang) * size);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(sx - Math.cos(ang) * size * 0.28, sy - Math.sin(ang) * size * 0.28);
+        ctx.lineTo(sx - Math.cos(ang) * size, sy - Math.sin(ang) * size);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function drawSparkleField(ctx, cx, cy, reached) {
+    if (!reached) return;
+    ctx.save();
+    // 3 sparkle stars scattered around the icon
+    const positions = [
+        [cx - 22, cy - 18, 5],
+        [cx + 21, cy - 16, 4],
+        [cx + 18, cy + 16, 3.5],
+    ];
+    for (const [sx, sy, size] of positions) {
+        draw4PointStar(ctx, sx, sy, size, '#ffe566');
     }
     ctx.restore();
 }
 
 function drawMilestoneIcon(ctx, index, x, y, reached) {
     ctx.save();
-    const activeColor = '#ff66c4';
-    const inactiveColor = 'rgba(255, 255, 255, 0.3)';
 
-    ctx.fillStyle = reached ? activeColor : inactiveColor;
-    ctx.strokeStyle = reached ? '#ffffff' : 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 1.5;
+    // Gradient fill for reached icons
+    const makeGrad = () => {
+        const g = ctx.createLinearGradient(x, y - 24, x, y + 24);
+        g.addColorStop(0, '#ff85d6');
+        g.addColorStop(1, '#e0009e');
+        return g;
+    };
+
+    ctx.fillStyle = reached ? makeGrad() : 'rgba(255, 255, 255, 0.22)';
+    ctx.strokeStyle = reached ? 'rgba(255,255,255,0.85)' : 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = reached ? 2 : 1.2;
 
     if (reached) {
         ctx.shadowColor = '#ff3399';
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 18;
     }
 
+    // Scale factor: icons are 1.6× bigger than before
+    const S = 1.6;
+
     switch (index) {
-        case 0: // 1 day - Triangle / Pyramid
+        case 0: { // 1 ngày - Triangle
             ctx.beginPath();
-            ctx.moveTo(x, y - 16);
-            ctx.lineTo(x + 13, y + 11);
-            ctx.lineTo(x - 13, y + 11);
+            ctx.moveTo(x, y - 20 * S);
+            ctx.lineTo(x + 16 * S, y + 12 * S);
+            ctx.lineTo(x - 16 * S, y + 12 * S);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
             break;
-
-        case 1: // 5 days - Hexagon Gem
+        }
+        case 1: { // 5 ngày - Hexagon Gem
             ctx.beginPath();
-            ctx.moveTo(x, y - 15);
-            ctx.lineTo(x + 11, y - 6);
-            ctx.lineTo(x + 11, y + 7);
-            ctx.lineTo(x, y + 15);
-            ctx.lineTo(x - 11, y + 7);
-            ctx.lineTo(x - 11, y - 6);
+            for (let i = 0; i < 6; i++) {
+                const ang = (Math.PI / 3) * i - Math.PI / 6;
+                const px = x + Math.cos(ang) * 18 * S;
+                const py = y + Math.sin(ang) * 18 * S;
+                i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            break;
-
-        case 2: // 15 days - Rounded Square
-            ctx.beginPath();
-            roundRect(ctx, x - 11, y - 11, 22, 22, 4);
-            ctx.fill();
-            ctx.stroke();
-            break;
-
-        case 3: // 30 days - 5-Point Star + Sparkles
-            drawStarPath(ctx, x, y, 5, 15, 7);
-            ctx.fill();
-            ctx.stroke();
-            if (reached) drawSparkleDots(ctx, x, y);
-            break;
-
-        case 4: // 60 days - Elongated Hex Gem + Sparkles
-            ctx.beginPath();
-            ctx.moveTo(x, y - 16);
-            ctx.lineTo(x + 12, y - 6);
-            ctx.lineTo(x + 12, y + 8);
-            ctx.lineTo(x, y + 16);
-            ctx.lineTo(x - 12, y + 8);
-            ctx.lineTo(x - 12, y - 6);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            if (reached) drawSparkleDots(ctx, x, y);
-            break;
-
-        case 5: // 90 days - Diamond Facet + Sparkles
-            ctx.beginPath();
-            ctx.moveTo(x - 15, y - 6);
-            ctx.lineTo(x, y - 16);
-            ctx.lineTo(x + 15, y - 6);
-            ctx.lineTo(x, y + 16);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            if (reached) drawSparkleDots(ctx, x, y);
-            break;
-
-        case 6: // 120 days - Crown
-            ctx.beginPath();
-            ctx.moveTo(x - 13, y + 11);
-            ctx.lineTo(x - 16, y - 8);
-            ctx.lineTo(x - 6, y + 2);
-            ctx.lineTo(x, y - 14);
-            ctx.lineTo(x + 6, y + 2);
-            ctx.lineTo(x + 16, y - 8);
-            ctx.lineTo(x + 13, y + 11);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            if (reached) drawSparkleDots(ctx, x, y);
-            break;
-
-        case 7: // 150 days - Crystal Jewel with rays
+            // inner highlight line
             if (reached) {
-                // Radiating Rays
                 ctx.save();
-                ctx.strokeStyle = '#ffe47a';
-                ctx.lineWidth = 1.5;
-                const rays = [[-20, -18], [20, -18], [-24, 0], [24, 0], [0, -22]];
-                for (const [rx, ry] of rays) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, y - 14 * S);
+                ctx.lineTo(x + 8 * S, y + 3 * S);
+                ctx.lineTo(x - 8 * S, y + 3 * S);
+                ctx.stroke();
+                ctx.restore();
+            }
+            break;
+        }
+        case 2: { // 15 ngày - Rounded Square
+            const sq = 19 * S;
+            roundRect(ctx, x - sq / 2, y - sq / 2, sq, sq, 5);
+            ctx.fill();
+            ctx.stroke();
+            if (reached) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+                ctx.lineWidth = 1;
+                roundRect(ctx, x - sq / 2 + 4, y - sq / 2 + 4, sq - 8, sq - 8, 3);
+                ctx.stroke();
+                ctx.restore();
+            }
+            break;
+        }
+        case 3: { // 30 ngày - 5-Point Star
+            drawStarPath(ctx, x, y, 5, 21 * S * 0.7, 9 * S * 0.7);
+            ctx.fill();
+            ctx.stroke();
+            drawSparkleField(ctx, x, y, reached);
+            break;
+        }
+        case 4: { // 60 ngày - Tall Diamond Gem
+            ctx.beginPath();
+            ctx.moveTo(x, y - 22 * S * 0.65);
+            ctx.lineTo(x + 14 * S * 0.65, y - 6 * S * 0.65);
+            ctx.lineTo(x + 14 * S * 0.65, y + 10 * S * 0.65);
+            ctx.lineTo(x, y + 22 * S * 0.65);
+            ctx.lineTo(x - 14 * S * 0.65, y + 10 * S * 0.65);
+            ctx.lineTo(x - 14 * S * 0.65, y - 6 * S * 0.65);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            if (reached) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(x - 8 * S * 0.65, y - 10 * S * 0.65);
+                ctx.lineTo(x, y - 18 * S * 0.65);
+                ctx.lineTo(x + 8 * S * 0.65, y - 10 * S * 0.65);
+                ctx.stroke();
+                ctx.restore();
+            }
+            drawSparkleField(ctx, x, y, reached);
+            break;
+        }
+        case 5: { // 90 ngày - Wide Diamond
+            ctx.beginPath();
+            ctx.moveTo(x - 20 * S * 0.65, y - 5 * S * 0.65);
+            ctx.lineTo(x, y - 22 * S * 0.65);
+            ctx.lineTo(x + 20 * S * 0.65, y - 5 * S * 0.65);
+            ctx.lineTo(x, y + 22 * S * 0.65);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            if (reached) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x - 10 * S * 0.65, y - 5 * S * 0.65);
+                ctx.lineTo(x, y - 22 * S * 0.65);
+                ctx.lineTo(x + 10 * S * 0.65, y - 5 * S * 0.65);
+                ctx.stroke();
+                ctx.restore();
+            }
+            drawSparkleField(ctx, x, y, reached);
+            break;
+        }
+        case 6: { // 120 ngày - Crown
+            const cs = S * 0.65;
+            ctx.beginPath();
+            ctx.moveTo(x - 18 * cs, y + 14 * cs);
+            ctx.lineTo(x - 20 * cs, y - 8 * cs);
+            ctx.lineTo(x - 8 * cs, y + 4 * cs);
+            ctx.lineTo(x, y - 18 * cs);
+            ctx.lineTo(x + 8 * cs, y + 4 * cs);
+            ctx.lineTo(x + 20 * cs, y - 8 * cs);
+            ctx.lineTo(x + 18 * cs, y + 14 * cs);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // crown dots
+            if (reached) {
+                ctx.save();
+                ctx.fillStyle = '#ffe566';
+                ctx.shadowColor = '#ffe566';
+                ctx.shadowBlur = 6;
+                for (const [dx, dy] of [[-20 * cs, -8 * cs], [0, -18 * cs], [20 * cs, -8 * cs]]) {
                     ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x + rx, y + ry);
+                    ctx.arc(x + dx, y + dy, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+            drawSparkleField(ctx, x, y, reached);
+            break;
+        }
+        case 7: { // 150 ngày - 8-Point Crystal
+            drawStarPath(ctx, x, y, 8, 21 * S * 0.6, 13 * S * 0.6);
+            ctx.fill();
+            ctx.stroke();
+            if (reached) {
+                // long radiating lines
+                ctx.save();
+                ctx.strokeStyle = '#ffe566';
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
+                for (let i = 0; i < 4; i++) {
+                    const ang = (i * Math.PI) / 4 + Math.PI / 8;
+                    const r1 = 15 * S * 0.6;
+                    const r2 = 24 * S * 0.6;
+                    ctx.beginPath();
+                    ctx.moveTo(x + Math.cos(ang) * r1, y + Math.sin(ang) * r1);
+                    ctx.lineTo(x + Math.cos(ang) * r2, y + Math.sin(ang) * r2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x - Math.cos(ang) * r1, y - Math.sin(ang) * r1);
+                    ctx.lineTo(x - Math.cos(ang) * r2, y - Math.sin(ang) * r2);
                     ctx.stroke();
                 }
                 ctx.restore();
             }
-            drawStarPath(ctx, x, y, 8, 16, 10);
+            drawSparkleField(ctx, x, y, reached);
+            break;
+        }
+        case 8: { // 180 ngày - Burst Star
+            drawStarPath(ctx, x, y, 8, 22 * S * 0.6, 8 * S * 0.6);
             ctx.fill();
             ctx.stroke();
-            if (reached) drawSparkleDots(ctx, x, y);
-            break;
-
-        case 8: // 180 days - Burst Sparkle
             if (reached) {
+                // 8 long burst rays
                 ctx.save();
-                ctx.strokeStyle = '#ffe47a';
-                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#ffe566';
+                ctx.lineWidth = 1.8;
+                ctx.lineCap = 'round';
                 for (let i = 0; i < 8; i++) {
                     const ang = (i * Math.PI) / 4;
+                    const r1 = 20 * S * 0.6;
+                    const r2 = 32 * S * 0.6;
                     ctx.beginPath();
-                    ctx.moveTo(x + Math.cos(ang) * 12, y + Math.sin(ang) * 12);
-                    ctx.lineTo(x + Math.cos(ang) * 23, y + Math.sin(ang) * 23);
+                    ctx.moveTo(x + Math.cos(ang) * r1, y + Math.sin(ang) * r1);
+                    ctx.lineTo(x + Math.cos(ang) * r2, y + Math.sin(ang) * r2);
                     ctx.stroke();
                 }
                 ctx.restore();
             }
-            drawStarPath(ctx, x, y, 8, 16, 6);
-            ctx.fill();
-            ctx.stroke();
-            if (reached) drawSparkleDots(ctx, x, y);
+            drawSparkleField(ctx, x, y, reached);
             break;
+        }
     }
     ctx.restore();
 }
@@ -515,18 +613,18 @@ function drawDualProgressBar(
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // ── Left Fill Bar (pink → stops before center circle) ────────
+    // ── Left Fill Bar: fills from LEFT edge → toward center circle ──
     if (user1Ratio > 0) {
         const trackW = centerX - leftStartX - checkRadius - 4;
         const fillW = Math.max(barRadius * 2, trackW * user1Ratio);
 
-        // clip to track boundaries
         ctx.save();
         roundRect(ctx, leftStartX, y - barHeight / 2, trackW, barHeight, barRadius);
         ctx.clip();
 
-        roundRect(ctx, centerX - checkRadius - 4 - fillW, y - barHeight / 2, fillW, barHeight, barRadius);
-        const grad1 = ctx.createLinearGradient(leftStartX, 0, centerX - checkRadius - 4, 0);
+        // fill starts at leftStartX and grows right
+        roundRect(ctx, leftStartX, y - barHeight / 2, fillW, barHeight, barRadius);
+        const grad1 = ctx.createLinearGradient(leftStartX, 0, leftStartX + trackW, 0);
         grad1.addColorStop(0, '#ff2d78');
         grad1.addColorStop(1, '#ff80b5');
         ctx.fillStyle = grad1;
@@ -534,7 +632,7 @@ function drawDualProgressBar(
         ctx.restore();
     }
 
-    // ── Right Fill Bar (sky-blue → extends right from center circle) ──
+    // ── Right Fill Bar: fills from RIGHT edge → toward center circle ──
     if (user2Ratio > 0) {
         const trackX = centerX + checkRadius + 4;
         const trackW = rightEndX - centerX - checkRadius - 4;
@@ -544,7 +642,8 @@ function drawDualProgressBar(
         roundRect(ctx, trackX, y - barHeight / 2, trackW, barHeight, barRadius);
         ctx.clip();
 
-        roundRect(ctx, trackX, y - barHeight / 2, fillW, barHeight, barRadius);
+        // fill starts at rightEndX and grows left
+        roundRect(ctx, trackX + trackW - fillW, y - barHeight / 2, fillW, barHeight, barRadius);
         const grad2 = ctx.createLinearGradient(trackX, 0, trackX + trackW, 0);
         grad2.addColorStop(0, '#3fc4ff');
         grad2.addColorStop(1, '#79d8ff');
@@ -682,7 +781,7 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
         // Text Label under Icon
         drawTextWithOutline(
             ctx,
-            `${day} days`,
+            `${day} ngày`,
             mx,
             textY,
             15,
