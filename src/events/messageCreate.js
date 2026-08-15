@@ -19,7 +19,6 @@ import {
   recordCorrectCount,
 } from '../services/countingGameService.js';
 import { getCommunityMinesweeperConfig, startCommunityMinesweeper, activeGames } from '../services/communityMinesweeperService.js';
-import { recordMessage } from '../services/streakService.js';
 
 const MESSAGE_XP_RATE_LIMIT_ATTEMPTS = 12;
 const MESSAGE_XP_RATE_LIMIT_WINDOW_MS = 10000;
@@ -44,9 +43,6 @@ export default {
       await handlePrefixCommand(message, client);
 
       await handleLeveling(message, client);
-      
-      // Handle streak tracking
-      await handleStreakTracking(message, client);
       
       // Handle gift box system
       await handleGiftBoxSystem(message, client);
@@ -326,30 +322,5 @@ async function triggerMinesweeperGame(channel, client, guildId, config) {
     });
   } catch (error) {
     logger.error('Error triggering Minesweeper game:', error);
-  }
-}
-
-// Streak tracking system
-async function handleStreakTracking(message, client) {
-  try {
-    // Skip if message is from bot or system
-    if (message.author.bot || message.system) return;
-    
-    // Skip if message is a command (starts with prefix)
-    const guildConfig = await getGuildConfig(client, message.guild.id);
-    const prefix = guildConfig?.prefix || getCommandPrefix();
-    if (message.content.startsWith(prefix)) return;
-    
-    // Check for user mentions in the message
-    const mentionedUsers = message.mentions.users.filter(user => !user.bot && user.id !== message.author.id);
-    
-    if (mentionedUsers.size === 0) return;
-    
-    // Record streak for each mentioned user
-    for (const [, mentionedUser] of mentionedUsers) {
-      await recordMessage(client, message.guild.id, message.author.id, mentionedUser.id);
-    }
-  } catch (error) {
-    logger.error('Error in streak tracking:', error);
   }
 }
