@@ -776,6 +776,14 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
     const avatar1 = user1 ? await getAvatar(user1) : null;
     const avatar2 = user2 ? await getAvatar(user2) : null;
 
+    // Map DB columns so the VIEWER (user1Id, left side) always shows their own progress:
+    // the viewer may be stored as user1 OR user2 (e.g. when they were the invited partner).
+    const isViewerUser1 = String(streak.user1Id) === String(user1Id);
+    const leftMessages = isViewerUser1 ? streak.user1Messages : streak.user2Messages;
+    const rightMessages = isViewerUser1 ? streak.user2Messages : streak.user1Messages;
+    const leftReplies = isViewerUser1 ? streak.user1Replies : streak.user2Replies;
+    const rightReplies = isViewerUser1 ? streak.user2Replies : streak.user1Replies;
+
     // 3. Draw Avatars (Left X: 90, Right X: 910, Y: 150)
     drawAvatar(ctx, avatar1, 90, 150, 56);
     drawAvatar(ctx, avatar2, 910, 150, 56);
@@ -787,16 +795,16 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
     drawPillBadge(ctx, 'TIN NHẮN', WIDTH / 2, 210, 160, 42, '#ff4785', '#ff739d');
 
     // Numbers Text (Left & Right) – bigger
-    drawTextWithOutline(ctx, `${streak.user1Messages}/${reqMessages}`, 130, 255, 26, 'center', '#ffffff', '#000000', 5);
-    drawTextWithOutline(ctx, `${streak.user2Messages}/${reqMessages}`, 870, 255, 26, 'center', '#ffffff', '#000000', 5);
+    drawTextWithOutline(ctx, `${leftMessages}/${reqMessages}`, 130, 255, 26, 'center', '#ffffff', '#000000', 5);
+    drawTextWithOutline(ctx, `${rightMessages}/${reqMessages}`, 870, 255, 26, 'center', '#ffffff', '#000000', 5);
 
     // Dual Progress Bar + Center Checkmark (Y: 255)
     drawDualProgressBar(
         ctx,
         255,
-        streak.user1Messages,
+        leftMessages,
         reqMessages,
-        streak.user2Messages,
+        rightMessages,
         reqMessages
     );
 
@@ -805,16 +813,16 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
     drawPillBadge(ctx, 'REPLY', WIDTH / 2, 335, 160, 42, '#6b46e5', '#9866ff');
 
     // Numbers Text (Left & Right) – bigger
-    drawTextWithOutline(ctx, `${streak.user1Replies}/1`, 130, 380, 26, 'center', '#ffffff', '#000000', 5);
-    drawTextWithOutline(ctx, `${streak.user2Replies}/1`, 870, 380, 26, 'center', '#ffffff', '#000000', 5);
+    drawTextWithOutline(ctx, `${leftReplies}/1`, 130, 380, 26, 'center', '#ffffff', '#000000', 5);
+    drawTextWithOutline(ctx, `${rightReplies}/1`, 870, 380, 26, 'center', '#ffffff', '#000000', 5);
 
     // Dual Progress Bar + Center Checkmark (Y: 380)
     drawDualProgressBar(
         ctx,
         380,
-        streak.user1Replies,
+        leftReplies,
         1,
-        streak.user2Replies,
+        rightReplies,
         1
     );
 
