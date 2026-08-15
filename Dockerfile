@@ -1,5 +1,7 @@
 FROM node:20-alpine
 
+RUN apk add --no-cache font-dejavu font-noto fontconfig
+
 WORKDIR /usr/src/app
 
 ENV NODE_ENV=production

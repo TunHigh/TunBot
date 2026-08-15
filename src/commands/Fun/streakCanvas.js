@@ -4,11 +4,31 @@ import {
     GlobalFonts,
 } from '@napi-rs/canvas';
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import {
     getRequiredMessages,
 } from './streakManager.js';
 
-// Load system fonts for canvas text rendering
+// Register custom TTF font for guaranteed rendering across all operating systems & Docker
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const fontPath = path.join(__dirname, '../../assets/fonts/StreakFont.ttf');
+
+try {
+    if (fs.existsSync(fontPath)) {
+        GlobalFonts.registerFromPath(fontPath, 'StreakFont');
+        console.log('[STREAK CANVAS] Custom font StreakFont.ttf registered successfully.');
+    } else {
+        console.warn('[STREAK CANVAS] Custom font not found at:', fontPath);
+    }
+} catch (error) {
+    console.warn('[STREAK CANVAS] Could not register custom font:', error.message);
+}
+
+// Load system fonts fallback
 try {
     GlobalFonts.loadSystemFonts();
 } catch (error) {
@@ -51,7 +71,7 @@ function drawTextWithOutline(
     if (text === null || text === undefined || text === '') return;
 
     ctx.save();
-    ctx.font = `bold ${size}px sans-serif`;
+    ctx.font = `bold ${Math.round(size)}px "StreakFont", sans-serif`;
     ctx.textAlign = align;
     ctx.textBaseline = 'middle';
 
