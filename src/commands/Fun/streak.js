@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import {
   getStreakData,
@@ -11,7 +11,6 @@ import {
 } from '../../services/streakService.js';
 import { generateStreakCard } from '../../services/streakCard.js';
 import { logger } from '../../utils/logger.js';
-import { createStreakInvitation, buildInvitationButtons } from '../../interactions/buttons/streak/streakInvitation.js';
 
 export const data = new SlashCommandBuilder()
   .setName('chuoi')
@@ -89,101 +88,56 @@ async function handleDefault(interaction, client) {
   const targetUser = interaction.options.getUser('nguoi_choi');
   const viewerId = interaction.user.id;
 
-  // If a specific user is provided, send invitation to start streak
+  // If a specific user is provided, show that streak card
   if (targetUser) {
     if (targetUser.bot) {
       return interaction.reply({
         embeds: [createEmbed({
-          title: '❌ Không thể mời',
-          description: 'Bạn không thể mời bot giữ chuỗi.',
+          title: '❌ Không thể xem streak',
+          description: 'Bạn chỉ có thể xem streak với người dùng thật.',
           color: 'error',
         })],
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
     }
 
     if (targetUser.id === viewerId) {
       return interaction.reply({
         embeds: [createEmbed({
-          title: '❌ Không thể mời',
-          description: 'Bạn không thể mời chính mình giữ chuỗi.',
+          title: '❌ Không thể xem streak',
+          description: 'Bạn không thể tạo hoặc xem streak với chính mình.',
           color: 'error',
         })],
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
     }
 
-    // Check if streak already exists
-    const existingStreak = await getStreakData(client, interaction.guildId, viewerId, targetUser.id);
-    if (existingStreak) {
-      // Show the existing streak card
-      const attachment = await buildStreakCardAttachment(client, existingStreak, viewerId);
-      if (!attachment) {
-        return interaction.reply({
-          embeds: [createEmbed({
-            title: '❌ Lỗi',
-            description: 'Không thể tạo thẻ streak. Vui lòng thử lại sau.',
-            color: 'error',
-          })],
-          flags: MessageFlags.Ephemeral,
-        });
-      }
-      return interaction.reply({
-        files: [attachment],
-      });
-    }
-
-    // Check streak partner limits
-    const viewerStreaks = await getUserStreaks(client, interaction.guildId, viewerId);
-    const targetStreaks = await getUserStreaks(client, interaction.guildId, targetUser.id);
-    
-    if (viewerStreaks.length >= MAX_STREAK_PARTNERS) {
+    const streak = await getStreakData(client, interaction.guildId, viewerId, targetUser.id);
+    if (!streak) {
       return interaction.reply({
         embeds: [createEmbed({
-          title: '❌ Đã đạt giới hạn',
-          description: `Bạn đã giữ streak với tối đa ${MAX_STREAK_PARTNERS} người. Hãy xóa streak cũ trước khi mời người mới.`,
-          color: 'error',
+          title: `💖 Streak với ${getUserLabel(targetUser)}`,
+          description: 'Hai bạn chưa có streak.\nHãy nhắn tin và **mention nhau** để bắt đầu chuỗi nhé!',
+          color: 'info',
+          thumbnail: targetUser.displayAvatarURL(),
         })],
-        flags: MessageFlags.Ephemeral,
       });
     }
-    
-    if (targetStreaks.length >= MAX_STREAK_PARTNERS) {
+
+    const attachment = await buildStreakCardAttachment(client, streak, viewerId);
+    if (!attachment) {
       return interaction.reply({
         embeds: [createEmbed({
-          title: '❌ Người kia đã đạt giới hạn',
-          description: `${getUserLabel(targetUser)} đã giữ streak với tối đa ${MAX_STREAK_PARTNERS} người.`,
+          title: '❌ Lỗi',
+          description: 'Không thể tạo thẻ streak. Vui lòng thử lại sau.',
           color: 'error',
         })],
-        flags: MessageFlags.Ephemeral,
+        ephemeral: true,
       });
     }
-
-    // Create invitation
-    await createStreakInvitation(client, interaction.guildId, viewerId, targetUser.id);
-    
-    const viewerName = getUserLabel(interaction.user);
-    const targetName = getUserLabel(targetUser);
-
-    const embed = createEmbed({
-      title: '💌 Lời mời giữ chuỗi (Streak)',
-      description: `**${viewerName}** muốn mời **${targetName}** cùng giữ chuỗi tin nhắn! 🎉\n\n` +
-        `📝 **Cách hoạt động:**\n` +
-        `• Cả hai cần **mention/reply nhau mỗi ngày**\n` +
-        `• Chuỗi sẽ tăng dần nếu duy trì liên tục\n` +
-        `• Mất chuỗi nếu một ngày không tương tác\n\n` +
-        `⏰ Lời mời hết hạn sau **24 giờ**`,
-      color: 'primary',
-      thumbnail: targetUser.displayAvatarURL(),
-      footer: { text: `${targetName}, hãy chọn bên dưới để đồng ý hoặc từ chối` },
-    });
-
-    const buttons = buildInvitationButtons(viewerId, targetUser.id);
 
     return interaction.reply({
-      embeds: [embed],
-      components: [buttons],
-      content: `<@${targetUser.id}>`,
+      files: [attachment],
     });
   }
 
