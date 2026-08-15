@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-
+import { resolvePostgresPoolConfig } from '../../config/database/postgres.js';
 import EconomyService from '../../services/economyService.js';
 
 
@@ -102,33 +102,7 @@ function getPool() {
         return pool;
     }
 
-    const connectionString =
-        process.env.POSTGRES_URL ||
-        process.env.DATABASE_URL;
-
-    if (
-        !connectionString
-    ) {
-        throw new Error(
-            'DATABASE_URL hoặc POSTGRES_URL chưa được cấu hình.'
-        );
-    }
-
-    const sslEnv = (
-        process.env.POSTGRES_SSL ||
-        process.env.PGSSL ||
-        ''
-    ).toLowerCase();
-
-    const ssl = (sslEnv === 'false' || sslEnv === '0')
-        ? false
-        : { rejectUnauthorized: false };
-
-    pool =
-        new Pool({
-            connectionString,
-            ssl,
-        });
+    pool = new Pool(resolvePostgresPoolConfig());
 
     return pool;
 }
