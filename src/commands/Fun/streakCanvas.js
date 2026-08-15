@@ -42,16 +42,10 @@ try {
 const WIDTH = 1000;
 const HEIGHT = 680;
 
-// Custom avatar frame PNG (slot its transparent inner hole onto the avatar circle)
-const avatarFramePath = path.join(__dirname, '../../assets/frame-Avatar.png');
-const AVATAR_FRAME_HOLE_RADIUS = 295; // inner-hole radius in source pixels (measured)
-const DRAWN_AVATAR_RADIUS = 44; // drawn ring/hole radius on the card (px)
-const AVATAR_FRAME_FILL_RATIO = 1.25; // avatar extends slightly past the hole to fill the art's transparent fringe (no inner gap)
 const backgroundPath = path.join(__dirname, '../../assets/background.png');
 const BACKGROUND_TOP_H = 480; // top area height replaced by the background image
 const BACKGROUND_BACKDROP = '#04060e'; // dark backdrop (kept in case aspect is off)
 let backgroundImage = null;
-let avatarFrameImage = null;
 
 // ============================================================
 // HELPERS
@@ -597,37 +591,61 @@ async function getAvatar(user) {
 }
 
 function drawAvatar(ctx, img, x, y, radius) {
-    // Avatar extends slightly past the frame hole so it fills the art's
-    // transparent fringe -> the avatar sits flush against the solid ring (no inner gap)
-    const scale = DRAWN_AVATAR_RADIUS / AVATAR_FRAME_HOLE_RADIUS;
-    const fillR = Math.round(DRAWN_AVATAR_RADIUS * AVATAR_FRAME_FILL_RATIO);
+    // Soft violet glow halo
+    ctx.save();
+    ctx.shadowColor = '#8a3dff';
+    ctx.shadowBlur = 28;
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 7, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(122, 47, 224, 0.9)';
+    ctx.fill();
+    ctx.restore();
 
     // Avatar Image Clip
     ctx.save();
     ctx.beginPath();
-    ctx.arc(x, y, fillR, 0, Math.PI * 2);
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.clip();
 
     if (img) {
-        ctx.drawImage(img, x - fillR, y - fillR, fillR * 2, fillR * 2);
+        ctx.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
     } else {
         ctx.fillStyle = '#3a4454';
-        ctx.fillRect(x - fillR, y - fillR, fillR * 2, fillR * 2);
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     }
 
     ctx.restore();
 
-    // Custom avatar frame (frame-Avatar.png): inner hole maps onto DRAWN_AVATAR_RADIUS
-    if (avatarFrameImage) {
-        const drawSize = avatarFrameImage.width * scale;
-        ctx.drawImage(
-            avatarFrameImage,
-            x - drawSize / 2,
-            y - drawSize / 2,
-            drawSize,
-            drawSize
-        );
-    }
+    // Gradient ring border (deep purple -> bright violet) over the avatar edge
+    const ringGrad = ctx.createLinearGradient(
+        x - radius, y - radius,
+        x + radius, y + radius
+    );
+    ringGrad.addColorStop(0, '#4f1a9e');
+    ringGrad.addColorStop(0.45, '#b85bff');
+    ringGrad.addColorStop(1, '#5d1cb8');
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 5, 0, Math.PI * 2);
+    ctx.arc(x, y, radius - 3, 0, Math.PI * 2, true);
+    ctx.fillStyle = ringGrad;
+    ctx.fill();
+
+    // Crisp inner highlight line to make the border pop
+    ctx.beginPath();
+    ctx.arc(x, y, radius - 1.5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    // Subtle outer rim light
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
 }
 
 // ============================================================
@@ -806,16 +824,6 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
     }
     drawBackground(ctx);
 
-    // Load custom avatar frame image once
-    if (!avatarFrameImage) {
-        try {
-            avatarFrameImage = await loadImage(fs.readFileSync(avatarFramePath));
-        } catch (error) {
-            console.warn('[STREAK CANVAS] Could not load avatar frame:', error.message);
-            avatarFrameImage = null;
-        }
-    }
-
     // 2. Fetch Users & Avatars
     let user1 = null;
     let user2 = null;
@@ -834,9 +842,9 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
     const leftReplies = isViewerUser1 ? streak.user1Replies : streak.user2Replies;
     const rightReplies = isViewerUser1 ? streak.user2Replies : streak.user1Replies;
 
-    // 3. Draw Avatars (Left X: 90, Right X: 910, Y: 150)
-    drawAvatar(ctx, avatar1, 90, 150, 56);
-    drawAvatar(ctx, avatar2, 910, 150, 56);
+    // 3. Draw Avatars (centered above each player's message count: X 130 / 870, Y 150)
+    drawAvatar(ctx, avatar1, 130, 150, 56);
+    drawAvatar(ctx, avatar2, 870, 150, 56);
 
     // 4. Message Section (TIN NHẮN)
     const reqMessages = getRequiredMessages(streak.streakDays);
