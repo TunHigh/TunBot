@@ -102,30 +102,33 @@ function getPool() {
         return pool;
     }
 
+    const connectionString =
+        process.env.POSTGRES_URL ||
+        process.env.DATABASE_URL;
 
     if (
-        !process.env.DATABASE_URL
+        !connectionString
     ) {
         throw new Error(
-            'DATABASE_URL chưa được cấu hình.'
+            'DATABASE_URL hoặc POSTGRES_URL chưa được cấu hình.'
         );
     }
 
+    const sslEnv = (
+        process.env.POSTGRES_SSL ||
+        process.env.PGSSL ||
+        ''
+    ).toLowerCase();
+
+    const ssl = (sslEnv === 'false' || sslEnv === '0')
+        ? false
+        : { rejectUnauthorized: false };
 
     pool =
         new Pool({
-            connectionString:
-                process.env.DATABASE_URL,
-
-            ssl:
-                process.env.PGSSL === 'false'
-                    ? false
-                    : {
-                        rejectUnauthorized:
-                            false,
-                    },
+            connectionString,
+            ssl,
         });
-
 
     return pool;
 }
@@ -159,6 +162,27 @@ function getToday() {
 
 
 // ============================================================
+// FORMAT DATE STRING
+// ============================================================
+
+function formatDateString(val) {
+    if (!val) return null;
+    if (val instanceof Date) {
+        return val.toISOString().split('T')[0];
+    }
+    const str = String(val).trim();
+    if (str.match(/^\d{4}-\d{2}-\d{2}/)) {
+        return str.slice(0, 10);
+    }
+    const parsed = new Date(val);
+    if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString().split('T')[0];
+    }
+    return str.slice(0, 10);
+}
+
+
+// ============================================================
 // REWARD
 // ============================================================
 
@@ -184,10 +208,8 @@ export async function initStreak(
         return;
     }
 
-
     const db =
         getPool();
-
 
     await db.query(`
         CREATE TABLE IF NOT EXISTS streaks (
@@ -226,7 +248,6 @@ export async function initStreak(
         )
     `);
 
-
     await db.query(`
         CREATE INDEX IF NOT EXISTS
         idx_streak_user1
@@ -237,7 +258,6 @@ export async function initStreak(
         )
     `);
 
-
     await db.query(`
         CREATE INDEX IF NOT EXISTS
         idx_streak_user2
@@ -247,7 +267,6 @@ export async function initStreak(
             status
         )
     `);
-
 
     await db.query(`
         CREATE TABLE IF NOT EXISTS streak_invites (
@@ -270,7 +289,6 @@ export async function initStreak(
         )
     `);
 
-
     await db.query(`
         CREATE INDEX IF NOT EXISTS
         idx_streak_invites
@@ -280,7 +298,6 @@ export async function initStreak(
             status
         )
     `);
-
 
     await db.query(`
         CREATE TABLE IF NOT EXISTS streak_rewards (
@@ -305,9 +322,7 @@ export async function initStreak(
         )
     `);
 
-
     initialized = true;
-
 
     console.log(
         '[STREAK] PostgreSQL initialized.'
@@ -326,7 +341,6 @@ function normalize(
     if (!row) {
         return null;
     }
-
 
     return {
 
@@ -348,11 +362,8 @@ function normalize(
             ),
 
         dayKey:
-            String(
+            formatDateString(
                 row.day_key
-            ).slice(
-                0,
-                10
             ),
 
         user1Messages:
@@ -376,14 +387,9 @@ function normalize(
             ),
 
         lastCompletedDate:
-            row.last_completed_date
-                ? String(
-                    row.last_completed_date
-                ).slice(
-                    0,
-                    10
-                )
-                : null,
+            formatDateString(
+                row.last_completed_date
+            ),
 
         nextReward:
             getReward(
@@ -392,6 +398,63 @@ function normalize(
                 ) + 1
             ),
     };
+}
+
+
+// ============================================================
+// SYNC STREAK DATE (NEW DAY RESET & BREAK CHECK)
+// ============================================================
+
+async function syncStreakDate(streak) {
+    if (!streak) return null;
+
+    const today = getToday();
+    if (streak.dayKey === today) {
+        return streak;
+    }
+
+    const db = getPool();
+    let newStreakDays = streak.streakDays;
+
+    if (streak.streakDays > 0) {
+        if (!streak.lastCompletedDate) {
+            newStreakDays = 0;
+        } else {
+            const todayDate = new Date(today + 'T00:00:00Z');
+            const lastCompDate = new Date(streak.lastCompletedDate + 'T00:00:00Z');
+            const diffDays = Math.round(
+                (todayDate.getTime() - lastCompDate.getTime()) / (1000 * 3600 * 24)
+            );
+
+            if (diffDays > 1) {
+                newStreakDays = 0;
+            }
+        }
+    }
+
+    const result = await db.query(`
+        UPDATE streaks
+        SET streak_days = $1,
+            day_key = $2::date,
+            user1_messages = 0,
+            user2_messages = 0,
+            user1_replies = 0,
+            user2_replies = 0,
+            updated_at = NOW()
+        WHERE id = $3
+        AND status = 'active'
+        RETURNING *
+    `, [
+        newStreakDays,
+        today,
+        streak.id,
+    ]);
+
+    if (result.rows[0]) {
+        return normalize(result.rows[0]);
+    }
+
+    return streak;
 }
 
 
@@ -406,7 +469,6 @@ export async function getUserStreaks(
 
     const db =
         getPool();
-
 
     const result =
         await db.query(
@@ -431,10 +493,14 @@ export async function getUserStreaks(
             ]
         );
 
+    const normalizedList = result.rows.map(normalize);
+    const syncedList = [];
 
-    return result.rows.map(
-        normalize
-    );
+    for (const item of normalizedList) {
+        syncedList.push(await syncStreakDate(item));
+    }
+
+    return syncedList;
 }
 
 
@@ -449,7 +515,6 @@ export async function getStreakById(
 
     const db =
         getPool();
-
 
     const result =
         await db.query(
@@ -468,12 +533,10 @@ export async function getStreakById(
             ]
         );
 
+    if (!result.rows[0]) return null;
 
-    return result.rows[0]
-        ? normalize(
-            result.rows[0]
-        )
-        : null;
+    const normalized = normalize(result.rows[0]);
+    return await syncStreakDate(normalized);
 }
 
 
@@ -507,13 +570,11 @@ export async function createInvite(
     const db =
         getPool();
 
-
     const inviter =
         await getUserStreaks(
             guildId,
             inviterId
         );
-
 
     if (
         inviter.length >=
@@ -526,13 +587,11 @@ export async function createInvite(
         };
     }
 
-
     const target =
         await getUserStreaks(
             guildId,
             targetId
         );
-
 
     if (
         target.length >=
@@ -545,13 +604,11 @@ export async function createInvite(
         };
     }
 
-
     const [user1, user2] =
         BigInt(inviterId) <
         BigInt(targetId)
             ? [inviterId, targetId]
             : [targetId, inviterId];
-
 
     const existing =
         await db.query(
@@ -575,7 +632,6 @@ export async function createInvite(
             ]
         );
 
-
     if (
         existing.rowCount
     ) {
@@ -585,7 +641,6 @@ export async function createInvite(
                 'Hai người đang có streak với nhau.',
         };
     }
-
 
     await db.query(
         `
@@ -606,7 +661,6 @@ export async function createInvite(
             targetId,
         ]
     );
-
 
     const result =
         await db.query(
@@ -636,7 +690,6 @@ export async function createInvite(
             ]
         );
 
-
     return {
         success: true,
 
@@ -660,7 +713,6 @@ export async function acceptInvite(
 
     const db =
         getPool();
-
 
     const result =
         await db.query(
@@ -687,7 +739,6 @@ export async function acceptInvite(
             ]
         );
 
-
     if (!result.rowCount) {
         return {
             success: false,
@@ -696,10 +747,8 @@ export async function acceptInvite(
         };
     }
 
-
     const invite =
         result.rows[0];
-
 
     const inviter =
         await getUserStreaks(
@@ -707,13 +756,11 @@ export async function acceptInvite(
             invite.inviter_id
         );
 
-
     const target =
         await getUserStreaks(
             guildId,
             invite.target_id
         );
-
 
     if (
         inviter.length >=
@@ -728,7 +775,6 @@ export async function acceptInvite(
                 'Một trong hai người đã đạt giới hạn 5 streak.',
         };
     }
-
 
     const [
         user1,
@@ -749,8 +795,7 @@ export async function acceptInvite(
                 invite.inviter_id,
             ];
 
-
-    const existing =
+    const existingAnyStatus =
         await db.query(
             `
             SELECT *
@@ -761,8 +806,6 @@ export async function acceptInvite(
             AND user1_id = $2
             AND user2_id = $3
 
-            AND status = 'active'
-
             LIMIT 1
             `,
             [
@@ -772,65 +815,84 @@ export async function acceptInvite(
             ]
         );
 
+    if (existingAnyStatus.rowCount) {
+        const row = existingAnyStatus.rows[0];
 
-    if (
-        existing.rowCount
-    ) {
-        return {
-            success: false,
-            message:
-                'Streak giữa hai người đã tồn tại.',
-        };
+        if (row.status === 'active') {
+            return {
+                success: false,
+                message:
+                    'Streak giữa hai người đã tồn tại.',
+            };
+        }
+
+        await db.query(
+            `
+            UPDATE streaks
+            SET streak_days = 0,
+                day_key = $2::date,
+                user1_messages = 0,
+                user2_messages = 0,
+                user1_replies = 0,
+                user2_replies = 0,
+                last_completed_date = NULL,
+                status = 'active',
+                updated_at = NOW()
+            WHERE id = $1
+            `,
+            [
+                row.id,
+                getToday(),
+            ]
+        );
+    } else {
+        await db.query(
+            `
+            INSERT INTO streaks(
+                guild_id,
+
+                user1_id,
+                user2_id,
+
+                streak_days,
+
+                day_key,
+
+                user1_messages,
+                user2_messages,
+
+                user1_replies,
+                user2_replies,
+
+                status
+            )
+
+            VALUES(
+                $1,
+                $2,
+                $3,
+
+                0,
+
+                $4::date,
+
+                0,
+                0,
+
+                0,
+                0,
+
+                'active'
+            )
+            `,
+            [
+                guildId,
+                user1,
+                user2,
+                getToday(),
+            ]
+        );
     }
-
-
-    await db.query(
-        `
-        INSERT INTO streaks(
-            guild_id,
-
-            user1_id,
-            user2_id,
-
-            streak_days,
-
-            day_key,
-
-            user1_messages,
-            user2_messages,
-
-            user1_replies,
-            user2_replies,
-
-            status
-        )
-
-        VALUES(
-            $1,
-            $2,
-            $3,
-
-            0,
-
-            $4::date,
-
-            0,
-            0,
-
-            0,
-            0,
-
-            'active'
-        )
-        `,
-        [
-            guildId,
-            user1,
-            user2,
-            getToday(),
-        ]
-    );
-
 
     await db.query(
         `
@@ -844,7 +906,6 @@ export async function acceptInvite(
             inviteId,
         ]
     );
-
 
     return {
         success: true,
@@ -867,7 +928,6 @@ export async function declineInvite(
     const db =
         getPool();
 
-
     const result =
         await db.query(
             `
@@ -889,7 +949,6 @@ export async function declineInvite(
             ]
         );
 
-
     if (!result.rowCount) {
         return {
             success: false,
@@ -897,7 +956,6 @@ export async function declineInvite(
                 'Lời mời không còn hiệu lực.',
         };
     }
-
 
     return {
         success: true,
@@ -917,7 +975,6 @@ export async function deleteStreak(
 
     const db =
         getPool();
-
 
     const result =
         await db.query(
@@ -948,7 +1005,6 @@ export async function deleteStreak(
             ]
         );
 
-
     if (!result.rowCount) {
         return {
             success: false,
@@ -956,7 +1012,6 @@ export async function deleteStreak(
                 'Không tìm thấy streak.',
         };
     }
-
 
     return {
         success: true,
@@ -976,12 +1031,10 @@ async function completeStreak(
     const db =
         getPool();
 
-
     const reward =
         getReward(
             streak.streakDays + 1
         );
-
 
     const result =
         await db.query(
@@ -1013,21 +1066,17 @@ async function completeStreak(
             ]
         );
 
-
     if (!result.rowCount) {
         return;
     }
-
 
     const updated =
         normalize(
             result.rows[0]
         );
 
-
     const newDay =
         updated.streakDays;
-
 
     await giveReward(
         client,
@@ -1037,7 +1086,6 @@ async function completeStreak(
         reward
     );
 
-
     await giveReward(
         client,
         updated,
@@ -1046,11 +1094,9 @@ async function completeStreak(
         reward
     );
 
-
     console.log(
         `[STREAK] ${updated.user1Id} + ${updated.user2Id} -> ${newDay} day`
     );
-
 
     // Thông báo vào system channel
     try {
@@ -1060,20 +1106,16 @@ async function completeStreak(
                 updated.guildId
             );
 
-
         if (!guild) {
             return;
         }
 
-
         const channel =
             guild.systemChannel;
-
 
         if (!channel) {
             return;
         }
-
 
         await channel.send({
             content:
@@ -1110,7 +1152,6 @@ async function giveReward(
     const db =
         getPool();
 
-
     const inserted =
         await db.query(
             `
@@ -1146,11 +1187,9 @@ async function giveReward(
             ]
         );
 
-
     if (!inserted.rowCount) {
         return;
     }
-
 
     try {
 
@@ -1164,7 +1203,6 @@ async function giveReward(
 
     } catch (error) {
 
-        // rollback reward claim
         await db.query(
             `
             DELETE FROM streak_rewards
@@ -1181,7 +1219,6 @@ async function giveReward(
                 userId,
             ]
         ).catch(() => {});
-
 
         throw error;
     }
@@ -1200,9 +1237,7 @@ export function startMessageTracker(
         return;
     }
 
-
     trackerStarted = true;
-
 
     client.on(
         'messageCreate',
@@ -1214,7 +1249,6 @@ export function startMessageTracker(
             ) {
                 return;
             }
-
 
             try {
 
@@ -1232,7 +1266,6 @@ export function startMessageTracker(
             }
         }
     );
-
 
     console.log(
         '[STREAK] Message tracker started.'
@@ -1255,15 +1288,12 @@ async function processMessage(
             message.author.id
         );
 
-
     if (!streaks.length) {
         return;
     }
 
-
     const db =
         getPool();
-
 
     for (
         const streak
@@ -1274,11 +1304,9 @@ async function processMessage(
             streak.user1Id ===
             message.author.id;
 
-
         const isUser2 =
             streak.user2Id ===
             message.author.id;
-
 
         if (
             !isUser1 &&
@@ -1297,12 +1325,10 @@ async function processMessage(
                 ? 'user1_messages'
                 : 'user2_messages';
 
-
         const currentMessages =
             isUser1
                 ? streak.user1Messages
                 : streak.user2Messages;
-
 
         if (
             currentMessages <
@@ -1350,7 +1376,6 @@ async function processMessage(
                         () => null
                     );
 
-
             if (
                 reference &&
                 reference.author &&
@@ -1364,7 +1389,6 @@ async function processMessage(
                         message.author.id
                     );
 
-
                 if (
                     reference.author.id ===
                     partner
@@ -1375,12 +1399,10 @@ async function processMessage(
                             ? 'user1_replies'
                             : 'user2_replies';
 
-
                     const currentReplies =
                         isUser1
                             ? streak.user1Replies
                             : streak.user2Replies;
-
 
                     if (
                         currentReplies <
@@ -1424,11 +1446,9 @@ async function processMessage(
                 streak.id
             );
 
-
         if (!updated) {
             continue;
         }
-
 
         if (
             updated.user1Messages >=

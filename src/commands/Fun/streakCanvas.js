@@ -715,8 +715,7 @@ export async function renderStreakCard(
 
     text(
         ctx,
-        user1?.username ||
-        'User 1',
+        user1?.globalName || user1?.username || 'User 1',
         360,
         255,
         28
@@ -725,8 +724,7 @@ export async function renderStreakCard(
 
     text(
         ctx,
-        user2?.username ||
-        'User 2',
+        user2?.globalName || user2?.username || 'User 2',
         840,
         255,
         28
@@ -856,7 +854,7 @@ export async function renderStreakCard(
         492,
         380,
         16,
-        streak.user1Replies
+        streak.user1Replies / 1
     );
 
 
@@ -866,7 +864,7 @@ export async function renderStreakCard(
         492,
         380,
         16,
-        streak.user2Replies
+        streak.user2Replies / 1
     );
 
 

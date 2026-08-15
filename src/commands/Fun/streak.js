@@ -25,13 +25,6 @@ import {
 
 
 // ============================================================
-// CONFIG
-// ============================================================
-
-const MAX_STREAKS = 5;
-
-
-// ============================================================
 // BUTTON ROW
 // ============================================================
 
@@ -103,13 +96,17 @@ async function renderStreak(
     page = 0
 ) {
     if (!streaks.length) {
-        return interaction.editReply({
-            content:
-                '💔 Bạn hiện không có streak nào.',
+        const payload = {
+            content: '💔 Bạn hiện không có streak nào.',
             embeds: [],
             files: [],
             components: [],
-        });
+        };
+        if (interaction.deferred || interaction.replied) {
+            return interaction.editReply(payload);
+        } else {
+            return interaction.update(payload);
+        }
     }
 
     page = Math.max(
@@ -127,6 +124,10 @@ async function renderStreak(
             streak,
             interaction.user.id
         );
+
+    if (!interaction.deferred && !interaction.replied) {
+        await interaction.deferUpdate();
+    }
 
     const imageBuffer =
         await renderStreakCard(
@@ -192,6 +193,7 @@ export default {
                     )
                     .setRequired(false)
         ),
+    category: 'Fun',
 
     async execute(interaction) {
 
@@ -292,8 +294,7 @@ export default {
                         '🔥 Lời mời giữ lửa'
                     )
                     .setDescription(
-                        `${interaction.user}, bạn có đồng ý bắt đầu ` +
-                        `giữ lửa với ${target} không?\n\n` +
+                        `${target}, ${interaction.user} đã gửi cho bạn lời mời giữ chuỗi!\n\n` +
 
                         `💬 Hai người cần chat đủ ` +
                         `**50 tin nhắn/người/ngày**.\n\n` +
@@ -731,4 +732,4 @@ export async function handleStreakButton(
 
 
     return true;
-}
+}
