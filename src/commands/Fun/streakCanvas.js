@@ -87,27 +87,23 @@ function drawTextWithOutline(
     ctx.restore();
 }
 
-function drawStarPath(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+// Return absolute-coordinate vertices of a spike star
+function starPoints(cx, cy, spikes, outerRadius, innerRadius) {
+    const points = [];
     let rot = (Math.PI / 2) * 3;
-    let x = cx;
-    let y = cy;
-    let step = Math.PI / spikes;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - outerRadius);
+    const step = Math.PI / spikes;
     for (let i = 0; i < spikes; i++) {
-        x = cx + Math.cos(rot) * outerRadius;
-        y = cy + Math.sin(rot) * outerRadius;
-        ctx.lineTo(x, y);
+        points.push([cx + Math.cos(rot) * outerRadius, cy + Math.sin(rot) * outerRadius]);
         rot += step;
-
-        x = cx + Math.cos(rot) * innerRadius;
-        y = cy + Math.sin(rot) * innerRadius;
-        ctx.lineTo(x, y);
+        points.push([cx + Math.cos(rot) * innerRadius, cy + Math.sin(rot) * innerRadius]);
         rot += step;
     }
-    ctx.lineTo(cx, cy - outerRadius);
-    ctx.closePath();
+    return points;
+}
+
+// Same vertices expressed as offsets relative to the shape center
+function starOffsets(spikes, outerRadius, innerRadius) {
+    return starPoints(0, 0, spikes, outerRadius, innerRadius);
 }
 
 // Draw 4-point sparkle star at (sx, sy) with given arm length
@@ -146,148 +142,176 @@ function drawSparkleField(ctx, cx, cy, reached) {
     ctx.restore();
 }
 
-function drawMilestoneIcon(ctx, index, x, y, reached) {
+// Draw a "gem cut" style icon: gradient body, faceted interior, glossy highlight & depth shade
+function fillGem(ctx, x, y, vertices, facetRatio, reached, rounded) {
     ctx.save();
+    const n = vertices ? vertices.length : 0;
 
-    // Gradient fill for reached icons
-    const makeGrad = () => {
-        const g = ctx.createLinearGradient(x, y - 24, x, y + 24);
-        g.addColorStop(0, '#ff85d6');
-        g.addColorStop(1, '#e0009e');
-        return g;
+    let minX = rounded ? -rounded.w / 2 : Math.min(...vertices.map((v) => v[0]));
+    let maxX = rounded ? rounded.w / 2 : Math.max(...vertices.map((v) => v[0]));
+    let minY = rounded ? -rounded.h / 2 : Math.min(...vertices.map((v) => v[1]));
+    let maxY = rounded ? rounded.h / 2 : Math.max(...vertices.map((v) => v[1]));
+
+    const traceOuter = (c) => {
+        if (rounded) {
+            roundRect(c, x - rounded.w / 2, y - rounded.h / 2, rounded.w, rounded.h, rounded.r);
+        } else {
+            c.beginPath();
+            vertices.forEach(([dx, dy], i) => (i === 0 ? c.moveTo(x + dx, y + dy) : c.lineTo(x + dx, y + dy)));
+            c.closePath();
+        }
     };
 
-    ctx.fillStyle = reached ? makeGrad() : 'rgba(255, 255, 255, 0.22)';
-    ctx.strokeStyle = reached ? 'rgba(255,255,255,0.85)' : 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = reached ? 2 : 1.2;
+    // Outer clip + base gradient body
+    traceOuter(ctx);
+    ctx.save();
+    ctx.clip();
 
+    const grad = ctx.createLinearGradient(x, y - 30, x, y + 30);
     if (reached) {
-        ctx.shadowColor = '#ff3399';
-        ctx.shadowBlur = 18;
+        grad.addColorStop(0, '#ffc1e8');
+        grad.addColorStop(0.38, '#ff82c9');
+        grad.addColorStop(0.72, '#f03aa2');
+        grad.addColorStop(1, '#b4007b');
+    } else {
+        grad.addColorStop(0, 'rgba(255,255,255,0.42)');
+        grad.addColorStop(1, 'rgba(255,255,255,0.10)');
     }
+
+    ctx.shadowColor = '#ff3399';
+    ctx.shadowBlur = reached ? 18 : 0;
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    if (rounded) {
+        // Inner ring (table) for rounded badge
+        const pad = Math.min(rounded.w, rounded.h) * (1 - facetRatio) * 0.5;
+        roundRect(ctx, x - rounded.w / 2 + pad, y - rounded.h / 2 + pad, rounded.w - pad * 2, rounded.h - pad * 2, Math.max(2, rounded.r - pad));
+        ctx.fillStyle = reached ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.16)';
+        ctx.fill();
+        ctx.strokeStyle = reached ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.20)';
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+    } else {
+        // Inset facet table + connectors
+        const cx = vertices.reduce((s, v) => s + v[0], 0) / n;
+        const cy = vertices.reduce((s, v) => s + v[1], 0) / n;
+        const inner = vertices.map(([dx, dy]) => [cx + (dx - cx) * facetRatio, cy + (dy - cy) * facetRatio]);
+
+        ctx.beginPath();
+        inner.forEach(([dx, dy], i) => (i === 0 ? ctx.moveTo(x + dx, y + dy) : ctx.lineTo(x + dx, y + dy)));
+        ctx.closePath();
+        ctx.fillStyle = reached ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.16)';
+        ctx.fill();
+
+        // Facet connector lines: table -> outer edges
+        ctx.strokeStyle = reached ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < n; i++) {
+            ctx.beginPath();
+            ctx.moveTo(x + inner[i][0], y + inner[i][1]);
+            ctx.lineTo(x + vertices[i][0], y + vertices[i][1]);
+            ctx.stroke();
+        }
+
+        // Table girdle
+        ctx.strokeStyle = reached ? 'rgba(255,255,255,0.40)' : 'rgba(255,255,255,0.20)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        inner.forEach(([dx, dy], i) => (i === 0 ? ctx.moveTo(x + dx, y + dy) : ctx.lineTo(x + dx, y + dy)));
+        ctx.closePath();
+        ctx.stroke();
+
+        // Bottom depth shade
+        ctx.fillStyle = reached ? 'rgba(92, 0, 64, 0.28)' : 'rgba(0, 0, 0, 0.10)';
+        ctx.beginPath();
+        ctx.moveTo(x + minX, y + maxY * 0.55);
+        ctx.lineTo(x + maxX, y + maxY * 0.55);
+        ctx.lineTo(x + (minX + maxX) / 2, y + maxY);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // Glossy highlight band near the top
+    const gx = x + (minX + maxX) / 2;
+    const gy = y + minY + (maxY - minY) * 0.24;
+    const gW = (maxX - minX) * 0.34;
+    const gH = (maxY - minY) * 0.14;
+    ctx.save();
+    ctx.globalAlpha = reached ? 0.55 : 0.28;
+    const gGloss = ctx.createLinearGradient(gx, gy - gH * 2, gx, gy + gH * 0.6);
+    gGloss.addColorStop(0, 'rgba(255,255,255,0.95)');
+    gGloss.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gGloss;
+    ctx.beginPath();
+    ctx.ellipse(gx, gy, gW, gH, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore(); // end clip
+
+    // Outer rim
+    traceOuter(ctx);
+    ctx.strokeStyle = reached ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = reached ? 2.2 : 1.4;
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function drawMilestoneIcon(ctx, index, x, y, reached) {
+    ctx.save();
 
     // Scale factor: icons are 1.6× bigger than before
     const S = 1.6;
 
     switch (index) {
         case 0: { // 1 ngày - Triangle
-            ctx.beginPath();
-            ctx.moveTo(x, y - 20 * S);
-            ctx.lineTo(x + 16 * S, y + 12 * S);
-            ctx.lineTo(x - 16 * S, y + 12 * S);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+            fillGem(ctx, x, y, [[0, -20 * S], [16 * S, 12 * S], [-16 * S, 12 * S]], 0.6, reached);
             break;
         }
         case 1: { // 5 ngày - Hexagon Gem
-            ctx.beginPath();
+            const v = [];
             for (let i = 0; i < 6; i++) {
                 const ang = (Math.PI / 3) * i - Math.PI / 6;
-                const px = x + Math.cos(ang) * 18 * S;
-                const py = y + Math.sin(ang) * 18 * S;
-                i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                v.push([Math.cos(ang) * 18 * S, Math.sin(ang) * 18 * S]);
             }
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            // inner highlight line
-            if (reached) {
-                ctx.save();
-                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(x, y - 14 * S);
-                ctx.lineTo(x + 8 * S, y + 3 * S);
-                ctx.lineTo(x - 8 * S, y + 3 * S);
-                ctx.stroke();
-                ctx.restore();
-            }
+            fillGem(ctx, x, y, v, 0.6, reached);
             break;
         }
         case 2: { // 15 ngày - Rounded Square
-            const sq = 19 * S;
-            roundRect(ctx, x - sq / 2, y - sq / 2, sq, sq, 5);
-            ctx.fill();
-            ctx.stroke();
-            if (reached) {
-                ctx.save();
-                ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-                ctx.lineWidth = 1;
-                roundRect(ctx, x - sq / 2 + 4, y - sq / 2 + 4, sq - 8, sq - 8, 3);
-                ctx.stroke();
-                ctx.restore();
-            }
+            fillGem(ctx, x, y, null, 0.62, reached, { w: 19 * S, h: 19 * S, r: 5 * S });
             break;
         }
         case 3: { // 30 ngày - 5-Point Star
-            drawStarPath(ctx, x, y, 5, 21 * S * 0.7, 9 * S * 0.7);
-            ctx.fill();
-            ctx.stroke();
+            fillGem(ctx, x, y, starOffsets(5, 21 * S * 0.7, 9 * S * 0.7), 0.5, reached);
             drawSparkleField(ctx, x, y, reached);
             break;
         }
         case 4: { // 60 ngày - Tall Diamond Gem
-            ctx.beginPath();
-            ctx.moveTo(x, y - 22 * S * 0.65);
-            ctx.lineTo(x + 14 * S * 0.65, y - 6 * S * 0.65);
-            ctx.lineTo(x + 14 * S * 0.65, y + 10 * S * 0.65);
-            ctx.lineTo(x, y + 22 * S * 0.65);
-            ctx.lineTo(x - 14 * S * 0.65, y + 10 * S * 0.65);
-            ctx.lineTo(x - 14 * S * 0.65, y - 6 * S * 0.65);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            if (reached) {
-                ctx.save();
-                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-                ctx.lineWidth = 1.2;
-                ctx.beginPath();
-                ctx.moveTo(x - 8 * S * 0.65, y - 10 * S * 0.65);
-                ctx.lineTo(x, y - 18 * S * 0.65);
-                ctx.lineTo(x + 8 * S * 0.65, y - 10 * S * 0.65);
-                ctx.stroke();
-                ctx.restore();
-            }
+            const cs = S * 0.65;
+            fillGem(
+                ctx,
+                x,
+                y,
+                [[0, -22 * cs], [14 * cs, -6 * cs], [14 * cs, 10 * cs], [0, 22 * cs], [-14 * cs, 10 * cs], [-14 * cs, -6 * cs]],
+                0.6,
+                reached
+            );
             drawSparkleField(ctx, x, y, reached);
             break;
         }
         case 5: { // 90 ngày - Wide Diamond
-            ctx.beginPath();
-            ctx.moveTo(x - 20 * S * 0.65, y - 5 * S * 0.65);
-            ctx.lineTo(x, y - 22 * S * 0.65);
-            ctx.lineTo(x + 20 * S * 0.65, y - 5 * S * 0.65);
-            ctx.lineTo(x, y + 22 * S * 0.65);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            if (reached) {
-                ctx.save();
-                ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(x - 10 * S * 0.65, y - 5 * S * 0.65);
-                ctx.lineTo(x, y - 22 * S * 0.65);
-                ctx.lineTo(x + 10 * S * 0.65, y - 5 * S * 0.65);
-                ctx.stroke();
-                ctx.restore();
-            }
+            const cs = S * 0.65;
+            fillGem(ctx, x, y, [[-20 * cs, -5 * cs], [0, -22 * cs], [20 * cs, -5 * cs], [0, 22 * cs]], 0.6, reached);
             drawSparkleField(ctx, x, y, reached);
             break;
         }
         case 6: { // 120 ngày - Crown
             const cs = S * 0.65;
-            ctx.beginPath();
-            ctx.moveTo(x - 18 * cs, y + 14 * cs);
-            ctx.lineTo(x - 20 * cs, y - 8 * cs);
-            ctx.lineTo(x - 8 * cs, y + 4 * cs);
-            ctx.lineTo(x, y - 18 * cs);
-            ctx.lineTo(x + 8 * cs, y + 4 * cs);
-            ctx.lineTo(x + 20 * cs, y - 8 * cs);
-            ctx.lineTo(x + 18 * cs, y + 14 * cs);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+            const v = [[-18 * cs, 14 * cs], [-20 * cs, -8 * cs], [-8 * cs, 4 * cs], [0, -18 * cs], [8 * cs, 4 * cs], [20 * cs, -8 * cs], [18 * cs, 14 * cs]];
+            fillGem(ctx, x, y, v, 0.55, reached);
             // crown dots
             if (reached) {
                 ctx.save();
@@ -305,9 +329,7 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
             break;
         }
         case 7: { // 150 ngày - 8-Point Crystal
-            drawStarPath(ctx, x, y, 8, 21 * S * 0.6, 13 * S * 0.6);
-            ctx.fill();
-            ctx.stroke();
+            fillGem(ctx, x, y, starOffsets(8, 21 * S * 0.6, 13 * S * 0.6), 0.5, reached);
             if (reached) {
                 // long radiating lines
                 ctx.save();
@@ -333,9 +355,7 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
             break;
         }
         case 8: { // 180 ngày - Burst Star
-            drawStarPath(ctx, x, y, 8, 22 * S * 0.6, 8 * S * 0.6);
-            ctx.fill();
-            ctx.stroke();
+            fillGem(ctx, x, y, starOffsets(8, 22 * S * 0.6, 8 * S * 0.6), 0.5, reached);
             if (reached) {
                 // 8 long burst rays
                 ctx.save();
