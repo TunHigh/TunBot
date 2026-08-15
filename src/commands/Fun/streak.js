@@ -18,6 +18,7 @@ import {
     getStreakPartner,
     startMessageTracker,
     getRequiredMessages,
+    getStreakChannel,
 } from './streakManager.js';
 
 import {
@@ -140,18 +141,20 @@ async function renderStreak(
     let partnerUser = null;
     try {
         partnerUser = await interaction.client.users.fetch(partnerId);
-    } catch {}
+    } catch { }
 
     const partnerName = partnerUser?.globalName || partnerUser?.username || 'Partner';
     const reqMessages = getRequiredMessages(streak.streakDays);
     const reward = streak.nextReward ?? 100;
+    const streakChannelId = await getStreakChannel(interaction.client, interaction.guildId);
+    const channelLabel = streakChannelId ? `<#${streakChannelId}>` : 'mainchat';
 
     const embed = new EmbedBuilder()
         .setColor(0xe03875)
         .setTitle(`💖 Streak với ${partnerName}`)
         .setDescription(
             `<@${interaction.user.id}> 🤝 <@${partnerId}>\n` +
-            `💬 Mỗi ngày cả hai phải: gửi **${reqMessages} tin nhắn** ở mainchat **và** reply tin nhắn của nhau **1 lần để giữ chuỗi** → +1 ngày streak.\n` +
+            `💬 Mỗi ngày cả hai phải: gửi **${reqMessages} tin nhắn** ở ${channelLabel} **và** reply tin nhắn của nhau **1 lần để giữ chuỗi** → +1 ngày streak.\n` +
             `🎁 **Thưởng mốc (xu, mỗi người):**\n` +
             `🏆 Ngày tiếp theo (**Ngày ${streak.streakDays + 1}**) → **+${reward.toLocaleString('vi-VN')} xu/người**`
         )
@@ -283,6 +286,9 @@ export default {
                     );
 
 
+            const streakChannelId = await getStreakChannel(interaction.client, interaction.guildId);
+            const channelLabel = streakChannelId ? `<#${streakChannelId}>` : 'mainchat';
+
             const embed =
                 new EmbedBuilder()
                     .setColor(
@@ -295,7 +301,7 @@ export default {
                         `${target}, ${interaction.user} đã gửi cho bạn lời mời giữ chuỗi!\n\n` +
 
                         `💬 Hai người cần chat đủ ` +
-                        `**50 tin nhắn/người/ngày**.\n\n` +
+                        `**${reqMessages} tin nhắn/người/ngày** ở ${channelLabel}.\n\n` +
 
                         `↩️ Mỗi người cần ít nhất ` +
                         `**1 reply/ngày**.\n\n` +
@@ -730,4 +736,4 @@ export async function handleStreakButton(
 
 
     return true;
-}
+}

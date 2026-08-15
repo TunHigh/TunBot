@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { resolvePostgresPoolConfig } from '../../config/database/postgres.js';
 import EconomyService from '../../services/economyService.js';
+import { getGuildConfig, patchGuildConfig } from '../../services/config/guildConfig.js';
 
 
 // ============================================================
@@ -1209,6 +1210,58 @@ async function giveReward(
 
 
 // ============================================================
+// STREAK CHANNEL (channel that records streak messages)
+// ============================================================
+
+export async function getStreakChannel(
+    client,
+    guildId
+) {
+    try {
+        const config =
+            await getGuildConfig(
+                client,
+                guildId
+            );
+
+        const streakConfig =
+            config && config.streak;
+
+        const channelId =
+            streakConfig &&
+            typeof streakConfig.channelId === 'string'
+                ? streakConfig.channelId
+                : null;
+
+        return channelId;
+    } catch (error) {
+        console.error(
+            '[STREAK] Failed to read streak channel:',
+            error
+        );
+        return null;
+    }
+}
+
+export async function setStreakChannel(
+    client,
+    guildId,
+    channelId
+) {
+    await patchGuildConfig(
+        client,
+        guildId,
+        {
+            streak: {
+                channelId: channelId || null,
+            },
+        },
+        { source: 'caidatchuoi' }
+    );
+}
+
+
+// ============================================================
 // MESSAGE TRACKING
 // ============================================================
 
@@ -1264,6 +1317,21 @@ async function processMessage(
     client,
     message
 ) {
+
+    // If a streak channel is configured, only count messages sent there.
+    const streakChannelId =
+        await getStreakChannel(
+            client,
+            message.guild.id
+        );
+
+    if (
+        streakChannelId &&
+        message.channel.id !==
+        streakChannelId
+    ) {
+        return;
+    }
 
     const streaks =
         await getUserStreaks(
