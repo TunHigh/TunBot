@@ -42,6 +42,17 @@ try {
 const WIDTH = 1000;
 const HEIGHT = 680;
 
+// Custom avatar frame PNG (slot its transparent inner hole onto the avatar circle)
+const avatarFramePath = path.join(__dirname, '../../assets/frame-Avatar.png');
+const AVATAR_FRAME_HOLE_RADIUS = 295; // inner-hole radius in source pixels (measured)
+const DRAWN_AVATAR_RADIUS = 44; // drawn ring/hole radius on the card (px)
+const AVATAR_FRAME_FILL_RATIO = 1.25; // avatar extends slightly past the hole to fill the art's transparent fringe (no inner gap)
+const backgroundPath = path.join(__dirname, '../../assets/background.png');
+const BACKGROUND_TOP_H = 480; // top area height replaced by the background image
+const BACKGROUND_BACKDROP = '#04060e'; // dark backdrop (kept in case aspect is off)
+let backgroundImage = null;
+let avatarFrameImage = null;
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -422,49 +433,68 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
 // ============================================================
 
 function drawBackground(ctx) {
-    // Ocean Gradient
-    const oceanGrad = ctx.createLinearGradient(0, 0, 0, 480);
-    oceanGrad.addColorStop(0, '#58d8ff');
-    oceanGrad.addColorStop(0.3, '#1c8ce3');
-    oceanGrad.addColorStop(0.7, '#0b56b5');
-    oceanGrad.addColorStop(1, '#093a82');
+    // Top Scene (Y: 0 to BACKGROUND_TOP_H) — background.png drawn to fill the whole
+    // top area (image is authored at the exact aspect, so no letterboxing).
+    if (backgroundImage) {
+        const scale = Math.min(
+            WIDTH / backgroundImage.width,
+            BACKGROUND_TOP_H / backgroundImage.height
+        );
+        const dw = backgroundImage.width * scale;
+        const dh = backgroundImage.height * scale;
 
-    ctx.fillStyle = oceanGrad;
-    ctx.fillRect(0, 0, WIDTH, 480);
+        // Dark backdrop so any thin leftover strip blends in seamlessly
+        ctx.fillStyle = BACKGROUND_BACKDROP;
+        ctx.fillRect(0, 0, WIDTH, BACKGROUND_TOP_H);
 
-    // Sunbeams radiating from top center
-    ctx.save();
-    ctx.globalAlpha = 0.16;
-    ctx.fillStyle = '#ffffff';
-    for (let i = -10; i <= 10; i++) {
-        ctx.beginPath();
-        ctx.moveTo(WIDTH / 2, 0);
-        ctx.lineTo(WIDTH / 2 + i * 110, 480);
-        ctx.lineTo(WIDTH / 2 + i * 110 + 45, 480);
-        ctx.closePath();
-        ctx.fill();
+        // Center the image horizontally (author the campfire at the image's center)
+        const drawX = (WIDTH - dw) / 2;
+        const drawY = (BACKGROUND_TOP_H - dh) / 2;
+        ctx.drawImage(backgroundImage, drawX, drawY, dw, dh);
+    } else {
+        // Fallback vector ocean (used only when background.png can't be loaded)
+        const oceanGrad = ctx.createLinearGradient(0, 0, 0, 480);
+        oceanGrad.addColorStop(0, '#58d8ff');
+        oceanGrad.addColorStop(0.3, '#1c8ce3');
+        oceanGrad.addColorStop(0.7, '#0b56b5');
+        oceanGrad.addColorStop(1, '#093a82');
+        ctx.fillStyle = oceanGrad;
+        ctx.fillRect(0, 0, WIDTH, 480);
+
+        // Sunbeams radiating from top center
+        ctx.save();
+        ctx.globalAlpha = 0.16;
+        ctx.fillStyle = '#ffffff';
+        for (let i = -10; i <= 10; i++) {
+            ctx.beginPath();
+            ctx.moveTo(WIDTH / 2, 0);
+            ctx.lineTo(WIDTH / 2 + i * 110, 480);
+            ctx.lineTo(WIDTH / 2 + i * 110 + 45, 480);
+            ctx.closePath();
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // Floating Bubbles
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        const bubbles = [
+            [50, 70, 14], [100, 140, 7], [160, 50, 5], [210, 200, 10],
+            [340, 110, 6], [660, 120, 7], [780, 80, 11], [840, 160, 6], [940, 100, 12]
+        ];
+        for (const [bx, by, br] of bubbles) {
+            ctx.beginPath();
+            ctx.arc(bx, by, br, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // Sea Plants / Coral at Bottom of Ocean (Y: 380 to 480)
+        drawCoral(ctx);
     }
-    ctx.restore();
 
-    // Floating Bubbles
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 2;
-    const bubbles = [
-        [50, 70, 14], [100, 140, 7], [160, 50, 5], [210, 200, 10],
-        [340, 110, 6], [660, 120, 7], [780, 80, 11], [840, 160, 6], [940, 100, 12]
-    ];
-    for (const [bx, by, br] of bubbles) {
-        ctx.beginPath();
-        ctx.arc(bx, by, br, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-    ctx.restore();
-
-    // Sea Plants / Coral at Bottom of Ocean (Y: 380 to 480)
-    drawCoral(ctx);
-
-    // Bottom Milestone Section (Dark Purple Gradient)
+    // Bottom Milestone Section (Dark Purple Gradient) — unchanged
     const mileGrad = ctx.createLinearGradient(0, 480, 0, HEIGHT);
     mileGrad.addColorStop(0, '#2b0c42');
     mileGrad.addColorStop(1, '#140424');
@@ -567,35 +597,37 @@ async function getAvatar(user) {
 }
 
 function drawAvatar(ctx, img, x, y, radius) {
-    ctx.save();
-
-    // Outer Red/Pink Glow Ring
-    ctx.shadowColor = '#ff4d94';
-    ctx.shadowBlur = 16;
-    ctx.beginPath();
-    ctx.arc(x, y, radius + 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#ff4d94';
-    ctx.fill();
-
-    // Inner White Ring Border
-    ctx.beginPath();
-    ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
+    // Avatar extends slightly past the frame hole so it fills the art's
+    // transparent fringe -> the avatar sits flush against the solid ring (no inner gap)
+    const scale = DRAWN_AVATAR_RADIUS / AVATAR_FRAME_HOLE_RADIUS;
+    const fillR = Math.round(DRAWN_AVATAR_RADIUS * AVATAR_FRAME_FILL_RATIO);
 
     // Avatar Image Clip
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.arc(x, y, fillR, 0, Math.PI * 2);
     ctx.clip();
 
     if (img) {
-        ctx.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
+        ctx.drawImage(img, x - fillR, y - fillR, fillR * 2, fillR * 2);
     } else {
         ctx.fillStyle = '#3a4454';
-        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        ctx.fillRect(x - fillR, y - fillR, fillR * 2, fillR * 2);
     }
 
     ctx.restore();
+
+    // Custom avatar frame (frame-Avatar.png): inner hole maps onto DRAWN_AVATAR_RADIUS
+    if (avatarFrameImage) {
+        const drawSize = avatarFrameImage.width * scale;
+        ctx.drawImage(
+            avatarFrameImage,
+            x - drawSize / 2,
+            y - drawSize / 2,
+            drawSize,
+            drawSize
+        );
+    }
 }
 
 // ============================================================
@@ -763,8 +795,26 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
     const canvas = createCanvas(WIDTH, HEIGHT);
     const ctx = canvas.getContext('2d');
 
-    // 1. Background Scene
+    // 1. Background (load assets once, then draw)
+    if (!backgroundImage) {
+        try {
+            backgroundImage = await loadImage(fs.readFileSync(backgroundPath));
+        } catch (error) {
+            console.warn('[STREAK CANVAS] Could not load background:', error.message);
+            backgroundImage = null;
+        }
+    }
     drawBackground(ctx);
+
+    // Load custom avatar frame image once
+    if (!avatarFrameImage) {
+        try {
+            avatarFrameImage = await loadImage(fs.readFileSync(avatarFramePath));
+        } catch (error) {
+            console.warn('[STREAK CANVAS] Could not load avatar frame:', error.message);
+            avatarFrameImage = null;
+        }
+    }
 
     // 2. Fetch Users & Avatars
     let user1 = null;
