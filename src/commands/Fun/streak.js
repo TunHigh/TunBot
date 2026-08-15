@@ -145,17 +145,24 @@ async function renderStreak(
             }
         );
 
-    const reward =
-        streak.nextReward ?? 100;
+    let partnerUser = null;
+    try {
+        partnerUser = await interaction.client.users.fetch(partnerId);
+    } catch {}
 
-    const embed =
-        new EmbedBuilder()
-            .setColor(0x24b8ec)
-            .setDescription(
-                `🔥 ${interaction.user} × <@${partnerId}>\n\n` +
-                `🔥 **${streak.streakDays} ngày**\n` +
-                `🏆 Ngày tiếp theo → **+${reward.toLocaleString('vi-VN')} xu/người**`
-            );
+    const partnerName = partnerUser?.globalName || partnerUser?.username || 'Partner';
+    const reward = streak.nextReward ?? 100;
+
+    const embed = new EmbedBuilder()
+        .setColor(0xe03875)
+        .setTitle(`💖 Streak với ${partnerName}`)
+        .setDescription(
+            `<@${interaction.user.id}> 🤝 <@${partnerId}>\n` +
+            `💬 Mỗi ngày cả hai phải: gửi **50 tin nhắn** ở mainchat **và** reply tin nhắn của nhau **1 lần để giữ chuỗi** → +1 ngày streak.\n` +
+            `🎁 **Thưởng mốc (xu, mỗi người):**\n` +
+            `🏆 Ngày tiếp theo (**Ngày ${streak.streakDays + 1}**) → **+${reward.toLocaleString('vi-VN')} xu/người**`
+        )
+        .setImage('attachment://streak.png');
 
     return interaction.editReply({
         content: '',
