@@ -142,6 +142,14 @@ function drawSparkleField(ctx, cx, cy, reached) {
     ctx.restore();
 }
 
+// Uniformly scale a vertex-offset array so its farthest point sits at radius R
+function fitRadius(vertices, R) {
+    const max = Math.max(...vertices.map((v) => Math.max(Math.abs(v[0]), Math.abs(v[1]))));
+    if (max <= 0) return vertices;
+    const k = R / max;
+    return vertices.map(([dx, dy]) => [dx * k, dy * k]);
+}
+
 // Draw a "gem cut" style icon: gradient body, faceted interior, glossy highlight & depth shade
 function fillGem(ctx, x, y, vertices, facetRatio, reached, rounded) {
     ctx.save();
@@ -263,39 +271,59 @@ function fillGem(ctx, x, y, vertices, facetRatio, reached, rounded) {
 function drawMilestoneIcon(ctx, index, x, y, reached) {
     ctx.save();
 
-    // Scale factor: icons are 1.6× bigger than before
-    const S = 1.6;
+    // Uniform icon radius so every milestone is the same size (R = 21)
+    const R = 21;
 
     switch (index) {
         case 0: { // 1 ngày - Triangle
-            fillGem(ctx, x, y, [[0, -20 * S], [16 * S, 12 * S], [-16 * S, 12 * S]], 0.6, reached);
+            fillGem(ctx, x, y, fitRadius([[0, -20], [16, 12], [-16, 12]], R), 0.6, reached);
             break;
         }
-        case 1: { // 5 ngày - Hexagon Gem
+        case 1: { // 5 ngày - Pentagon Gem
             const v = [];
-            for (let i = 0; i < 6; i++) {
-                const ang = (Math.PI / 3) * i - Math.PI / 6;
-                v.push([Math.cos(ang) * 18 * S, Math.sin(ang) * 18 * S]);
+            for (let i = 0; i < 5; i++) {
+                const ang = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                v.push([Math.cos(ang) * 30, Math.sin(ang) * 30]);
             }
-            fillGem(ctx, x, y, v, 0.6, reached);
+            fillGem(ctx, x, y, fitRadius(v, R), 0.6, reached);
             break;
         }
         case 2: { // 15 ngày - Rounded Square
-            fillGem(ctx, x, y, null, 0.62, reached, { w: 19 * S, h: 19 * S, r: 5 * S });
+            const s = 30;
+            const f = fitRadius(
+                [
+                    [-s / 2, -s / 2],
+                    [s / 2, -s / 2],
+                    [s / 2, s / 2],
+                    [-s / 2, s / 2],
+                ],
+                R
+            );
+            const side = f[2][0] * 2;
+            fillGem(ctx, x, y, null, 0.62, reached, { w: side, h: side, r: Math.max(3, side * 0.16) });
             break;
         }
         case 3: { // 30 ngày - 5-Point Star
-            fillGem(ctx, x, y, starOffsets(5, 21 * S * 0.7, 9 * S * 0.7), 0.5, reached);
+            fillGem(ctx, x, y, fitRadius(starOffsets(5, 30, 12), 0.92 * R), 0.5, reached);
             drawSparkleField(ctx, x, y, reached);
             break;
         }
         case 4: { // 60 ngày - Tall Diamond Gem
-            const cs = S * 0.65;
             fillGem(
                 ctx,
                 x,
                 y,
-                [[0, -22 * cs], [14 * cs, -6 * cs], [14 * cs, 10 * cs], [0, 22 * cs], [-14 * cs, 10 * cs], [-14 * cs, -6 * cs]],
+                fitRadius(
+                    [
+                        [0, -22],
+                        [14, -6],
+                        [14, 10],
+                        [0, 22],
+                        [-14, 10],
+                        [-14, -6],
+                    ],
+                    R
+                ),
                 0.6,
                 reached
             );
@@ -303,14 +331,23 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
             break;
         }
         case 5: { // 90 ngày - Wide Diamond
-            const cs = S * 0.65;
-            fillGem(ctx, x, y, [[-20 * cs, -5 * cs], [0, -22 * cs], [20 * cs, -5 * cs], [0, 22 * cs]], 0.6, reached);
+            fillGem(ctx, x, y, fitRadius([[-20, -5], [0, -22], [20, -5], [0, 22]], R), 0.6, reached);
             drawSparkleField(ctx, x, y, reached);
             break;
         }
         case 6: { // 120 ngày - Crown
-            const cs = S * 0.65;
-            const v = [[-18 * cs, 14 * cs], [-20 * cs, -8 * cs], [-8 * cs, 4 * cs], [0, -18 * cs], [8 * cs, 4 * cs], [20 * cs, -8 * cs], [18 * cs, 14 * cs]];
+            const v = fitRadius(
+                [
+                    [-18, 14],
+                    [-20, -8],
+                    [-8, 4],
+                    [0, -18],
+                    [8, 4],
+                    [20, -8],
+                    [18, 14],
+                ],
+                R
+            );
             fillGem(ctx, x, y, v, 0.55, reached);
             // crown dots
             if (reached) {
@@ -318,7 +355,7 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
                 ctx.fillStyle = '#ffe566';
                 ctx.shadowColor = '#ffe566';
                 ctx.shadowBlur = 6;
-                for (const [dx, dy] of [[-20 * cs, -8 * cs], [0, -18 * cs], [20 * cs, -8 * cs]]) {
+                for (const [dx, dy] of [[-20, -8], [0, -18], [20, -8]]) {
                     ctx.beginPath();
                     ctx.arc(x + dx, y + dy, 3.5, 0, Math.PI * 2);
                     ctx.fill();
@@ -329,7 +366,7 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
             break;
         }
         case 7: { // 150 ngày - 8-Point Crystal
-            fillGem(ctx, x, y, starOffsets(8, 21 * S * 0.6, 13 * S * 0.6), 0.5, reached);
+            fillGem(ctx, x, y, fitRadius(starOffsets(8, 30, 18), 0.92 * R), 0.5, reached);
             if (reached) {
                 // long radiating lines
                 ctx.save();
@@ -338,8 +375,8 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
                 ctx.lineCap = 'round';
                 for (let i = 0; i < 4; i++) {
                     const ang = (i * Math.PI) / 4 + Math.PI / 8;
-                    const r1 = 15 * S * 0.6;
-                    const r2 = 24 * S * 0.6;
+                    const r1 = 22;
+                    const r2 = 32;
                     ctx.beginPath();
                     ctx.moveTo(x + Math.cos(ang) * r1, y + Math.sin(ang) * r1);
                     ctx.lineTo(x + Math.cos(ang) * r2, y + Math.sin(ang) * r2);
@@ -355,7 +392,7 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
             break;
         }
         case 8: { // 180 ngày - Burst Star
-            fillGem(ctx, x, y, starOffsets(8, 22 * S * 0.6, 8 * S * 0.6), 0.5, reached);
+            fillGem(ctx, x, y, fitRadius(starOffsets(8, 30, 10), 0.92 * R), 0.5, reached);
             if (reached) {
                 // 8 long burst rays
                 ctx.save();
@@ -364,8 +401,8 @@ function drawMilestoneIcon(ctx, index, x, y, reached) {
                 ctx.lineCap = 'round';
                 for (let i = 0; i < 8; i++) {
                     const ang = (i * Math.PI) / 4;
-                    const r1 = 20 * S * 0.6;
-                    const r2 = 32 * S * 0.6;
+                    const r1 = 24;
+                    const r2 = 36;
                     ctx.beginPath();
                     ctx.moveTo(x + Math.cos(ang) * r1, y + Math.sin(ang) * r1);
                     ctx.lineTo(x + Math.cos(ang) * r2, y + Math.sin(ang) * r2);
