@@ -279,6 +279,29 @@ export async function registerCommands(client, options = {}) {
 
     try {
         const { commands, totalSubcommands } = collectCommandPayloads(client);
+
+        if (!clientId) {
+            throw new Error('CLIENT_ID is required for slash command registration');
+        }
+
+        if (guildId) {
+            // Registering to Guild -> Clear global commands to remove duplicate entries in Discord
+            try {
+                logger.info(`Cleaning up old global commands to prevent duplicate commands...`);
+                await client.rest.put(`/applications/${clientId}/commands`, { body: [] });
+            } catch (err) {
+                logger.warn(`Could not clear global commands: ${err.message}`);
+            }
+        } else if (process.env.GUILD_ID) {
+            // Registering Globally -> Clear old guild-specific commands to remove duplicate entries
+            try {
+                logger.info(`Cleaning up old guild commands for guild ${process.env.GUILD_ID}...`);
+                await client.rest.put(`/applications/${clientId}/guilds/${process.env.GUILD_ID}/commands`, { body: [] });
+            } catch (err) {
+                logger.warn(`Could not clear guild commands: ${err.message}`);
+            }
+        }
+
         await registerCommandsToDiscord(client, clientId, guildId, commands, totalSubcommands);
     } catch (error) {
         logger.error('Error registering commands:', error);
