@@ -165,7 +165,7 @@ async function renderStreak(
         .setImage('attachment://streak.png');
 
     return interaction.editReply({
-        content: '',
+        content: null,
         embeds: [embed],
         files: [attachment],
         components: [
