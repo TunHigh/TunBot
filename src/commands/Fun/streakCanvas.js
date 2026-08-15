@@ -1,7 +1,15 @@
 import {
     createCanvas,
     loadImage,
+    GlobalFonts,
 } from '@napi-rs/canvas';
+
+// Load system fonts for canvas text rendering
+try {
+    GlobalFonts.loadSystemFonts();
+} catch (error) {
+    console.warn('[STREAK CANVAS] Could not load system fonts:', error.message);
+}
 
 // ============================================================
 // DIMENSIONS
@@ -33,11 +41,13 @@ function drawTextWithOutline(
     size,
     align = 'center',
     color = '#ffffff',
-    strokeColor = 'rgba(0,0,0,0.7)',
+    strokeColor = 'rgba(0,0,0,0.85)',
     strokeWidth = 4
 ) {
+    if (text === null || text === undefined || text === '') return;
+
     ctx.save();
-    ctx.font = `bold ${size}px sans-serif, Arial, "Segoe UI"`;
+    ctx.font = `bold ${size}px sans-serif`;
     ctx.textAlign = align;
     ctx.textBaseline = 'middle';
 
@@ -45,11 +55,11 @@ function drawTextWithOutline(
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = strokeWidth;
         ctx.lineJoin = 'round';
-        ctx.strokeText(text, x, y);
+        ctx.strokeText(String(text), x, y);
     }
 
     ctx.fillStyle = color;
-    ctx.fillText(text, x, y);
+    ctx.fillText(String(text), x, y);
     ctx.restore();
 }
 
