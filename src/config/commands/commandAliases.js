@@ -61,8 +61,6 @@ export const commandAliases = {
     'roll': 'roll',
     'dice': 'roll',
     'fight': 'fight',
-    'chuoi': 'chuoi',
-    'streak': 'chuoi',
 
     'gcreate': 'gcreate',
     'gstart': 'gcreate',
