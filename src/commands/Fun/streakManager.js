@@ -1371,45 +1371,29 @@ async function processMessage(
         // MESSAGE
         // ====================================================
 
-        const reqMessages = getRequiredMessages(streak.streakDays);
-
         const messageColumn =
             isUser1
                 ? 'user1_messages'
                 : 'user2_messages';
 
-        const currentMessages =
-            isUser1
-                ? streak.user1Messages
-                : streak.user2Messages;
+        // Keep counting every message the user sends (no cap at the daily requirement).
+        await db.query(
+            `
+            UPDATE streaks
 
-        if (
-            currentMessages <
-            reqMessages
-        ) {
+            SET ${messageColumn} =
+                ${messageColumn} + 1,
 
-            await db.query(
-                `
-                UPDATE streaks
+                updated_at = NOW()
 
-                SET ${messageColumn} =
-                    LEAST(
-                        ${messageColumn} + 1,
-                        $2
-                    ),
+            WHERE id = $1
 
-                    updated_at = NOW()
-
-                WHERE id = $1
-
-                AND status = 'active'
-                `,
-                [
-                    streak.id,
-                    reqMessages,
-                ]
-            );
-        }
+            AND status = 'active'
+            `,
+            [
+                streak.id,
+            ]
+        );
 
 
         // ====================================================
