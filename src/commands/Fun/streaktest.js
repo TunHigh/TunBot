@@ -8,6 +8,10 @@ import {
     renderStreakCard,
 } from './streakCanvas.js';
 
+import {
+    getRequiredMessages,
+} from './streakManager.js';
+
 export default {
     data: new SlashCommandBuilder()
         .setName('streaktest')
@@ -94,13 +98,15 @@ export default {
 
             const attachment = new AttachmentBuilder(imageBuffer, { name: 'streak_test.png' });
 
+            const reqMessages = getRequiredMessages(days);
+
             const embed = new EmbedBuilder()
                 .setColor(0xe03875)
                 .setTitle('🎨 Test Render Streak Canvas (Cập Nhật)')
                 .setDescription(
                     `**Thông số xem trước:**\n` +
-                    `👤 **Bạn (${interaction.user.username}):** ${user1Msg}/50 tin nhắn | ${user1Reply}/2 reply\n` +
-                    `👤 **Partner (${partner.username}):** ${user2Msg}/50 tin nhắn | ${user2Reply}/2 reply\n` +
+                    `👤 **Bạn (${interaction.user.username}):** ${user1Msg}/${reqMessages} tin nhắn | ${user1Reply}/1 reply\n` +
+                    `👤 **Partner (${partner.username}):** ${user2Msg}/${reqMessages} tin nhắn | ${user2Reply}/1 reply\n` +
                     `🔥 **Số ngày Streak:** ${days} ngày`
                 )
                 .setImage('attachment://streak_test.png')

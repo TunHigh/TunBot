@@ -4,6 +4,10 @@ import {
     GlobalFonts,
 } from '@napi-rs/canvas';
 
+import {
+    getRequiredMessages,
+} from './streakManager.js';
+
 // Load system fonts for canvas text rendering
 try {
     GlobalFonts.loadSystemFonts();
@@ -590,21 +594,23 @@ export async function renderStreakCard(client, streak, user1Id, user2Id) {
     drawAvatar(ctx, avatar2, 910, 150, 56);
 
     // 4. Message Section (TIN NHẮN)
+    const reqMessages = getRequiredMessages(streak.streakDays);
+
     // Pill Badge
     drawPillBadge(ctx, 'TIN NHẮN', WIDTH / 2, 210, 140, 36, '#ff4785', '#ff739d');
 
     // Numbers Text (Left & Right)
-    drawTextWithOutline(ctx, `${streak.user1Messages}/50`, 135, 255, 22, 'center', '#ffffff', '#000000', 4);
-    drawTextWithOutline(ctx, `${streak.user2Messages}/50`, 865, 255, 22, 'center', '#ffffff', '#000000', 4);
+    drawTextWithOutline(ctx, `${streak.user1Messages}/${reqMessages}`, 135, 255, 22, 'center', '#ffffff', '#000000', 4);
+    drawTextWithOutline(ctx, `${streak.user2Messages}/${reqMessages}`, 865, 255, 22, 'center', '#ffffff', '#000000', 4);
 
     // Dual Progress Bar + Center Checkmark (Y: 255)
     drawDualProgressBar(
         ctx,
         255,
         streak.user1Messages,
-        50,
+        reqMessages,
         streak.user2Messages,
-        50,
+        reqMessages,
         '#ffa826',
         '#4da2ff'
     );

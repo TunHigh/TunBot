@@ -9,9 +9,18 @@ import EconomyService from '../../services/economyService.js';
 
 const MAX_STREAKS = 5;
 
-const DAILY_MESSAGES = 50;
-
 const DAILY_REPLIES = 1;
+
+export function getRequiredMessages(day = 0) {
+    if (day <= 1) return 2;
+    if (day <= 2) return 5;
+    if (day <= 4) return 10;
+    if (day <= 7) return 15;
+    if (day <= 14) return 20;
+    if (day <= 30) return 30;
+    if (day <= 60) return 40;
+    return 50;
+}
 
 const INVITE_MINUTES = 30;
 
@@ -1294,6 +1303,8 @@ async function processMessage(
         // MESSAGE
         // ====================================================
 
+        const reqMessages = getRequiredMessages(streak.streakDays);
+
         const messageColumn =
             isUser1
                 ? 'user1_messages'
@@ -1306,7 +1317,7 @@ async function processMessage(
 
         if (
             currentMessages <
-            DAILY_MESSAGES
+            reqMessages
         ) {
 
             await db.query(
@@ -1327,7 +1338,7 @@ async function processMessage(
                 `,
                 [
                     streak.id,
-                    DAILY_MESSAGES,
+                    reqMessages,
                 ]
             );
         }
@@ -1424,12 +1435,14 @@ async function processMessage(
             continue;
         }
 
+        const updatedReqMessages = getRequiredMessages(updated.streakDays);
+
         if (
             updated.user1Messages >=
-            DAILY_MESSAGES &&
+            updatedReqMessages &&
 
             updated.user2Messages >=
-            DAILY_MESSAGES &&
+            updatedReqMessages &&
 
             updated.user1Replies >=
             DAILY_REPLIES &&

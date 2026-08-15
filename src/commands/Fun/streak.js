@@ -17,6 +17,7 @@ import {
     getStreakById,
     getStreakPartner,
     startMessageTracker,
+    getRequiredMessages,
 } from './streakManager.js';
 
 import {
@@ -142,6 +143,7 @@ async function renderStreak(
     } catch {}
 
     const partnerName = partnerUser?.globalName || partnerUser?.username || 'Partner';
+    const reqMessages = getRequiredMessages(streak.streakDays);
     const reward = streak.nextReward ?? 100;
 
     const embed = new EmbedBuilder()
@@ -149,7 +151,7 @@ async function renderStreak(
         .setTitle(`💖 Streak với ${partnerName}`)
         .setDescription(
             `<@${interaction.user.id}> 🤝 <@${partnerId}>\n` +
-            `💬 Mỗi ngày cả hai phải: gửi **50 tin nhắn** ở mainchat **và** reply tin nhắn của nhau **1 lần để giữ chuỗi** → +1 ngày streak.\n` +
+            `💬 Mỗi ngày cả hai phải: gửi **${reqMessages} tin nhắn** ở mainchat **và** reply tin nhắn của nhau **1 lần để giữ chuỗi** → +1 ngày streak.\n` +
             `🎁 **Thưởng mốc (xu, mỗi người):**\n` +
             `🏆 Ngày tiếp theo (**Ngày ${streak.streakDays + 1}**) → **+${reward.toLocaleString('vi-VN')} xu/người**`
         )
