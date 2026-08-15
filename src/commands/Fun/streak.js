@@ -34,55 +34,46 @@ function createNavigationRow(
     page,
     total
 ) {
-    return new ActionRowBuilder().addComponents(
-
+    const navRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-            .setCustomId(
-                `streak:first:${ownerId}:${streakId}`
-            )
+            .setCustomId(`streak:first:${ownerId}:${streakId}`)
             .setLabel('|<')
             .setStyle(ButtonStyle.Secondary)
             .setDisabled(page <= 0),
 
         new ButtonBuilder()
-            .setCustomId(
-                `streak:prev:${ownerId}:${streakId}`
-            )
+            .setCustomId(`streak:prev:${ownerId}:${streakId}`)
             .setLabel('<')
             .setStyle(ButtonStyle.Secondary)
             .setDisabled(page <= 0),
 
         new ButtonBuilder()
-            .setCustomId(
-                `streak:page:${ownerId}:${streakId}`
-            )
+            .setCustomId(`streak:page:${ownerId}:${streakId}`)
             .setLabel(`${page + 1}/${total}`)
             .setStyle(ButtonStyle.Primary)
             .setDisabled(true),
 
         new ButtonBuilder()
-            .setCustomId(
-                `streak:next:${ownerId}:${streakId}`
-            )
+            .setCustomId(`streak:next:${ownerId}:${streakId}`)
             .setLabel('>')
             .setStyle(ButtonStyle.Secondary)
             .setDisabled(page >= total - 1),
 
         new ButtonBuilder()
-            .setCustomId(
-                `streak:last:${ownerId}:${streakId}`
-            )
+            .setCustomId(`streak:last:${ownerId}:${streakId}`)
             .setLabel('>|')
             .setStyle(ButtonStyle.Secondary)
-            .setDisabled(page >= total - 1),
+            .setDisabled(page >= total - 1)
+    );
 
+    const actionRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-            .setCustomId(
-                `streak:delete:${ownerId}:${streakId}`
-            )
-            .setLabel('🗑️ Xóa')
+            .setCustomId(`streak:delete:${ownerId}:${streakId}`)
+            .setLabel('🗑️ Xóa streak')
             .setStyle(ButtonStyle.Danger)
     );
+
+    return [navRow, actionRow];
 }
 
 
@@ -168,14 +159,12 @@ async function renderStreak(
         content: null,
         embeds: [embed],
         files: [attachment],
-        components: [
-            createNavigationRow(
-                interaction.user.id,
-                streak.id,
-                page,
-                streaks.length
-            ),
-        ],
+        components: createNavigationRow(
+            interaction.user.id,
+            streak.id,
+            page,
+            streaks.length
+        ),
     });
 }
 
