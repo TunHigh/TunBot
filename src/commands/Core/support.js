@@ -3,9 +3,9 @@ import { createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 
 import { InteractionHelper } from '../../utils/interactionHelper.js';
-const SUPPORT_SERVER_URL = "https://discord.gg/QnWNz2dKCE";
+const SUPPORT_SERVER_URL = "https://discord.gg/Hp9J9pxbfR";
 export default {
-    data: new SlashCommandBuilder()
+  data: new SlashCommandBuilder()
     .setName("support")
     .setDescription("Nhận liên kết đến máy chủ hỗ trợ"),
 
@@ -27,7 +27,7 @@ export default {
       });
     } catch (error) {
       logger.error('Support command error:', error);
-      
+
       try {
         return await InteractionHelper.safeReply(interaction, {
           embeds: [createEmbed({ title: 'Lỗi Hệ Thống', description: 'Không thể hiển thị thông tin hỗ trợ.', color: 'error' })],

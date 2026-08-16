@@ -86,7 +86,7 @@ export async function createInitialHelpMenu(client) {
                 name: '🚀 Bắt Đầu',
                 value: [
                     '**1. Chạy thiết lập** — Dùng `/configwizard` để cấu hình tiền tố, vai trò quản trị và nhật ký.',
-                    '**2. Bật các hệ thống** — Dùng `/commands dashboard` để bật hoặc tắt danh mục.',                    '**3. Duyệt lệnh** — Dùng menu bên dưới để xem danh mục và lệnh.',
+                    '**2. Bật các hệ thống** — Dùng `/commands dashboard` để bật hoặc tắt danh mục.', '**3. Duyệt lệnh** — Dùng menu bên dưới để xem danh mục và lệnh.',
                 ].join('\n'),
                 inline: false,
             },
@@ -101,14 +101,14 @@ export async function createInitialHelpMenu(client) {
             },
             {
                 name: '\u200B',
-                value: `-# ${botName} là [mã nguồn mở](https://youtu.be/1jCZX8s3bJE?si=NPOYx-vxVE1I5vJK)`,
+                value: `-# ${botName}`,
                 inline: false,
             },
         ],
     });
 
-    embed.setFooter({ 
-        text: "Làm ra với ❤️" 
+    embed.setFooter({
+        text: "Làm ra với ❤️"
     });
     embed.setTimestamp();
 
@@ -119,7 +119,7 @@ export async function createInitialHelpMenu(client) {
 
     const supportButton = new ButtonBuilder()
         .setLabel("Máy Chủ Hỗ Trợ")
-        .setURL("https://discord.gg/QnWNz2dKCE")
+        .setURL("https://discord.gg/Hp9J9pxbfR")
         .setStyle(ButtonStyle.Link);
 
     const selectRow = createSelectMenu(
@@ -146,10 +146,10 @@ export default {
         .setDescription("Hiển thị menu trợ giúp với tất cả lệnh có sẵn"),
 
     async execute(interaction, guildConfig, client) {
-        
+
         const { MessageFlags } = await import('discord.js');
         await InteractionHelper.safeDefer(interaction);
-        
+
         const { embeds, components } = await createInitialHelpMenu(client);
 
         await InteractionHelper.safeEditReply(interaction, {
