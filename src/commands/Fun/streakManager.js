@@ -1082,7 +1082,7 @@ async function completeStreak(
         `[STREAK] ${updated.user1Id} + ${updated.user2Id} -> ${newDay} day`
     );
 
-    // Thông báo vào system channel
+    // Thông báo khi đạt mốc streak
     try {
 
         const guild =
@@ -1094,8 +1094,15 @@ async function completeStreak(
             return;
         }
 
-        const channel =
-            guild.systemChannel;
+        // Ưu tiên gửi vào kênh streak đã cấu hình, fallback về system channel
+        let channel = null;
+        const streakChannelId = await getStreakChannel(client, updated.guildId);
+        if (streakChannelId) {
+            channel = guild.channels.cache.get(streakChannelId);
+        }
+        if (!channel) {
+            channel = guild.systemChannel;
+        }
 
         if (!channel) {
             return;
@@ -1103,12 +1110,8 @@ async function completeStreak(
 
         await channel.send({
             content:
-                `${mention(updated.user1Id)} và ` +
-                `${mention(updated.user2Id)} ` +
-                `đã đạt streak **${newDay} ngày**!\n\n` +
-
-                `🏆 **${newDay} ngày** ` +
-                `→ **+${reward.toLocaleString('vi-VN')} xu/người**`,
+                `🎉 ${mention(updated.user1Id)} và ${mention(updated.user2Id)} đã đạt chuỗi **${newDay} ngày**!\n` +
+                `🏆 **${newDay} ngày** → **+${reward.toLocaleString('vi-VN')} xu/người**`,
         });
 
     } catch (error) {
