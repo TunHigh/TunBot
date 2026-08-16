@@ -288,6 +288,7 @@ export default {
 
             const streakChannelId = await getStreakChannel(interaction.client, interaction.guildId);
             const channelLabel = streakChannelId ? `<#${streakChannelId}>` : 'mainchat';
+            const reqMessages = getRequiredMessages(1); // Streak mới bắt đầu từ ngày 1
 
             const embed =
                 new EmbedBuilder()
