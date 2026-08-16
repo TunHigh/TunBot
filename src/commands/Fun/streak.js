@@ -151,7 +151,7 @@ async function renderStreak(
 
     const embed = new EmbedBuilder()
         .setColor(0xe03875)
-        .setTitle(`💖 Chuỗi với ${partnerName} 💖`)
+        .setTitle(`🔥 Chuỗi với ${partnerName} 🔥`)
         .setDescription(
             `<@${interaction.user.id}> 🤝 <@${partnerId}>\n` +
             `💬 Mỗi ngày cả hai phải: gửi **${reqMessages} tin nhắn** ở ${channelLabel} **và** reply tin nhắn của nhau **1 lần để giữ chuỗi** → +1 ngày streak.\n` +
