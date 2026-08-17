@@ -10,7 +10,7 @@ export class DiceRenderer {
     this.diceSize = options.diceSize || 140;
     this.spacing = options.spacing || 25;
     this.canvasWidth = this.diceSize * 3 + this.spacing * 2 + 60;
-    this.canvasHeight = this.diceSize + 100;
+    this.canvasHeight = this.diceSize + 80;
     this.frameCount = options.frameCount || 75;
     this.fps = options.fps || 25;
 
@@ -30,17 +30,17 @@ export class DiceRenderer {
       dotShadow: '#000000',
       goldAccent: '#ffd700',
       goldDark: '#b8860b',
-      tableGreen: '#0f3d1a',
-      tableGreenDark: '#0a2a12',
+      tableDark: '#0a1a0a',
+      tableMid: '#102810',
+      tableLight: '#1a3a1a',
     };
 
-    // Animation phases (normalized 0-1)
+    // Animation phases (normalized 0-1) - In-place spinning
     this.phases = {
-      anticipation: 0.08,   // Wind up
-      throwUp: 0.22,        // Launch upward
-      spinAir: 0.50,        // Tumbling in air
-      fallDown: 0.72,       // Falling
-      settle: 1.0,          // Bounce & settle
+      anticipation: 0.10,   // Wind up / shake
+      spinFast: 0.45,       // Fast spinning in place
+      spinSlow: 0.75,       // Decelerating spin
+      settle: 1.0,          // Final settle
     };
   }
 
@@ -100,13 +100,13 @@ export class DiceRenderer {
 
   /**
    * Calculate full 3D transform for a die at given progress
-   * Returns position, rotation (3 axes), scale, and visible face
+   * In-place spinning animation (no jumping)
    */
   calculateDiceTransform(diceIndex, progress, finalFace, seed) {
     const rng = this.mulberry32(seed + diceIndex * 1000 + 42);
 
     const baseX = this.diceSize / 2 + 30 + diceIndex * (this.diceSize + this.spacing);
-    const groundY = this.canvasHeight - this.diceSize / 2 - 35;
+    const groundY = this.canvasHeight - this.diceSize / 2 - 25;
 
     // Per-dice variation
     const variation = rng();
@@ -116,105 +116,105 @@ export class DiceRenderer {
     let x, y, rotX, rotY, rotZ, scale, currentFace, squash, wobble;
 
     if (progress < this.phases.anticipation) {
-      // ─── Anticipation / Wind up ───
+      // ─── Anticipation / Shake ───
       const t = progress / this.phases.anticipation;
       const e = this.easeInOutCubic(t);
       
-      x = baseX - e * 15 * (variation - 0.5);
-      y = groundY + e * 8;
-      rotX = -e * 0.3 * (variation2 - 0.5);
-      rotY = e * 0.4 * (variation3 - 0.5);
-      rotZ = 0;
-      scale = 1 - e * 0.05;
+      // Subtle shake/wobble before spin
+      x = baseX + Math.sin(t * Math.PI * 8) * 3 * e * (variation - 0.5);
+      y = groundY;
+      rotX = Math.sin(t * Math.PI * 6) * 0.15 * e * (variation2 - 0.5);
+      rotY = Math.sin(t * Math.PI * 7) * 0.2 * e * (variation3 - 0.5);
+      rotZ = Math.sin(t * Math.PI * 5) * 0.1 * e * (variation - 0.5);
+      scale = 1;
       currentFace = Math.floor(rng() * 6) + 1;
-      squash = 1 - e * 0.1;
-      wobble = 0;
+      squash = 1;
+      wobble = Math.sin(t * Math.PI * 10) * 2 * e;
 
-    } else if (progress < this.phases.throwUp) {
-      // ─── Throw Up ───
-      const t = (progress - this.phases.anticipation) / (this.phases.throwUp - this.phases.anticipation);
-      const e = this.easeOutBack(t);
+    } else if (progress < this.phases.spinFast) {
+      // ─── Fast Spinning In Place ───
+      const t = (progress - this.phases.anticipation) / (this.phases.spinFast - this.phases.anticipation);
+      const e = this.easeOutQuart(t); // Fast start, then maintain speed
       
-      const throwHeight = this.canvasHeight * 0.65;
       x = baseX;
-      y = groundY - e * throwHeight;
-      rotX = (1 - e) * 0.3 * (variation2 - 0.5) + e * Math.PI * 2 * (2 + variation);
-      rotY = (1 - e) * 0.4 * (variation3 - 0.5) + e * Math.PI * 2 * (1.5 + variation2);
-      rotZ = e * Math.PI * 1.5 * (variation3 - 0.5);
-      scale = 1 + e * 0.08;
-      currentFace = Math.floor(rng() * 6) + 1;
-      squash = 1 + (1 - e) * 0.15;
-      wobble = Math.sin(t * Math.PI * 8) * (1 - t) * 10;
-
-    } else if (progress < this.phases.spinAir) {
-      // ─── Spin in Air (tumbling) ───
-      const t = (progress - this.phases.throwUp) / (this.phases.spinAir - this.phases.throwUp);
-      const peakY = groundY - this.canvasHeight * 0.65;
+      y = groundY;
       
-      // Complex 3D tumbling
-      const tumbleSpeedX = 4 + variation * 3;
-      const tumbleSpeedY = 3.5 + variation2 * 2.5;
-      const tumbleSpeedZ = 2.5 + variation3 * 2;
+      // High-speed rotation on multiple axes
+      const spinSpeedX = 8 + variation * 6;
+      const spinSpeedY = 10 + variation2 * 8;
+      const spinSpeedZ = 6 + variation3 * 4;
       
-      x = baseX + Math.sin(t * Math.PI * 2.5) * 18 * (1 - t * 0.5);
-      y = peakY + Math.sin(t * Math.PI) * 25;
+      rotX = Math.PI * 2 * spinSpeedX * t + variation * Math.PI;
+      rotY = Math.PI * 2 * spinSpeedY * t + variation2 * Math.PI;
+      rotZ = Math.PI * 2 * spinSpeedZ * t + variation3 * Math.PI;
       
-      rotX = Math.PI * 2 * tumbleSpeedX * t + variation * Math.PI;
-      rotY = Math.PI * 2 * tumbleSpeedY * t + variation2 * Math.PI;
-      rotZ = Math.PI * 2 * tumbleSpeedZ * t + variation3 * Math.PI;
+      // Subtle vertical vibration from spin
+      const vibrate = Math.sin(t * Math.PI * 30) * 1.5 * (1 - t * 0.3);
+      y += vibrate;
       
       scale = 1;
       currentFace = Math.floor(rng() * 6) + 1;
       squash = 1;
-      wobble = Math.sin(t * Math.PI * 12) * 8 * (1 - t * 0.3);
+      wobble = Math.sin(t * Math.PI * 20) * 1.5 * (1 - t * 0.2);
 
-    } else if (progress < this.phases.fallDown) {
-      // ─── Fall Down ───
-      const t = (progress - this.phases.spinAir) / (this.phases.fallDown - this.phases.spinAir);
-      const e = this.easeInOutCubic(t);
-      const peakY = groundY - this.canvasHeight * 0.65;
+    } else if (progress < this.phases.spinSlow) {
+      // ─── Decelerating Spin ───
+      const t = (progress - this.phases.spinFast) / (this.phases.spinSlow - this.phases.spinFast);
+      const e = this.easeOutQuart(t); // Smooth deceleration
       
-      x = baseX + Math.sin(t * Math.PI * 1.5) * 12 * (1 - t);
-      y = peakY + e * (groundY - peakY + 30);
+      x = baseX;
+      y = groundY;
       
-      // Slowing rotation as it falls
-      const slowFactor = 1 - e * 0.7;
-      rotX = Math.PI * 2 * (4 + variation * 3) * (1 - e * 0.5) + variation * Math.PI;
-      rotY = Math.PI * 2 * (3.5 + variation2 * 2.5) * (1 - e * 0.5) + variation2 * Math.PI;
-      rotZ = Math.PI * 2 * (2.5 + variation3 * 2) * (1 - e * 0.5) + variation3 * Math.PI;
+      // Rotation slowing down
+      const spinSpeedX = 8 + variation * 6;
+      const spinSpeedY = 10 + variation2 * 8;
+      const spinSpeedZ = 6 + variation3 * 4;
+      
+      const totalSpinX = Math.PI * 2 * spinSpeedX * (this.phases.spinFast - this.phases.anticipation);
+      const totalSpinY = Math.PI * 2 * spinSpeedY * (this.phases.spinFast - this.phases.anticipation);
+      const totalSpinZ = Math.PI * 2 * spinSpeedZ * (this.phases.spinFast - this.phases.anticipation);
+      
+      const decelFactor = 1 - e;
+      rotX = totalSpinX + totalSpinX * decelFactor * 0.5 + variation * Math.PI;
+      rotY = totalSpinY + totalSpinY * decelFactor * 0.5 + variation2 * Math.PI;
+      rotZ = totalSpinZ + totalSpinZ * decelFactor * 0.5 + variation3 * Math.PI;
+      
+      // Less vibration as it slows
+      const vibrate = Math.sin(t * Math.PI * 15) * 1 * (1 - t);
+      y += vibrate;
       
       scale = 1;
       currentFace = Math.floor(rng() * 6) + 1;
-      squash = 1 + (1 - e) * 0.08;
-      wobble = (1 - e) * 6;
+      squash = 1;
+      wobble = Math.sin(t * Math.PI * 10) * 1 * (1 - t);
 
     } else {
-      // ─── Settle with Bounce ───
-      const t = (progress - this.phases.fallDown) / (this.phases.settle - this.phases.fallDown);
-      const bounceCount = 3;
-      const bounce = Math.abs(Math.sin(t * Math.PI * bounceCount)) * Math.pow(1 - t, 1.5) * 22;
+      // ─── Final Settle ───
+      const t = (progress - this.phases.spinSlow) / (this.phases.settle - this.phases.spinSlow);
+      const e = this.easeOutElastic(t);
       
       x = baseX;
-      y = groundY - bounce;
+      y = groundY;
       
-      // Final rotation settling to show correct face
-      const settleFactor = this.easeOutElastic(t);
-      rotX = Math.PI * 2 * Math.round((4 + variation * 3) * (1 - settleFactor * 0.3));
-      rotY = Math.PI * 2 * Math.round((3.5 + variation2 * 2.5) * (1 - settleFactor * 0.3));
-      rotZ = Math.PI * 2 * Math.round((2.5 + variation3 * 2) * (1 - settleFactor * 0.3));
+      // Snap to final orientation showing correct face
+      const finalRotX = Math.PI * 2 * Math.round((8 + variation * 6) * 0.5 + variation);
+      const finalRotY = Math.PI * 2 * Math.round((10 + variation2 * 8) * 0.5 + variation2);
+      const finalRotZ = Math.PI * 2 * Math.round((6 + variation3 * 4) * 0.5 + variation3);
       
-      // Snap to final orientation in last 20%
-      if (t > 0.8) {
-        const snapT = (t - 0.8) / 0.2;
-        rotX = rotX * (1 - snapT);
-        rotY = rotY * (1 - snapT);
-        rotZ = rotZ * (1 - snapT);
-      }
+      // Smoothly interpolate to zero rotation (upright)
+      const snapProgress = Math.min(1, t * 1.5);
+      rotX = finalRotX * (1 - snapProgress);
+      rotY = finalRotY * (1 - snapProgress);
+      rotZ = finalRotZ * (1 - snapProgress);
+      
+      // Tiny final bounce
+      const bounce = Math.abs(Math.sin(t * Math.PI * 2)) * Math.pow(1 - t, 2) * 3;
+      y -= bounce;
       
       scale = 1;
-      currentFace = t > 0.7 ? finalFace : Math.floor(rng() * 6) + 1;
-      squash = 1 + Math.max(0, Math.sin(t * Math.PI * bounceCount * 2)) * 0.12 * (1 - t);
-      wobble = Math.max(0, Math.sin(t * Math.PI * bounceCount)) * (1 - t) * 4;
+      currentFace = t > 0.5 ? finalFace : Math.floor(rng() * 6) + 1;
+      squash = 1 + Math.max(0, Math.sin(t * Math.PI * 4)) * 0.05 * (1 - t);
+      wobble = Math.max(0, Math.sin(t * Math.PI * 2)) * (1 - t) * 1;
     }
 
     return { x, y, rotX, rotY, rotZ, scale, currentFace, squash, wobble };
@@ -458,49 +458,44 @@ export class DiceRenderer {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-    // Subtle animated particles/glitter during spin
-    if (progress > this.phases.throwUp && progress < this.phases.fallDown) {
+    // Subtle animated particles during fast spin
+    if (progress > this.phases.anticipation && progress < this.phases.spinSlow) {
       this.drawAmbientParticles(ctx, progress);
     }
 
-    // Table surface
-    const tableY = this.canvasHeight - 35;
+    // Table surface - dark felt, no green border
+    const tableY = this.canvasHeight - 25;
     const tableGrad = ctx.createLinearGradient(0, tableY, 0, this.canvasHeight);
-    tableGrad.addColorStop(0, '#0f3d1a');
-    tableGrad.addColorStop(0.5, '#0a2a12');
-    tableGrad.addColorStop(1, '#051508');
+    tableGrad.addColorStop(0, this.colors.tableLight);
+    tableGrad.addColorStop(0.5, this.colors.tableMid);
+    tableGrad.addColorStop(1, this.colors.tableDark);
     ctx.fillStyle = tableGrad;
     ctx.fillRect(0, tableY, this.canvasWidth, this.canvasHeight - tableY);
 
-    // Table edge highlight
-    ctx.beginPath();
-    ctx.moveTo(0, tableY);
-    ctx.lineTo(this.canvasWidth, tableY);
-    ctx.strokeStyle = 'rgba(255,215,0,0.3)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Gold accent line
-    ctx.beginPath();
-    ctx.moveTo(0, tableY + 2);
-    ctx.lineTo(this.canvasWidth, tableY + 2);
-    ctx.strokeStyle = 'rgba(255,215,0,0.1)';
+    // Subtle table texture lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.02)';
     ctx.lineWidth = 1;
-    ctx.stroke();
+    for (let i = 0; i < 20; i++) {
+      const y = tableY + i * 1.2;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.canvasWidth, y);
+      ctx.stroke();
+    }
   }
 
   drawAmbientParticles(ctx, progress) {
-    const t = (progress - this.phases.throwUp) / (this.phases.fallDown - this.phases.throwUp);
-    const particleCount = 12;
+    const t = (progress - this.phases.anticipation) / (this.phases.spinSlow - this.phases.anticipation);
+    const particleCount = 8;
     
     for (let i = 0; i < particleCount; i++) {
       const seed = i * 1000 + progress * 10000;
       const rng = this.mulberry32(seed);
       
       const x = rng() * this.canvasWidth;
-      const y = rng() * (this.canvasHeight - 50) + 20;
-      const size = 1 + rng() * 2;
-      const alpha = (0.3 + rng() * 0.4) * (1 - Math.abs(t - 0.5) * 2);
+      const y = rng() * (this.canvasHeight - 40) + 15;
+      const size = 1 + rng() * 1.5;
+      const alpha = (0.2 + rng() * 0.3) * (1 - Math.abs(t - 0.5) * 1.5);
       
       ctx.beginPath();
       ctx.arc(x, y, size, 0, Math.PI * 2);
