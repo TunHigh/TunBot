@@ -4,16 +4,6 @@ import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { getDiceRenderer } from '../../utils/diceRenderer.js';
 
-// Unicode dice faces - Discord renders these as actual dice images
-const DICE_EMOJIS = {
-  1: '⚀',
-  2: '⚁',
-  3: '⚂',
-  4: '⚃',
-  5: '⚄',
-  6: '⚅',
-};
-
 // Initialize dice renderer (singleton)
 const diceRenderer = getDiceRenderer({
   diceSize: 100,
@@ -45,7 +35,6 @@ export default {
     const resultColor = isTai ? 'success' : 'error';
 
     // Generate procedural 3D dice rolling animation GIF
-    // Using a seed based on the results for consistent animation
     const seed = Date.now();
     const gifBuffer = await diceRenderer.renderRollAnimation(diceResults, seed);
     
@@ -65,35 +54,37 @@ export default {
     // Let the animation play for ~1.5 seconds (25 frames @ 25fps = 1s, plus buffer)
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Build dice emoji display (3 dice side by side)
-    const diceEmojiDisplay = diceResults.map(d => DICE_EMOJIS[d]).join('  ');
+    // Generate final frame as PNG (static image of settled dice)
+    const finalFrameBuffer = await diceRenderer.renderFinalFrame(diceResults);
+    const finalAttachment = new AttachmentBuilder(finalFrameBuffer, { name: 'dice-final.png' });
 
-    // Final result embed with actual dice emojis
+    // Final result embed with rendered dice image
     const resultEmbed = createEmbed({
       title: '🎲 Kết quả Tung Xúc Xắc (3D Procedural)',
-      description: `**${diceEmojiDisplay}**\n\n**Tổng điểm: ${total}**\n${resultText}`,
+      description: `**Tổng điểm: ${total}**\n${resultText}`,
       color: resultColor,
+      image: 'attachment://dice-final.png',
       fields: [
         {
           name: '🎯 Xúc xắc 1',
-          value: `${DICE_EMOJIS[diceResults[0]]} **${diceResults[0]}**`,
+          value: `**${diceResults[0]}**`,
           inline: true,
         },
         {
           name: '🎯 Xúc xắc 2',
-          value: `${DICE_EMOJIS[diceResults[1]]} **${diceResults[1]}**`,
+          value: `**${diceResults[1]}**`,
           inline: true,
         },
         {
           name: '🎯 Xúc xắc 3',
-          value: `${DICE_EMOJIS[diceResults[2]]} **${diceResults[2]}**`,
+          value: `**${diceResults[2]}**`,
           inline: true,
         },
       ],
       footer: { text: 'Tài: 11-18 | Xỉu: 3-10 | Rendered with @napi-rs/canvas' },
     });
 
-    await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed], files: [] });
+    await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed], files: [finalAttachment] });
     logger.debug(`Roll command executed by user ${interaction.user.id} - Result: ${diceResults.join(', ')} = ${total} (${isTai ? 'Tài' : 'Xỉu'}) in guild ${interaction.guildId}`);
   },
 };
