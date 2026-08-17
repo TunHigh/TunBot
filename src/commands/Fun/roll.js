@@ -3,48 +3,73 @@ import { successEmbed, createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 
-// Dice face emojis
-const DICE_FACES = {
-  1: '⚀',
-  2: '⚁',
-  3: '⚂',
-  4: '⚃',
-  5: '⚄',
-  6: '⚅',
+// GIF URLs for dice animations and faces
+const DICE_GIFS = {
+  // Rolling animation GIF
+  rolling: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+  // Dice face GIFs (1-6)
+  faces: {
+    1: 'https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif',
+    2: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+    3: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+    4: 'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
+    5: 'https://media.giphy.com/media/26BROrSHlmyzzHf3i/giphy.gif',
+    6: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+  },
+  // Alternative dice face GIFs (more distinct)
+  facesAlt: {
+    1: 'https://i.gifer.com/7QXh.gif',
+    2: 'https://i.gifer.com/7QXi.gif',
+    3: 'https://i.gifer.com/7QXj.gif',
+    4: 'https://i.gifer.com/7QXk.gif',
+    5: 'https://i.gifer.com/7QXl.gif',
+    6: 'https://i.gifer.com/7QXm.gif',
+  },
 };
 
-// Rolling animation frames
-const ROLLING_FRAMES = ['🎲', '🎯', '🎲', '🎯', '🎲'];
+// Use alternative set which has more distinct faces
+const DICE_FACE_GIFS = DICE_GIFS.facesAlt;
+const ROLLING_GIF = DICE_GIFS.rolling;
 
 export default {
   data: new SlashCommandBuilder()
     .setName('roll')
-    .setDescription('Tung 3 xúc xắc.'),
+    .setDescription('Tung 3 xúc xắc kiểu Tài Xỉu (3d6)'),
 
   category: 'Fun',
 
   async execute(interaction, config, client) {
     await InteractionHelper.safeDefer(interaction);
 
-    // Initial rolling message
+    // Initial rolling message with animated GIF
     const rollingEmbed = createEmbed({
       title: '🎲 Đang lắc xúc xắc...',
       description: '🎲 🎲 🎲',
       color: 'primary',
+      image: ROLLING_GIF,
     });
 
     await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed] });
 
-    // Animation: Show rolling frames
-    for (let i = 0; i < ROLLING_FRAMES.length; i++) {
-      const frame = ROLLING_FRAMES[i];
+    // Animation: Show rolling frames with different GIFs
+    const rollingFrames = [
+      'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+      'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
+      'https://media.giphy.com/media/26BROrSHlmyzzHf3i/giphy.gif',
+      'https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif',
+      'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+    ];
+
+    for (let i = 0; i < rollingFrames.length; i++) {
+      const frameGif = rollingFrames[i];
       const animEmbed = createEmbed({
         title: '🎲 Đang lắc xúc xắc...',
-        description: `${frame} ${frame} ${frame}`,
+        description: '🎲 🎲 🎲',
         color: 'primary',
+        image: frameGif,
       });
       await InteractionHelper.safeEditReply(interaction, { embeds: [animEmbed] });
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 400));
     }
 
     // Roll 3 dice (1-6 each)
@@ -62,27 +87,30 @@ export default {
     const resultText = isTai ? '🟢 **TÀI**' : '🔴 **XỈU**';
     const resultColor = isTai ? 'success' : 'error';
 
-    // Final result embed
-    const diceEmojis = diceResults.map(d => DICE_FACES[d]).join(' ');
-    
+    // Build dice GIF markdown for description (3 dice side by side)
+    const diceGifMarkdown = diceResults
+      .map(d => `![Dice ${d}](${DICE_FACE_GIFS[d]})`)
+      .join(' ');
+
+    // Final result embed with dice GIFs
     const resultEmbed = createEmbed({
       title: '🎲 Kết quả Tung Xúc Xắc',
-      description: `**${diceEmojis}**\n\n**Tổng điểm: ${total}**\n${resultText}`,
+      description: `**${diceGifMarkdown}**\n\n**Tổng điểm: ${total}**\n${resultText}`,
       color: resultColor,
       fields: [
         {
           name: '🎯 Xúc xắc 1',
-          value: `${DICE_FACES[diceResults[0]]} (${diceResults[0]})`,
+          value: `![Dice ${diceResults[0]}](${DICE_FACE_GIFS[diceResults[0]]}) (${diceResults[0]})`,
           inline: true,
         },
         {
           name: '🎯 Xúc xắc 2',
-          value: `${DICE_FACES[diceResults[1]]} (${diceResults[1]})`,
+          value: `![Dice ${diceResults[1]}](${DICE_FACE_GIFS[diceResults[1]]}) (${diceResults[1]})`,
           inline: true,
         },
         {
           name: '🎯 Xúc xắc 3',
-          value: `${DICE_FACES[diceResults[2]]} (${diceResults[2]})`,
+          value: `![Dice ${diceResults[2]}](${DICE_FACE_GIFS[diceResults[2]]}) (${diceResults[2]})`,
           inline: true,
         },
       ],
