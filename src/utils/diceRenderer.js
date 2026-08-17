@@ -11,8 +11,8 @@ export class DiceRenderer {
     this.spacing = options.spacing || 20;
     this.canvasWidth = this.diceSize * 3 + this.spacing * 2 + 40;
     this.canvasHeight = this.diceSize + 60;
-    this.frameCount = options.frameCount || 30;
-    this.fps = options.fps || 30;
+    this.frameCount = options.frameCount || 45;
+    this.fps = options.fps || 25;
 
     // Pre-computed face dot patterns for dice 1-6
     this.facePatterns = this.generateFacePatterns();

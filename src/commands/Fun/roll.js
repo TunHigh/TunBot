@@ -8,7 +8,7 @@ import { getDiceRenderer } from '../../utils/diceRenderer.js';
 const diceRenderer = getDiceRenderer({
   diceSize: 100,
   spacing: 15,
-  frameCount: 25,
+  frameCount: 45,
   fps: 25,
 });
 
@@ -51,8 +51,8 @@ export default {
 
     await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: [attachment] });
 
-    // Let the animation play for ~1.5 seconds (25 frames @ 25fps = 1s, plus buffer)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Let the animation play for ~2 seconds (45 frames @ 25fps = 1.8s, plus buffer)
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Generate final frame as PNG (static image of settled dice)
     const finalFrameBuffer = await diceRenderer.renderFinalFrame(diceResults);
