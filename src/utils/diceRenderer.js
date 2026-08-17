@@ -2,37 +2,37 @@ import { Canvas } from '@napi-rs/canvas';
 import GIFEncoder from 'gif-encoder-2';
 
 /**
- * Premium Tài Xỉu Dice Renderer - True 3D Perspective
- * - Camera projection with focal length
- * - Face culling & painter's algorithm
- * - Hand-drawn organic pips (bezier curves)
- * - Dynamic face shading
+ * Optimized Tài Xỉu Dice Renderer - True 3D Perspective
+ * - Smaller canvas (720x400) for speed
+ * - 20 FPS, shorter duration
+ * - Darker dice faces with strong contrast
+ * - Hand-drawn organic pips
  * - Physics-based tumble & settle
  * - Final frame hold
  */
 
 const DEFAULTS = {
-  width: 900,
-  height: 500,
-  fps: 30,
-  duration: 1800,      // ms rolling
-  resultPause: 500,    // ms hold final frame
-  diceSize: 145,       // logical size (half-edge in 3D units)
-  gap: 45,             // gap between dice centers
+  width: 720,
+  height: 400,
+  fps: 20,
+  duration: 1200,      // ms rolling (shorter = faster)
+  resultPause: 400,    // ms hold final frame
+  diceSize: 110,       // logical size (half-edge in 3D units)
+  gap: 35,             // gap between dice centers
   background: '#111318',
   title: 'TÀI XỈU',
   showResultText: true,
   // 3D camera
-  cameraZ: 420,
-  focal: 300,
-  // Colors
-  faceLight: '#ffffff',
-  faceMid: '#f5f6f8',
-  faceDark: '#dfe3ea',
-  faceShadow: '#e8ebef',
-  faceShadowDark: '#c4cad3',
-  outlineColor: '#aeb5bf',
-  pipColor: '#151515',
+  cameraZ: 350,
+  focal: 250,
+  // Colors - DARKER faces for contrast on dark bg
+  faceLight: '#e8eaeF',      // bright but not white
+  faceMid: '#c8ccd4',
+  faceDark: '#a8adb8',
+  faceShadow: '#888c96',
+  faceShadowDark: '#686c76',
+  outlineColor: '#5a5e66',   // darker outline
+  pipColor: '#0d0d0d',       // very dark pips
   pipHighlight: '#ffffff',
   shadowColor: '#000000',
 };
@@ -201,11 +201,11 @@ function drawPip(ctx, x, y, radius, angle = 0) {
   );
   ctx.closePath();
 
-  ctx.fillStyle = '#151515';
+  ctx.fillStyle = '#0d0d0d';
   ctx.fill();
 
   // Tiny soft highlight
-  ctx.globalAlpha = 0.13;
+  ctx.globalAlpha = 0.15;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
   ctx.ellipse(
@@ -222,7 +222,6 @@ function drawPip(ctx, x, y, radius, angle = 0) {
 
 function drawFacePips(ctx, face, number, rx, ry, rz, cameraZ, focal, canvasW, canvasH) {
   const positions = pipPositions[number];
-  const S = face.indices ? 1 : 1; // placeholder, we use face geometry
 
   // Face center slightly in front of surface
   const center = {
@@ -248,7 +247,7 @@ function drawFacePips(ctx, face, number, rx, ry, rz, cameraZ, focal, canvasW, ca
     const projX = canvasW / 2 + p.x * scale;
     const projY = canvasH / 2 + p.y * scale;
 
-    const pipRadius = 5.2 * scale;
+    const pipRadius = 4.8 * scale;
 
     // Subtle wobble based on position
     const wobble = Math.sin(p.x * 0.2 + p.y * 0.13) * 0.18;
@@ -268,209 +267,20 @@ function faceGradient(ctx, points, visibility, config) {
   const g = ctx.createLinearGradient(minX, minY, maxX, maxY);
   const light = clamp(visibility, 0, 1);
 
+  // Much darker, more contrasty colors
   if (light > 0.7) {
     g.addColorStop(0, config.faceLight);
-    g.addColorStop(0.55, config.faceMid);
+    g.addColorStop(0.5, config.faceMid);
     g.addColorStop(1, config.faceDark);
-  } else if (light > 0.2) {
+  } else if (light > 0.35) {
     g.addColorStop(0, config.faceMid);
-    g.addColorStop(0.55, '#e8ebf0');
-    g.addColorStop(1, '#cbd1db');
+    g.addColorStop(0.5, config.faceDark);
+    g.addColorStop(1, config.faceShadow);
   } else {
     g.addColorStop(0, config.faceShadow);
     g.addColorStop(1, config.faceShadowDark);
   }
   return g;
-}
-
-// ── Render a single die at world position (offsetX, offsetY) ──
-
-function renderDie(ctx, rx, ry, rz, diceValues, faceVisibility, config, offsetX, offsetY) {
-  const { vertices, faces } = createCubeGeometry(config.diceSize);
-  const camera = { x: 0, y: 0, z: config.cameraZ };
-  const canvasW = config.width;
-  const canvasH = config.height;
-
-  // Transform vertices
-  const transformed = vertices.map(v => rotate(v, rx, ry, rz));
-
-  // Determine visible faces with depth sorting
-  const visibleFaces = [];
-
-  for (const face of faces) {
-    const a = transformed[face.indices[0]];
-    const b = transformed[face.indices[1]];
-    const c = transformed[face.indices[2]];
-
-    // Face normal in world space
-    const normal = normalize(cross(sub(b, a), sub(c, a)));
-
-    // Face center
-    const center = face.indices
-      .map(i => transformed[i])
-      .reduce(
-        (acc, p) => ({ x: acc.x + p.x / 4, y: acc.y + p.y / 4, z: acc.z + p.z / 4 }),
-        { x: 0, y: 0, z: 0 }
-      );
-
-    // Vector to camera
-    const toCamera = normalize({
-      x: camera.x - center.x,
-      y: camera.y - center.y,
-      z: camera.z - center.z,
-    });
-
-    const visibility = dot(normal, toCamera);
-
-    if (visibility <= 0) continue;
-
-    // Project face vertices
-    const points = face.indices.map(i => {
-      const v = transformed[i];
-      const z = config.cameraZ - v.z;
-      const scale = config.focal / z;
-      return {
-        x: canvasW / 2 + v.x * scale + offsetX,
-        y: canvasH / 2 + v.y * scale + offsetY,
-        scale,
-      };
-    });
-
-    visibleFaces.push({
-      face,
-      points,
-      center,
-      visibility,
-      depth: center.z,
-    });
-  }
-
-  // Painter's algorithm: far to near
-  visibleFaces.sort((a, b) => a.depth - b.depth);
-
-  // Render faces
-  for (const item of visibleFaces) {
-    const { face, points, visibility } = item;
-
-    ctx.save();
-    ctx.beginPath();
-
-    // Rounded polygon edges via quadratic curves
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const cur = points[i];
-      const mx = (prev.x + cur.x) / 2;
-      const my = (prev.y + cur.y) / 2;
-      ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
-    }
-    // Close with curve
-    const last = points[points.length - 1];
-    const first = points[0];
-    const mx = (last.x + first.x) / 2;
-    const my = (last.y + first.y) / 2;
-    ctx.quadraticCurveTo(last.x, last.y, mx, my);
-    ctx.quadraticCurveTo(first.x, first.y, first.x, first.y);
-    ctx.closePath();
-
-    // Face shading
-    ctx.fillStyle = faceGradient(ctx, points, visibility, config);
-    ctx.fill();
-
-    // Thin outline
-    ctx.strokeStyle = config.outlineColor;
-    ctx.lineWidth = 1.15;
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-
-    ctx.restore();
-
-    // Draw pips on this face
-    // Map face name to dice value index
-    let valueIndex = -1;
-    switch (face.name) {
-      case 'front': valueIndex = 0; break;
-      case 'right': valueIndex = 1; break;
-      case 'top': valueIndex = 2; break;
-      case 'back': valueIndex = 0; break;  // hidden usually
-      case 'left': valueIndex = 1; break;  // hidden usually
-      case 'bottom': valueIndex = 2; break; // hidden usually
-    }
-
-    // For visible faces, we need to know which die value to show
-    // We'll pass the dice values array and determine based on face
-    // Actually, each die has 3 visible faces typically: front, right, top
-    // We'll map: front->dice[0], right->dice[1], top->dice[2] for the first die
-    // But we need per-die values. Let's handle this differently.
-  }
-}
-
-// ── Render all 3 dice ──
-
-function renderDice(ctx, diceStates, diceValues, config) {
-  const canvasW = config.width;
-  const canvasH = config.height;
-
-  // Clear
-  ctx.clearRect(0, 0, canvasW, canvasH);
-  ctx.fillStyle = config.background;
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // Central glow
-  const glow = ctx.createRadialGradient(
-    canvasW / 2, canvasH * 0.47, 30,
-    canvasW / 2, canvasH * 0.47, canvasW * 0.55
-  );
-  glow.addColorStop(0, 'rgba(255,255,255,0.075)');
-  glow.addColorStop(0.5, 'rgba(255,255,255,0.025)');
-  glow.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // Floor glow
-  const floor = ctx.createRadialGradient(
-    canvasW / 2, canvasH * 0.83, 20,
-    canvasW / 2, canvasH * 0.83, 360
-  );
-  floor.addColorStop(0, 'rgba(255,255,255,0.035)');
-  floor.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = floor;
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // Title
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 31px Arial';
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.fillText(config.title, canvasW / 2, 60);
-  const lineWidth = 90;
-  const grad = ctx.createLinearGradient(
-    canvasW / 2 - lineWidth, 0,
-    canvasW / 2 + lineWidth, 0
-  );
-  grad.addColorStop(0, 'rgba(255,255,255,0)');
-  grad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(canvasW / 2 - lineWidth, 76, lineWidth * 2, 1);
-  ctx.restore();
-
-  // Positions for 3 dice
-  const totalWidth = config.diceSize * 3 + config.gap * 2;
-  const startX = (canvasW - totalWidth) / 2;
-  const baseY = 185 - canvasH / 2; // offset from center
-
-  // Render each die
-  for (let i = 0; i < 3; i++) {
-    const state = diceStates[i];
-    const offsetX = startX + i * (config.diceSize + config.gap) - canvasW / 2;
-    const offsetY = baseY - state.bounce - state.finalBounce;
-
-    renderSingleDie(ctx, state, diceValues[i], config, offsetX, offsetY);
-  }
-
-  // Result text
-  drawResultText(ctx, diceValues, config);
 }
 
 // ── Render a single die with all its faces ──
@@ -564,22 +374,16 @@ function renderSingleDie(ctx, state, value, config, offsetX, offsetY) {
     ctx.fillStyle = faceGradient(ctx, points, visibility, config);
     ctx.fill();
 
+    // Stronger outline
     ctx.strokeStyle = config.outlineColor;
-    ctx.lineWidth = 1.15;
+    ctx.lineWidth = 1.5;
     ctx.lineJoin = 'round';
     ctx.stroke();
 
     ctx.restore();
 
     // Draw pips on this face
-    // Map face to value: we show the die's value on front, right, top
-    // For a standard die, opposite faces sum to 7
-    // But for Tài Xỉu we just show the rolled value on visible faces
-    let faceValue = value;
-    // Could show different faces, but for simplicity show same value
-    // on all visible faces (or map properly)
-    
-    drawFacePips(ctx, face, faceValue, state.rx, state.ry, state.rz, 
+    drawFacePips(ctx, face, value, state.rx, state.ry, state.rz, 
                  config.cameraZ, config.focal, canvasW, canvasH);
   }
 }
@@ -598,19 +402,87 @@ function drawDieShadow(ctx, state, config, offsetX, offsetY) {
   const shadowY = canvasH / 2 + bottomCenter.y * scale + offsetY + config.diceSize * 0.6 * scale;
 
   ctx.save();
-  ctx.globalAlpha = 0.35 * state.shadowScale;
-  ctx.filter = 'blur(12px)';
+  ctx.globalAlpha = 0.3 * state.shadowScale;
+  ctx.filter = 'blur(10px)';
   ctx.beginPath();
   ctx.ellipse(
     shadowX,
     shadowY,
-    config.diceSize * 0.45 * scale * state.shadowWidth,
-    config.diceSize * 0.1 * scale,
+    config.diceSize * 0.42 * scale * state.shadowWidth,
+    config.diceSize * 0.09 * scale,
     0, 0, Math.PI * 2
   );
   ctx.fillStyle = config.shadowColor;
   ctx.fill();
   ctx.restore();
+}
+
+// ── Render all 3 dice ──
+
+function renderDice(ctx, diceStates, diceValues, config) {
+  const canvasW = config.width;
+  const canvasH = config.height;
+
+  // Clear
+  ctx.clearRect(0, 0, canvasW, canvasH);
+  ctx.fillStyle = config.background;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Central glow (subtle)
+  const glow = ctx.createRadialGradient(
+    canvasW / 2, canvasH * 0.47, 20,
+    canvasW / 2, canvasH * 0.47, canvasW * 0.5
+  );
+  glow.addColorStop(0, 'rgba(255,255,255,0.06)');
+  glow.addColorStop(0.5, 'rgba(255,255,255,0.02)');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Floor glow
+  const floor = ctx.createRadialGradient(
+    canvasW / 2, canvasH * 0.85, 15,
+    canvasW / 2, canvasH * 0.85, 300
+  );
+  floor.addColorStop(0, 'rgba(255,255,255,0.03)');
+  floor.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = floor;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Title
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 26px Arial';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillText(config.title, canvasW / 2, 50);
+  const lineWidth = 75;
+  const grad = ctx.createLinearGradient(
+    canvasW / 2 - lineWidth, 0,
+    canvasW / 2 + lineWidth, 0
+  );
+  grad.addColorStop(0, 'rgba(255,255,255,0)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(canvasW / 2 - lineWidth, 64, lineWidth * 2, 1);
+  ctx.restore();
+
+  // Positions for 3 dice
+  const totalWidth = config.diceSize * 3 + config.gap * 2;
+  const startX = (canvasW - totalWidth) / 2;
+  const baseY = 150 - canvasH / 2; // offset from center
+
+  // Render each die
+  for (let i = 0; i < 3; i++) {
+    const state = diceStates[i];
+    const offsetX = startX + i * (config.diceSize + config.gap) - canvasW / 2;
+    const offsetY = baseY - state.bounce - state.finalBounce;
+
+    renderSingleDie(ctx, state, diceValues[i], config, offsetX, offsetY);
+  }
+
+  // Result text
+  drawResultText(ctx, diceValues, config);
 }
 
 // ── Result Text ──
@@ -620,9 +492,9 @@ function drawResultText(ctx, diceValues, config) {
 
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = '600 20px Arial';
-  ctx.fillStyle = 'rgba(255,255,255,0.48)';
-  ctx.fillText('ĐANG LẮC...', config.width / 2, 450);
+  ctx.font = '600 17px Arial';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('ĐANG LẮC...', config.width / 2, 360);
   ctx.restore();
 }
 
@@ -634,11 +506,11 @@ function drawFinalResultText(ctx, diceValues, config) {
 
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = 'bold 27px Arial';
+  ctx.font = 'bold 23px Arial';
   ctx.fillStyle = '#ffffff';
   ctx.fillText(
     `${diceValues[0]}  •  ${diceValues[1]}  •  ${diceValues[2]}    =    ${total}    →    ${type}`,
-    config.width / 2, 450
+    config.width / 2, 360
   );
   ctx.restore();
 }
@@ -667,7 +539,7 @@ export class DiceRenderer {
     const encoder = new GIFEncoder(this.config.width, this.config.height);
     encoder.setRepeat(0);
     encoder.setDelay(Math.round(1000 / this.config.fps));
-    encoder.setQuality(6);
+    encoder.setQuality(10); // Lower quality = faster encoding
     encoder.start();
 
     const canvas = new Canvas(this.config.width, this.config.height);
@@ -681,9 +553,9 @@ export class DiceRenderer {
         ry: Math.random() * Math.PI * 2,
         rz: Math.random() * Math.PI * 2,
         // Spin speeds (radians per frame at full speed)
-        spinX: (7 + Math.random() * 5) * Math.PI / 30,
-        spinY: (8 + Math.random() * 6) * Math.PI / 30,
-        spinZ: (4 + Math.random() * 4) * Math.PI / 30,
+        spinX: (7 + Math.random() * 5) * Math.PI / 20,
+        spinY: (8 + Math.random() * 6) * Math.PI / 20,
+        spinZ: (4 + Math.random() * 4) * Math.PI / 20,
         // Bounce
         bouncePhase: Math.random() * Math.PI * 2,
         bounce: 0,
@@ -702,8 +574,8 @@ export class DiceRenderer {
     for (let frame = 0; frame < this.frameCount; frame++) {
       const rawProgress = frame / Math.max(1, this.frameCount - 1);
 
-      const rollProgress = clamp(rawProgress / 0.72, 0, 1);
-      const settleProgress = clamp((rawProgress - 0.72) / 0.28, 0, 1);
+      const rollProgress = clamp(rawProgress / 0.7, 0, 1);
+      const settleProgress = clamp((rawProgress - 0.7) / 0.3, 0, 1);
 
       const rollingEase = easeOutCubic(rollProgress);
       const settleEase = easeOutBack(settleProgress);
@@ -713,20 +585,20 @@ export class DiceRenderer {
         const roll = 1 - rollingEase;
 
         // Spin during roll phase
-        state.rx = lerp(state.rx + roll * state.spinX * 30, state.finalRx, settleEase);
-        state.ry = lerp(state.ry + roll * state.spinY * 30, state.finalRy, settleEase);
-        state.rz = lerp(state.rz + roll * state.spinZ * 30, state.finalRz, settleEase);
+        state.rx = lerp(state.rx + roll * state.spinX * 20, state.finalRx, settleEase);
+        state.ry = lerp(state.ry + roll * state.spinY * 20, state.finalRy, settleEase);
+        state.rz = lerp(state.rz + roll * state.spinZ * 20, state.finalRz, settleEase);
 
         // Bounce
-        const bounceWave = Math.abs(Math.sin(frame * 0.68 + state.bouncePhase));
-        state.bounce = bounceWave * 42 * (1 - rollingEase) * (1 - settleProgress);
+        const bounceWave = Math.abs(Math.sin(frame * 0.75 + state.bouncePhase));
+        state.bounce = bounceWave * 35 * (1 - rollingEase) * (1 - settleProgress);
 
         // Final settle bounce
-        state.finalBounce = Math.sin(settleProgress * Math.PI * 3) * 8 * (1 - settleProgress);
+        state.finalBounce = Math.sin(settleProgress * Math.PI * 3) * 6 * (1 - settleProgress);
 
         // Shadow
-        state.shadowScale = 0.72 + (1 - state.bounce / 42) * 0.28;
-        state.shadowWidth = 1 + state.bounce / 80;
+        state.shadowScale = 0.75 + (1 - state.bounce / 35) * 0.25;
+        state.shadowWidth = 1 + state.bounce / 70;
       });
 
       renderDice(ctx, diceStates, diceResults, this.config);
@@ -753,20 +625,20 @@ export class DiceRenderer {
 
       // Glows
       const glow = ctx.createRadialGradient(
-        this.config.width / 2, this.config.height * 0.47, 30,
-        this.config.width / 2, this.config.height * 0.47, this.config.width * 0.55
+        this.config.width / 2, this.config.height * 0.47, 20,
+        this.config.width / 2, this.config.height * 0.47, this.config.width * 0.5
       );
-      glow.addColorStop(0, 'rgba(255,255,255,0.075)');
-      glow.addColorStop(0.5, 'rgba(255,255,255,0.025)');
+      glow.addColorStop(0, 'rgba(255,255,255,0.06)');
+      glow.addColorStop(0.5, 'rgba(255,255,255,0.02)');
       glow.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, this.config.width, this.config.height);
 
       const floor = ctx.createRadialGradient(
-        this.config.width / 2, this.config.height * 0.83, 20,
-        this.config.width / 2, this.config.height * 0.83, 360
+        this.config.width / 2, this.config.height * 0.85, 15,
+        this.config.width / 2, this.config.height * 0.85, 300
       );
-      floor.addColorStop(0, 'rgba(255,255,255,0.035)');
+      floor.addColorStop(0, 'rgba(255,255,255,0.03)');
       floor.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = floor;
       ctx.fillRect(0, 0, this.config.width, this.config.height);
@@ -774,25 +646,25 @@ export class DiceRenderer {
       // Title
       ctx.save();
       ctx.textAlign = 'center';
-      ctx.font = 'bold 31px Arial';
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
-      ctx.fillText(this.config.title, this.config.width / 2, 60);
-      const lineWidth = 90;
+      ctx.font = 'bold 26px Arial';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillText(this.config.title, this.config.width / 2, 50);
+      const lineWidth = 75;
       const grad = ctx.createLinearGradient(
         this.config.width / 2 - lineWidth, 0,
         this.config.width / 2 + lineWidth, 0
       );
       grad.addColorStop(0, 'rgba(255,255,255,0)');
-      grad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+      grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
       grad.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = grad;
-      ctx.fillRect(this.config.width / 2 - lineWidth, 76, lineWidth * 2, 1);
+      ctx.fillRect(this.config.width / 2 - lineWidth, 64, lineWidth * 2, 1);
       ctx.restore();
 
       // Render dice at final positions
       const totalWidth = this.config.diceSize * 3 + this.config.gap * 2;
       const startX = (this.config.width - totalWidth) / 2;
-      const baseY = 185 - this.config.height / 2;
+      const baseY = 150 - this.config.height / 2;
 
       for (let index = 0; index < 3; index++) {
         const offsetX = startX + index * (this.config.diceSize + this.config.gap) - this.config.width / 2;
@@ -818,20 +690,20 @@ export class DiceRenderer {
 
     // Glows
     const glow = ctx.createRadialGradient(
-      this.config.width / 2, this.config.height * 0.47, 30,
-      this.config.width / 2, this.config.height * 0.47, this.config.width * 0.55
+      this.config.width / 2, this.config.height * 0.47, 20,
+      this.config.width / 2, this.config.height * 0.47, this.config.width * 0.5
     );
-    glow.addColorStop(0, 'rgba(255,255,255,0.075)');
-    glow.addColorStop(0.5, 'rgba(255,255,255,0.025)');
+    glow.addColorStop(0, 'rgba(255,255,255,0.06)');
+    glow.addColorStop(0.5, 'rgba(255,255,255,0.02)');
     glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, this.config.width, this.config.height);
 
     const floor = ctx.createRadialGradient(
-      this.config.width / 2, this.config.height * 0.83, 20,
-      this.config.width / 2, this.config.height * 0.83, 360
+      this.config.width / 2, this.config.height * 0.85, 15,
+      this.config.width / 2, this.config.height * 0.85, 300
     );
-    floor.addColorStop(0, 'rgba(255,255,255,0.035)');
+    floor.addColorStop(0, 'rgba(255,255,255,0.03)');
     floor.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = floor;
     ctx.fillRect(0, 0, this.config.width, this.config.height);
@@ -839,19 +711,19 @@ export class DiceRenderer {
     // Title
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = 'bold 31px Arial';
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.fillText(this.config.title, this.config.width / 2, 60);
-    const lineWidth = 90;
+    ctx.font = 'bold 26px Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(this.config.title, this.config.width / 2, 50);
+    const lineWidth = 75;
     const grad = ctx.createLinearGradient(
       this.config.width / 2 - lineWidth, 0,
       this.config.width / 2 + lineWidth, 0
     );
     grad.addColorStop(0, 'rgba(255,255,255,0)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(this.config.width / 2 - lineWidth, 76, lineWidth * 2, 1);
+    ctx.fillRect(this.config.width / 2 - lineWidth, 64, lineWidth * 2, 1);
     ctx.restore();
 
     // Final dice states
@@ -867,7 +739,7 @@ export class DiceRenderer {
 
     const totalWidth = this.config.diceSize * 3 + this.config.gap * 2;
     const startX = (this.config.width - totalWidth) / 2;
-    const baseY = 185 - this.config.height / 2;
+    const baseY = 150 - this.config.height / 2;
 
     for (let index = 0; index < 3; index++) {
       const offsetX = startX + index * (this.config.diceSize + this.config.gap) - this.config.width / 2;

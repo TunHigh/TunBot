@@ -4,17 +4,15 @@ import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { getDiceRenderer } from '../../utils/diceRenderer.js';
 
-// Initialize dice renderer (singleton)
+// Initialize dice renderer (singleton) - Optimized for speed & visibility
 const diceRenderer = getDiceRenderer({
-  width: 900,
-  height: 500,
-  fps: 30,
-  duration: 1800,      // ms rolling
-  resultPause: 500,    // ms hold final frame
-  diceSize: 145,
-  gap: 45,
-  radius: 25,          // corner radius
-  depth: 27,           // fake 3D depth
+  width: 720,
+  height: 400,
+  fps: 20,
+  duration: 1200,      // ms rolling (shorter = faster)
+  resultPause: 400,    // ms hold final frame
+  diceSize: 110,
+  gap: 35,
   background: '#111318',
   title: 'TÀI XỈU',
   showResultText: true,
@@ -59,8 +57,8 @@ export default {
 
     await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: [attachment] });
 
-    // Let the animation play for ~2.5 seconds (1800ms rolling + 500ms pause = 2300ms, plus buffer)
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    // Let the animation play (1200ms rolling + 400ms pause = 1600ms, plus buffer)
+    await new Promise(resolve => setTimeout(resolve, 1800));
 
     // Generate final frame as PNG (static image of settled dice)
     const finalFrameBuffer = await diceRenderer.renderFinalFrame(diceResults);
