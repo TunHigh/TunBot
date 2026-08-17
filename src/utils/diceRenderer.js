@@ -2,11 +2,12 @@ import { Canvas } from '@napi-rs/canvas';
 import GIFEncoder from 'gif-encoder-2';
 
 /**
- * Premium Tài Xỉu Dice Renderer
- * - Rounded dice with fake 3D perspective
- * - Inset marks with shadow/highlight
- * - Motion blur ghost frames
- * - Physics-based bounce & settle
+ * Premium Tài Xỉu Dice Renderer - True 3D Perspective
+ * - Camera projection with focal length
+ * - Face culling & painter's algorithm
+ * - Hand-drawn organic pips (bezier curves)
+ * - Dynamic face shading
+ * - Physics-based tumble & settle
  * - Final frame hold
  */
 
@@ -16,29 +17,77 @@ const DEFAULTS = {
   fps: 30,
   duration: 1800,      // ms rolling
   resultPause: 500,    // ms hold final frame
-  diceSize: 145,
-  gap: 45,
-  radius: 25,          // corner radius
-  depth: 27,           // fake 3D depth
+  diceSize: 145,       // logical size (half-edge in 3D units)
+  gap: 45,             // gap between dice centers
   background: '#111318',
-  diceTop: '#ffffff',
-  diceMiddle: '#e8edf2',
-  diceBottom: '#b9c2cb',
-  markColor: '#25292e',
-  shadowOpacity: 0.45,
-  motionBlur: true,
   title: 'TÀI XỈU',
   showResultText: true,
+  // 3D camera
+  cameraZ: 420,
+  focal: 300,
+  // Colors
+  faceLight: '#ffffff',
+  faceMid: '#f5f6f8',
+  faceDark: '#dfe3ea',
+  faceShadow: '#e8ebef',
+  faceShadowDark: '#c4cad3',
+  outlineColor: '#aeb5bf',
+  pipColor: '#151515',
+  pipHighlight: '#ffffff',
+  shadowColor: '#000000',
 };
 
-// ── Math Helpers ──
+// ── 3D Math ──
 
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
+function rotX(p, a) {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c };
+}
+
+function rotY(p, a) {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c };
+}
+
+function rotZ(p, a) {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x: p.x * c - p.y * s, y: p.x * s + p.y * c, z: p.z };
+}
+
+function rotate(p, rx, ry, rz) {
+  p = rotX(p, rx);
+  p = rotY(p, ry);
+  p = rotZ(p, rz);
+  return p;
+}
+
+function dot(a, b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+function cross(a, b) {
+  return {
+    x: a.y * b.z - a.z * b.y,
+    y: a.z * b.x - a.x * b.z,
+    z: a.x * b.y - a.y * b.x,
+  };
+}
+
+function sub(a, b) {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
+
+function normalize(v) {
+  const l = Math.sqrt(dot(v, v)) || 1;
+  return { x: v.x / l, y: v.y / l, z: v.z / l };
 }
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
+}
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
 }
 
 function easeOutCubic(t) {
@@ -51,420 +100,546 @@ function easeOutBack(t) {
   return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }
 
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+// ── Cube Geometry (unit cube, scaled by diceSize) ──
+
+function createCubeGeometry(size) {
+  const S = size / 2;
+  const vertices = [
+    { x: -S, y: -S, z: -S }, // 0
+    { x:  S, y: -S, z: -S }, // 1
+    { x:  S, y:  S, z: -S }, // 2
+    { x: -S, y:  S, z: -S }, // 3
+    { x: -S, y: -S, z:  S }, // 4
+    { x:  S, y: -S, z:  S }, // 5
+    { x:  S, y:  S, z:  S }, // 6
+    { x: -S, y:  S, z:  S }, // 7
+  ];
+
+  const faces = [
+    {
+      name: 'front',
+      indices: [4, 5, 6, 7],
+      normal: { x: 0, y: 0, z: 1 },
+      u: { x: 1, y: 0, z: 0 },
+      v: { x: 0, y: 1, z: 0 },
+    },
+    {
+      name: 'right',
+      indices: [1, 5, 6, 2],
+      normal: { x: 1, y: 0, z: 0 },
+      u: { x: 0, y: 0, z: -1 },
+      v: { x: 0, y: 1, z: 0 },
+    },
+    {
+      name: 'top',
+      indices: [0, 1, 5, 4],
+      normal: { x: 0, y: -1, z: 0 },
+      u: { x: 1, y: 0, z: 0 },
+      v: { x: 0, y: 0, z: 1 },
+    },
+    {
+      name: 'back',
+      indices: [0, 3, 2, 1],
+      normal: { x: 0, y: 0, z: -1 },
+      u: { x: -1, y: 0, z: 0 },
+      v: { x: 0, y: 1, z: 0 },
+    },
+    {
+      name: 'left',
+      indices: [0, 4, 7, 3],
+      normal: { x: -1, y: 0, z: 0 },
+      u: { x: 0, y: 0, z: 1 },
+      v: { x: 0, y: 1, z: 0 },
+    },
+    {
+      name: 'bottom',
+      indices: [3, 7, 6, 2],
+      normal: { x: 0, y: 1, z: 0 },
+      u: { x: 1, y: 0, z: 0 },
+      v: { x: 0, y: 0, z: -1 },
+    },
+  ];
+
+  return { vertices, faces };
 }
 
-// ── Rounded Rect Path ──
+// ── Pip Positions (normalized -0.5 to 0.5) ──
 
-function roundedRectPath(ctx, x, y, width, height, radius) {
-  radius = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-}
+const pipPositions = {
+  1: [[0, 0]],
+  2: [[-0.48, -0.48], [0.48, 0.48]],
+  3: [[-0.48, -0.48], [0, 0], [0.48, 0.48]],
+  4: [[-0.48, -0.48], [0.48, -0.48], [-0.48, 0.48], [0.48, 0.48]],
+  5: [[-0.48, -0.48], [0.48, -0.48], [0, 0], [-0.48, 0.48], [0.48, 0.48]],
+  6: [[-0.48, -0.5], [-0.48, 0], [-0.48, 0.5], [0.48, -0.5], [0.48, 0], [0.48, 0.5]],
+};
 
-// ── Dice Gradient ──
+// ── Hand-drawn Pip (organic oval via bezier) ──
 
-function createDiceGradient(ctx, x, y, width, height, config) {
-  const grad = ctx.createLinearGradient(x, y, x, y + height);
-  grad.addColorStop(0, config.diceTop);
-  grad.addColorStop(0.45, config.diceMiddle);
-  grad.addColorStop(1, config.diceBottom);
-  return grad;
-}
-
-// ── Face Mark Positions ──
-
-function getFaceMarks(value) {
-  const positions = {
-    1: [[0, 0]],
-    2: [[-0.28, -0.28], [0.28, 0.28]],
-    3: [[-0.28, -0.28], [0, 0], [0.28, 0.28]],
-    4: [[-0.28, -0.28], [0.28, -0.28], [-0.28, 0.28], [0.28, 0.28]],
-    5: [[-0.28, -0.28], [0.28, -0.28], [0, 0], [-0.28, 0.28], [0.28, 0.28]],
-    6: [[-0.28, -0.31], [0.28, -0.31], [-0.28, 0], [0.28, 0], [-0.28, 0.31], [0.28, 0.31]],
-  };
-  return positions[value] || positions[1];
-}
-
-// ── Draw Inset Mark (oval with inset shadow + highlight) ──
-
-function drawMark(ctx, cx, cy, size, angle = 0, scaleX = 1, scaleY = 1) {
+function drawPip(ctx, x, y, radius, angle = 0) {
   ctx.save();
-  ctx.translate(cx, cy);
+  ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.scale(scaleX, scaleY);
 
-  const width = size * 0.19;
-  const height = size * 0.095;
-
-  // Inset shadow
   ctx.beginPath();
-  ctx.roundRect(-width / 2 + 1.5, -height / 2 + 2, width, height, height / 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.24)';
-  ctx.fill();
-
-  // Dark inset body
-  ctx.beginPath();
-  ctx.roundRect(-width / 2, -height / 2, width, height, height / 2);
-  ctx.fillStyle = '#24282d';
-  ctx.fill();
-
-  // Tiny highlight
-  ctx.beginPath();
-  ctx.roundRect(-width * 0.35, -height * 0.28, width * 0.7, height * 0.18, height * 0.1);
-  ctx.fillStyle = 'rgba(255,255,255,0.10)';
-  ctx.fill();
-
-  ctx.restore();
-}
-
-// ── Draw Front Face (rounded, with perspective skew) ──
-
-function drawFrontFace(ctx, x, y, size, value, config, skewX, skewY, rotation) {
-  const p = size * 0.045;
-  const points = [
-    [x + p + skewX, y + p + skewY],
-    [x + size - p + skewX, y + p],
-    [x + size - p, y + size - p],
-    [x + p, y + size - p + skewY],
-  ];
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(points[0][0], points[0][1]);
-  ctx.lineTo(points[1][0], points[1][1]);
-  ctx.lineTo(points[2][0], points[2][1]);
-  ctx.lineTo(points[3][0], points[3][1]);
-  ctx.closePath();
-  ctx.clip();
-
-  // Face gradient
-  const grad = createDiceGradient(ctx, x, y, size, size, config);
-  ctx.fillStyle = grad;
-  ctx.fillRect(x - 20, y - 20, size + 40, size + 40);
-
-  // Subtle light
-  const light = ctx.createRadialGradient(
-    x + size * 0.25, y + size * 0.15, 1,
-    x + size * 0.25, y + size * 0.15, size * 0.8
+  // Organic hand-drawn oval shape
+  ctx.moveTo(-radius * 0.95, 0);
+  ctx.bezierCurveTo(
+    -radius * 0.85, -radius * 0.75,
+    -radius * 0.15, -radius,
+    radius * 0.55, -radius * 0.65
   );
-  light.addColorStop(0, 'rgba(255,255,255,0.60)');
-  light.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = light;
-  ctx.fillRect(x - 20, y - 20, size + 40, size + 40);
-
-  // Draw marks
-  const marks = getFaceMarks(value);
-  const centerX = x + size / 2;
-  const centerY = y + size / 2;
-
-  for (const [mx, my] of marks) {
-    const px = centerX + mx * size;
-    const py = centerY + my * size;
-
-    // Perspective distortion on marks
-    const sx = clamp(0.78 + Math.cos(rotation) * 0.22, 0.55, 1);
-    const sy = clamp(0.85 + Math.sin(rotation) * 0.15, 0.65, 1);
-
-    drawMark(ctx, px, py, size, rotation * 0.08, sx, sy);
-  }
-
-  ctx.restore();
-
-  // Front border
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(points[0][0], points[0][1]);
-  ctx.lineTo(points[1][0], points[1][1]);
-  ctx.lineTo(points[2][0], points[2][1]);
-  ctx.lineTo(points[3][0], points[3][1]);
+  ctx.bezierCurveTo(
+    radius * 1.0, -radius * 0.25,
+    radius * 0.9, radius * 0.5,
+    radius * 0.45, radius * 0.75
+  );
+  ctx.bezierCurveTo(
+    -radius * 0.1, radius * 1.0,
+    -radius * 0.85, radius * 0.7,
+    -radius * 0.95, 0
+  );
   ctx.closePath();
-  ctx.strokeStyle = 'rgba(80,88,98,0.45)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.restore();
-}
 
-// ── Draw Top Face (parallelogram) ──
+  ctx.fillStyle = '#151515';
+  ctx.fill();
 
-function drawTopFace(ctx, x, y, size, depth, rotation, config) {
-  const dx = Math.sin(rotation) * depth;
-  const dy = Math.cos(rotation) * depth;
-
-  const points = [
-    [x, y],
-    [x + size, y],
-    [x + size + dx, y - dy],
-    [x + dx, y - dy],
-  ];
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(points[0][0], points[0][1]);
-  for (let i = 1; i < points.length; i++) {
-    ctx.lineTo(points[i][0], points[i][1]);
-  }
-  ctx.closePath();
-  ctx.clip();
-
-  const grad = ctx.createLinearGradient(x, y - depth, x, y);
-  grad.addColorStop(0, '#ffffff');
-  grad.addColorStop(0.7, '#edf1f4');
-  grad.addColorStop(1, '#d1d8df');
-  ctx.fillStyle = grad;
-  ctx.fillRect(x - depth, y - depth, size + depth * 2, depth * 2);
-
-  // Highlight
-  const highlight = ctx.createLinearGradient(x, y - depth, x + size, y);
-  highlight.addColorStop(0, 'rgba(255,255,255,0.65)');
-  highlight.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = highlight;
-  ctx.fillRect(x - depth, y - depth, size + depth * 2, depth * 2);
-
-  ctx.restore();
-
-  // Top edge highlight
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(points[0][0], points[0][1]);
-  ctx.lineTo(points[3][0], points[3][1]);
-  ctx.lineTo(points[2][0], points[2][1]);
-  ctx.lineTo(points[1][0], points[1][1]);
-  ctx.closePath();
-  ctx.strokeStyle = 'rgba(255,255,255,0.65)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.restore();
-}
-
-// ── Draw Right Face ──
-
-function drawRightFace(ctx, x, y, size, depth, rotation, config) {
-  const dx = Math.sin(rotation) * depth;
-  const dy = Math.cos(rotation) * depth;
-
-  const points = [
-    [x + size, y],
-    [x + size + dx, y - dy],
-    [x + size + dx, y + size - dy],
-    [x + size, y + size],
-  ];
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(points[0][0], points[0][1]);
-  for (let i = 1; i < points.length; i++) {
-    ctx.lineTo(points[i][0], points[i][1]);
-  }
-  ctx.closePath();
-  ctx.clip();
-
-  const grad = ctx.createLinearGradient(x + size, y, x + size + depth, y);
-  grad.addColorStop(0, '#c8d0d8');
-  grad.addColorStop(1, '#8d98a3');
-  ctx.fillStyle = grad;
-  ctx.fillRect(x + size - 5, y - depth, depth + 15, size + depth * 2);
-
-  // Dark edge
-  const edge = ctx.createLinearGradient(x + size, y, x + size + dx, y);
-  edge.addColorStop(0, 'rgba(255,255,255,0.15)');
-  edge.addColorStop(1, 'rgba(0,0,0,0.18)');
-  ctx.fillStyle = edge;
-  ctx.fillRect(x + size, y - depth, depth + 10, size + depth * 2);
-
-  ctx.restore();
-
-  // Right edge
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(points[0][0], points[0][1]);
-  ctx.lineTo(points[1][0], points[1][1]);
-  ctx.lineTo(points[2][0], points[2][1]);
-  ctx.lineTo(points[3][0], points[3][1]);
-  ctx.closePath();
-  ctx.strokeStyle = 'rgba(72,80,89,0.5)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.restore();
-}
-
-// ── Draw Complete Dice ──
-
-function drawDice(ctx, x, y, size, value, state, config) {
-  const depth = config.depth * state.depthScale;
-
-  // Shadow
-  ctx.save();
-  ctx.globalAlpha = config.shadowOpacity * state.shadowScale;
-  ctx.filter = 'blur(15px)';
+  // Tiny soft highlight
+  ctx.globalAlpha = 0.13;
+  ctx.fillStyle = '#ffffff';
   ctx.beginPath();
   ctx.ellipse(
-    x + size / 2 + depth * 0.35,
-    y + size + 17,
-    size * 0.47 * state.shadowWidth,
-    size * 0.115,
-    0, 0, Math.PI * 2
+    -radius * 0.25, -radius * 0.28,
+    radius * 0.25, radius * 0.12,
+    -0.25, 0, Math.PI * 2
   );
-  ctx.fillStyle = '#000000';
   ctx.fill();
-  ctx.restore();
 
-  // Motion blur ghost frames
-  if (config.motionBlur && state.blur > 0) {
-    for (let i = 3; i >= 1; i--) {
-      const alpha = state.blur * (0.025 * i);
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      drawDiceBody(ctx, x - state.velocityX * i * 0.7, y - state.velocityY * i * 0.7, size, value, state, config);
-      ctx.restore();
-    }
+  ctx.restore();
+}
+
+// ── Draw pips on a 3D face ──
+
+function drawFacePips(ctx, face, number, rx, ry, rz, cameraZ, focal, canvasW, canvasH) {
+  const positions = pipPositions[number];
+  const S = face.indices ? 1 : 1; // placeholder, we use face geometry
+
+  // Face center slightly in front of surface
+  const center = {
+    x: face.normal.x * 1.002,
+    y: face.normal.y * 1.002,
+    z: face.normal.z * 1.002,
+  };
+
+  for (const [px, py] of positions) {
+    // Local position on face
+    let p = {
+      x: center.x + face.u.x * px * 1.25 + face.v.x * py * 1.25,
+      y: center.y + face.u.y * px * 1.25 + face.v.y * py * 1.25,
+      z: center.z + face.u.z * px * 1.25 + face.v.z * py * 1.25,
+    };
+
+    // Rotate with cube
+    p = rotate(p, rx, ry, rz);
+
+    // Project to 2D
+    const z = cameraZ - p.z;
+    const scale = focal / z;
+    const projX = canvasW / 2 + p.x * scale;
+    const projY = canvasH / 2 + p.y * scale;
+
+    const pipRadius = 5.2 * scale;
+
+    // Subtle wobble based on position
+    const wobble = Math.sin(p.x * 0.2 + p.y * 0.13) * 0.18;
+
+    drawPip(ctx, projX, projY, pipRadius, wobble);
+  }
+}
+
+// ── Face Gradient (lighting based on visibility) ──
+
+function faceGradient(ctx, points, visibility, config) {
+  const minX = Math.min(...points.map(p => p.x));
+  const maxX = Math.max(...points.map(p => p.x));
+  const minY = Math.min(...points.map(p => p.y));
+  const maxY = Math.max(...points.map(p => p.y));
+
+  const g = ctx.createLinearGradient(minX, minY, maxX, maxY);
+  const light = clamp(visibility, 0, 1);
+
+  if (light > 0.7) {
+    g.addColorStop(0, config.faceLight);
+    g.addColorStop(0.55, config.faceMid);
+    g.addColorStop(1, config.faceDark);
+  } else if (light > 0.2) {
+    g.addColorStop(0, config.faceMid);
+    g.addColorStop(0.55, '#e8ebf0');
+    g.addColorStop(1, '#cbd1db');
+  } else {
+    g.addColorStop(0, config.faceShadow);
+    g.addColorStop(1, config.faceShadowDark);
+  }
+  return g;
+}
+
+// ── Render a single die at world position (offsetX, offsetY) ──
+
+function renderDie(ctx, rx, ry, rz, diceValues, faceVisibility, config, offsetX, offsetY) {
+  const { vertices, faces } = createCubeGeometry(config.diceSize);
+  const camera = { x: 0, y: 0, z: config.cameraZ };
+  const canvasW = config.width;
+  const canvasH = config.height;
+
+  // Transform vertices
+  const transformed = vertices.map(v => rotate(v, rx, ry, rz));
+
+  // Determine visible faces with depth sorting
+  const visibleFaces = [];
+
+  for (const face of faces) {
+    const a = transformed[face.indices[0]];
+    const b = transformed[face.indices[1]];
+    const c = transformed[face.indices[2]];
+
+    // Face normal in world space
+    const normal = normalize(cross(sub(b, a), sub(c, a)));
+
+    // Face center
+    const center = face.indices
+      .map(i => transformed[i])
+      .reduce(
+        (acc, p) => ({ x: acc.x + p.x / 4, y: acc.y + p.y / 4, z: acc.z + p.z / 4 }),
+        { x: 0, y: 0, z: 0 }
+      );
+
+    // Vector to camera
+    const toCamera = normalize({
+      x: camera.x - center.x,
+      y: camera.y - center.y,
+      z: camera.z - center.z,
+    });
+
+    const visibility = dot(normal, toCamera);
+
+    if (visibility <= 0) continue;
+
+    // Project face vertices
+    const points = face.indices.map(i => {
+      const v = transformed[i];
+      const z = config.cameraZ - v.z;
+      const scale = config.focal / z;
+      return {
+        x: canvasW / 2 + v.x * scale + offsetX,
+        y: canvasH / 2 + v.y * scale + offsetY,
+        scale,
+      };
+    });
+
+    visibleFaces.push({
+      face,
+      points,
+      center,
+      visibility,
+      depth: center.z,
+    });
   }
 
-  drawDiceBody(ctx, x, y, size, value, state, config);
+  // Painter's algorithm: far to near
+  visibleFaces.sort((a, b) => a.depth - b.depth);
+
+  // Render faces
+  for (const item of visibleFaces) {
+    const { face, points, visibility } = item;
+
+    ctx.save();
+    ctx.beginPath();
+
+    // Rounded polygon edges via quadratic curves
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const cur = points[i];
+      const mx = (prev.x + cur.x) / 2;
+      const my = (prev.y + cur.y) / 2;
+      ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+    }
+    // Close with curve
+    const last = points[points.length - 1];
+    const first = points[0];
+    const mx = (last.x + first.x) / 2;
+    const my = (last.y + first.y) / 2;
+    ctx.quadraticCurveTo(last.x, last.y, mx, my);
+    ctx.quadraticCurveTo(first.x, first.y, first.x, first.y);
+    ctx.closePath();
+
+    // Face shading
+    ctx.fillStyle = faceGradient(ctx, points, visibility, config);
+    ctx.fill();
+
+    // Thin outline
+    ctx.strokeStyle = config.outlineColor;
+    ctx.lineWidth = 1.15;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    ctx.restore();
+
+    // Draw pips on this face
+    // Map face name to dice value index
+    let valueIndex = -1;
+    switch (face.name) {
+      case 'front': valueIndex = 0; break;
+      case 'right': valueIndex = 1; break;
+      case 'top': valueIndex = 2; break;
+      case 'back': valueIndex = 0; break;  // hidden usually
+      case 'left': valueIndex = 1; break;  // hidden usually
+      case 'bottom': valueIndex = 2; break; // hidden usually
+    }
+
+    // For visible faces, we need to know which die value to show
+    // We'll pass the dice values array and determine based on face
+    // Actually, each die has 3 visible faces typically: front, right, top
+    // We'll map: front->dice[0], right->dice[1], top->dice[2] for the first die
+    // But we need per-die values. Let's handle this differently.
+  }
 }
 
-// ── Dice Body (top + right + front) ──
+// ── Render all 3 dice ──
 
-function drawDiceBody(ctx, x, y, size, value, state, config) {
-  ctx.save();
+function renderDice(ctx, diceStates, diceValues, config) {
+  const canvasW = config.width;
+  const canvasH = config.height;
 
-  // Overall shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.30)';
-  ctx.shadowBlur = 12;
-  ctx.shadowOffsetY = 7;
-
-  // Top
-  drawTopFace(ctx, x, y, size, config.depth * state.depthScale, state.rotationY, config);
-
-  // Right side
-  drawRightFace(ctx, x, y, size, config.depth * state.depthScale, state.rotationY, config);
-
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-
-  // Front
-  drawFrontFace(ctx, x, y, size, value, config, state.skewX, state.skewY, state.rotationZ);
-
-  // Strong top highlight
-  ctx.save();
-  const highlight = ctx.createLinearGradient(x, y, x + size, y + size);
-  highlight.addColorStop(0, 'rgba(255,255,255,0.38)');
-  highlight.addColorStop(0.35, 'rgba(255,255,255,0.08)');
-  highlight.addColorStop(1, 'rgba(255,255,255,0)');
-  roundedRectPath(ctx, x + 4, y + 4, size - 8, size - 8, config.radius);
-  ctx.fillStyle = highlight;
-  ctx.fill();
-  ctx.restore();
-
-  // Edge highlight
-  ctx.save();
-  roundedRectPath(ctx, x + 2, y + 2, size - 4, size - 4, config.radius);
-  ctx.strokeStyle = 'rgba(255,255,255,0.48)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.restore();
-
-  ctx.restore();
-}
-
-// ── Random Orientation ──
-
-function randomOrientation() {
-  return {
-    rotationX: Math.random() * Math.PI * 2,
-    rotationY: Math.random() * Math.PI * 2,
-    rotationZ: Math.random() * Math.PI * 2,
-  };
-}
-
-function randomFace() {
-  return Math.floor(Math.random() * 6) + 1;
-}
-
-// ── Background ──
-
-function drawBackground(ctx, config) {
-  ctx.clearRect(0, 0, config.width, config.height);
+  // Clear
+  ctx.clearRect(0, 0, canvasW, canvasH);
   ctx.fillStyle = config.background;
-  ctx.fillRect(0, 0, config.width, config.height);
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
   // Central glow
   const glow = ctx.createRadialGradient(
-    config.width / 2, config.height * 0.47, 30,
-    config.width / 2, config.height * 0.47, config.width * 0.55
+    canvasW / 2, canvasH * 0.47, 30,
+    canvasW / 2, canvasH * 0.47, canvasW * 0.55
   );
   glow.addColorStop(0, 'rgba(255,255,255,0.075)');
   glow.addColorStop(0.5, 'rgba(255,255,255,0.025)');
   glow.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, config.width, config.height);
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
-  // Bottom floor glow
+  // Floor glow
   const floor = ctx.createRadialGradient(
-    config.width / 2, config.height * 0.83, 20,
-    config.width / 2, config.height * 0.83, 360
+    canvasW / 2, canvasH * 0.83, 20,
+    canvasW / 2, canvasH * 0.83, 360
   );
   floor.addColorStop(0, 'rgba(255,255,255,0.035)');
   floor.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = floor;
-  ctx.fillRect(0, 0, config.width, config.height);
-}
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
-// ── Title ──
-
-function drawTitle(ctx, config) {
+  // Title
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = 'bold 31px Arial';
   ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.fillText(config.title, config.width / 2, 60);
-
+  ctx.fillText(config.title, canvasW / 2, 60);
   const lineWidth = 90;
   const grad = ctx.createLinearGradient(
-    config.width / 2 - lineWidth, 0,
-    config.width / 2 + lineWidth, 0
+    canvasW / 2 - lineWidth, 0,
+    canvasW / 2 + lineWidth, 0
   );
   grad.addColorStop(0, 'rgba(255,255,255,0)');
   grad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
   grad.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = grad;
-  ctx.fillRect(config.width / 2 - lineWidth, 76, lineWidth * 2, 1);
+  ctx.fillRect(canvasW / 2 - lineWidth, 76, lineWidth * 2, 1);
+  ctx.restore();
+
+  // Positions for 3 dice
+  const totalWidth = config.diceSize * 3 + config.gap * 2;
+  const startX = (canvasW - totalWidth) / 2;
+  const baseY = 185 - canvasH / 2; // offset from center
+
+  // Render each die
+  for (let i = 0; i < 3; i++) {
+    const state = diceStates[i];
+    const offsetX = startX + i * (config.diceSize + config.gap) - canvasW / 2;
+    const offsetY = baseY - state.bounce - state.finalBounce;
+
+    renderSingleDie(ctx, state, diceValues[i], config, offsetX, offsetY);
+  }
+
+  // Result text
+  drawResultText(ctx, diceValues, config);
+}
+
+// ── Render a single die with all its faces ──
+
+function renderSingleDie(ctx, state, value, config, offsetX, offsetY) {
+  const { vertices, faces } = createCubeGeometry(config.diceSize);
+  const canvasW = config.width;
+  const canvasH = config.height;
+
+  // Transform vertices
+  const transformed = vertices.map(v => rotate(v, state.rx, state.ry, state.rz));
+
+  const camera = { x: 0, y: 0, z: config.cameraZ };
+
+  // Determine visible faces with depth sorting
+  const visibleFaces = [];
+
+  for (const face of faces) {
+    const a = transformed[face.indices[0]];
+    const b = transformed[face.indices[1]];
+    const c = transformed[face.indices[2]];
+
+    const normal = normalize(cross(sub(b, a), sub(c, a)));
+
+    const center = face.indices
+      .map(i => transformed[i])
+      .reduce(
+        (acc, p) => ({ x: acc.x + p.x / 4, y: acc.y + p.y / 4, z: acc.z + p.z / 4 }),
+        { x: 0, y: 0, z: 0 }
+      );
+
+    const toCamera = normalize({
+      x: camera.x - center.x,
+      y: camera.y - center.y,
+      z: camera.z - center.z,
+    });
+
+    const visibility = dot(normal, toCamera);
+
+    if (visibility <= 0) continue;
+
+    const points = face.indices.map(i => {
+      const v = transformed[i];
+      const z = config.cameraZ - v.z;
+      const scale = config.focal / z;
+      return {
+        x: canvasW / 2 + v.x * scale + offsetX,
+        y: canvasH / 2 + v.y * scale + offsetY,
+        scale,
+      };
+    });
+
+    visibleFaces.push({
+      face,
+      points,
+      center,
+      visibility,
+      depth: center.z,
+    });
+  }
+
+  // Painter's algorithm
+  visibleFaces.sort((a, b) => a.depth - b.depth);
+
+  // Shadow (draw first, behind everything)
+  drawDieShadow(ctx, state, config, offsetX, offsetY);
+
+  // Render faces
+  for (const item of visibleFaces) {
+    const { face, points, visibility } = item;
+
+    ctx.save();
+    ctx.beginPath();
+
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const cur = points[i];
+      const mx = (prev.x + cur.x) / 2;
+      const my = (prev.y + cur.y) / 2;
+      ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+    }
+    const last = points[points.length - 1];
+    const first = points[0];
+    const mx = (last.x + first.x) / 2;
+    const my = (last.y + first.y) / 2;
+    ctx.quadraticCurveTo(last.x, last.y, mx, my);
+    ctx.quadraticCurveTo(first.x, first.y, first.x, first.y);
+    ctx.closePath();
+
+    ctx.fillStyle = faceGradient(ctx, points, visibility, config);
+    ctx.fill();
+
+    ctx.strokeStyle = config.outlineColor;
+    ctx.lineWidth = 1.15;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    ctx.restore();
+
+    // Draw pips on this face
+    // Map face to value: we show the die's value on front, right, top
+    // For a standard die, opposite faces sum to 7
+    // But for Tài Xỉu we just show the rolled value on visible faces
+    let faceValue = value;
+    // Could show different faces, but for simplicity show same value
+    // on all visible faces (or map properly)
+    
+    drawFacePips(ctx, face, faceValue, state.rx, state.ry, state.rz, 
+                 config.cameraZ, config.focal, canvasW, canvasH);
+  }
+}
+
+// ── Die Shadow ──
+
+function drawDieShadow(ctx, state, config, offsetX, offsetY) {
+  const canvasW = config.width;
+  const canvasH = config.height;
+
+  // Project bottom center
+  const bottomCenter = rotate({ x: 0, y: config.diceSize / 2, z: 0 }, state.rx, state.ry, state.rz);
+  const z = config.cameraZ - bottomCenter.z;
+  const scale = config.focal / z;
+  const shadowX = canvasW / 2 + bottomCenter.x * scale + offsetX;
+  const shadowY = canvasH / 2 + bottomCenter.y * scale + offsetY + config.diceSize * 0.6 * scale;
+
+  ctx.save();
+  ctx.globalAlpha = 0.35 * state.shadowScale;
+  ctx.filter = 'blur(12px)';
+  ctx.beginPath();
+  ctx.ellipse(
+    shadowX,
+    shadowY,
+    config.diceSize * 0.45 * scale * state.shadowWidth,
+    config.diceSize * 0.1 * scale,
+    0, 0, Math.PI * 2
+  );
+  ctx.fillStyle = config.shadowColor;
+  ctx.fill();
   ctx.restore();
 }
 
 // ── Result Text ──
 
-function drawResult(ctx, result, config, progress) {
+function drawResultText(ctx, diceValues, config) {
   if (!config.showResultText) return;
 
-  if (progress < 0.78) {
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.font = '600 20px Arial';
-    ctx.fillStyle = 'rgba(255,255,255,0.48)';
-    ctx.fillText('ĐANG LẮC...', config.width / 2, 450);
-    ctx.restore();
-    return;
-  }
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = '600 20px Arial';
+  ctx.fillStyle = 'rgba(255,255,255,0.48)';
+  ctx.fillText('ĐANG LẮC...', config.width / 2, 450);
+  ctx.restore();
+}
 
-  const total = result[0] + result[1] + result[2];
+function drawFinalResultText(ctx, diceValues, config) {
+  if (!config.showResultText) return;
+
+  const total = diceValues[0] + diceValues[1] + diceValues[2];
   const type = total >= 11 ? 'TÀI' : 'XỈU';
 
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = 'bold 27px Arial';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(`${result[0]}  •  ${result[1]}  •  ${result[2]}    =    ${total}    →    ${type}`, config.width / 2, 450);
+  ctx.fillText(
+    `${diceValues[0]}  •  ${diceValues[1]}  •  ${diceValues[2]}    =    ${total}    →    ${type}`,
+    config.width / 2, 450
+  );
   ctx.restore();
 }
 
@@ -498,33 +673,32 @@ export class DiceRenderer {
     const canvas = new Canvas(this.config.width, this.config.height);
     const ctx = canvas.getContext('2d');
 
-    // Positions
-    const totalWidth = this.config.diceSize * 3 + this.config.gap * 2;
-    const startX = (this.config.width - totalWidth) / 2;
-    const baseY = 185;
-
-    // Per-dice random state
+    // Per-dice random initial state
     const diceStates = [0, 1, 2].map(i => {
-      const orient = randomOrientation();
       return {
-        seed: Math.random() * 100,
-        rotationX: orient.rotationX,
-        rotationY: orient.rotationY,
-        rotationZ: orient.rotationZ,
-        spinX: 7 + Math.random() * 5,
-        spinY: 8 + Math.random() * 6,
-        spinZ: 4 + Math.random() * 4,
+        // Initial random orientation
+        rx: Math.random() * Math.PI * 2,
+        ry: Math.random() * Math.PI * 2,
+        rz: Math.random() * Math.PI * 2,
+        // Spin speeds (radians per frame at full speed)
+        spinX: (7 + Math.random() * 5) * Math.PI / 30,
+        spinY: (8 + Math.random() * 6) * Math.PI / 30,
+        spinZ: (4 + Math.random() * 4) * Math.PI / 30,
+        // Bounce
+        bouncePhase: Math.random() * Math.PI * 2,
         bounce: 0,
-        velocityX: 0,
-        velocityY: 0,
-        blur: 1,
-        randomValue: randomFace(),
-        finalValue: diceResults[i],
-        phase: Math.random() * Math.PI * 2,
+        finalBounce: 0,
+        // Shadow
+        shadowScale: 1,
+        shadowWidth: 1,
+        // Final settled orientation (slightly randomized)
+        finalRx: Math.sin(i * 1.7) * 0.04,
+        finalRy: Math.sin(i * 2.3) * 0.06,
+        finalRz: Math.sin(i) * 0.025,
       };
     });
 
-    // Render rolling frames
+    // Rolling frames
     for (let frame = 0; frame < this.frameCount; frame++) {
       const rawProgress = frame / Math.max(1, this.frameCount - 1);
 
@@ -534,88 +708,99 @@ export class DiceRenderer {
       const rollingEase = easeOutCubic(rollProgress);
       const settleEase = easeOutBack(settleProgress);
 
-      drawBackground(ctx, this.config);
-      drawTitle(ctx, this.config);
-
+      // Update each die
       diceStates.forEach((state, index) => {
         const roll = 1 - rollingEase;
 
-        // Spin
-        const rotX = state.rotationX + roll * state.spinX * Math.PI;
-        const rotY = state.rotationY + roll * state.spinY * Math.PI;
-        const rotZ = state.rotationZ + roll * state.spinZ * Math.PI;
-
-        // Settle rotation (stylized)
-        const finalRotX = Math.sin(index * 1.7) * 0.04;
-        const finalRotY = Math.sin(index * 2.3) * 0.06;
-        const finalRotZ = Math.sin(index) * 0.025;
-
-        state.rotationX = lerp(rotX, finalRotX, settleEase);
-        state.rotationY = lerp(rotY, finalRotY, settleEase);
-        state.rotationZ = lerp(rotZ, finalRotZ, settleEase);
+        // Spin during roll phase
+        state.rx = lerp(state.rx + roll * state.spinX * 30, state.finalRx, settleEase);
+        state.ry = lerp(state.ry + roll * state.spinY * 30, state.finalRy, settleEase);
+        state.rz = lerp(state.rz + roll * state.spinZ * 30, state.finalRz, settleEase);
 
         // Bounce
-        const bounceWave = Math.abs(Math.sin(frame * 0.68 + state.phase));
-        const bounce = bounceWave * 42 * (1 - rollingEase) * (1 - settleProgress);
+        const bounceWave = Math.abs(Math.sin(frame * 0.68 + state.bouncePhase));
+        state.bounce = bounceWave * 42 * (1 - rollingEase) * (1 - settleProgress);
 
-        // Final bounce
-        const finalBounce = Math.sin(settleProgress * Math.PI * 3) * 8 * (1 - settleProgress);
-
-        // Skew
-        state.skewX = Math.sin(state.rotationY) * this.config.depth * 0.45;
-        state.skewY = Math.cos(state.rotationX) * this.config.depth * 0.30;
-
-        // Depth
-        state.depthScale = 0.85 + Math.abs(Math.cos(state.rotationY)) * 0.25;
+        // Final settle bounce
+        state.finalBounce = Math.sin(settleProgress * Math.PI * 3) * 8 * (1 - settleProgress);
 
         // Shadow
-        state.shadowScale = 0.72 + (1 - bounce / 42) * 0.28;
-        state.shadowWidth = 1 + bounce / 80;
-
-        // Motion blur
-        state.blur = roll;
-
-        // Velocity
-        state.velocityX = Math.sin(frame * 0.9 + state.phase) * 5 * roll;
-        state.velocityY = Math.cos(frame * 0.8 + state.phase) * 4 * roll;
-
-        // Visible value
-        let visibleValue;
-        if (rawProgress < 0.68) {
-          const change = Math.floor(frame / 3);
-          visibleValue = (Math.abs(Math.sin(state.seed + change * 12.9898 + index)) * 100000) % 6;
-          visibleValue = Math.floor(visibleValue) + 1;
-        } else {
-          visibleValue = state.finalValue;
-        }
-
-        const x = startX + index * (this.config.diceSize + this.config.gap);
-        const y = baseY - bounce - finalBounce;
-
-        drawDice(ctx, x, y, this.config.diceSize, visibleValue, state, this.config);
+        state.shadowScale = 0.72 + (1 - state.bounce / 42) * 0.28;
+        state.shadowWidth = 1 + state.bounce / 80;
       });
 
-      drawResult(ctx, diceResults, this.config, rawProgress);
+      renderDice(ctx, diceStates, diceResults, this.config);
       encoder.addFrame(ctx);
     }
 
-    // Hold final frame
+    // Hold final frames
     for (let i = 0; i < this.pauseFrames; i++) {
-      drawBackground(ctx, this.config);
-      drawTitle(ctx, this.config);
+      // Final settled state
+      const finalStates = diceStates.map((state, index) => ({
+        rx: state.finalRx,
+        ry: state.finalRy,
+        rz: state.finalRz,
+        bounce: 0,
+        finalBounce: 0,
+        shadowScale: 1,
+        shadowWidth: 1,
+      }));
+
+      // Clear and render
+      ctx.clearRect(0, 0, this.config.width, this.config.height);
+      ctx.fillStyle = this.config.background;
+      ctx.fillRect(0, 0, this.config.width, this.config.height);
+
+      // Glows
+      const glow = ctx.createRadialGradient(
+        this.config.width / 2, this.config.height * 0.47, 30,
+        this.config.width / 2, this.config.height * 0.47, this.config.width * 0.55
+      );
+      glow.addColorStop(0, 'rgba(255,255,255,0.075)');
+      glow.addColorStop(0.5, 'rgba(255,255,255,0.025)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, this.config.width, this.config.height);
+
+      const floor = ctx.createRadialGradient(
+        this.config.width / 2, this.config.height * 0.83, 20,
+        this.config.width / 2, this.config.height * 0.83, 360
+      );
+      floor.addColorStop(0, 'rgba(255,255,255,0.035)');
+      floor.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = floor;
+      ctx.fillRect(0, 0, this.config.width, this.config.height);
+
+      // Title
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 31px Arial';
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fillText(this.config.title, this.config.width / 2, 60);
+      const lineWidth = 90;
+      const grad = ctx.createLinearGradient(
+        this.config.width / 2 - lineWidth, 0,
+        this.config.width / 2 + lineWidth, 0
+      );
+      grad.addColorStop(0, 'rgba(255,255,255,0)');
+      grad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(this.config.width / 2 - lineWidth, 76, lineWidth * 2, 1);
+      ctx.restore();
+
+      // Render dice at final positions
+      const totalWidth = this.config.diceSize * 3 + this.config.gap * 2;
+      const startX = (this.config.width - totalWidth) / 2;
+      const baseY = 185 - this.config.height / 2;
 
       for (let index = 0; index < 3; index++) {
-        const x = startX + index * (this.config.diceSize + this.config.gap);
-        const state = {
-          rotationX: 0, rotationY: 0, rotationZ: 0,
-          skewX: 0, skewY: 0,
-          depthScale: 1, shadowScale: 1, shadowWidth: 1,
-          blur: 0, velocityX: 0, velocityY: 0,
-        };
-        drawDice(ctx, x, baseY, this.config.diceSize, diceResults[index], state, this.config);
+        const offsetX = startX + index * (this.config.diceSize + this.config.gap) - this.config.width / 2;
+        const offsetY = baseY;
+        renderSingleDie(ctx, finalStates[index], diceResults[index], this.config, offsetX, offsetY);
       }
 
-      drawResult(ctx, diceResults, this.config, 1);
+      drawFinalResultText(ctx, diceResults, this.config);
       encoder.addFrame(ctx);
     }
 
@@ -627,25 +812,70 @@ export class DiceRenderer {
     const canvas = new Canvas(this.config.width, this.config.height);
     const ctx = canvas.getContext('2d');
 
-    drawBackground(ctx, this.config);
-    drawTitle(ctx, this.config);
+    // Background
+    ctx.fillStyle = this.config.background;
+    ctx.fillRect(0, 0, this.config.width, this.config.height);
+
+    // Glows
+    const glow = ctx.createRadialGradient(
+      this.config.width / 2, this.config.height * 0.47, 30,
+      this.config.width / 2, this.config.height * 0.47, this.config.width * 0.55
+    );
+    glow.addColorStop(0, 'rgba(255,255,255,0.075)');
+    glow.addColorStop(0.5, 'rgba(255,255,255,0.025)');
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, this.config.width, this.config.height);
+
+    const floor = ctx.createRadialGradient(
+      this.config.width / 2, this.config.height * 0.83, 20,
+      this.config.width / 2, this.config.height * 0.83, 360
+    );
+    floor.addColorStop(0, 'rgba(255,255,255,0.035)');
+    floor.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = floor;
+    ctx.fillRect(0, 0, this.config.width, this.config.height);
+
+    // Title
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 31px Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fillText(this.config.title, this.config.width / 2, 60);
+    const lineWidth = 90;
+    const grad = ctx.createLinearGradient(
+      this.config.width / 2 - lineWidth, 0,
+      this.config.width / 2 + lineWidth, 0
+    );
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(this.config.width / 2 - lineWidth, 76, lineWidth * 2, 1);
+    ctx.restore();
+
+    // Final dice states
+    const finalStates = [0, 1, 2].map(i => ({
+      rx: Math.sin(i * 1.7) * 0.04,
+      ry: Math.sin(i * 2.3) * 0.06,
+      rz: Math.sin(i) * 0.025,
+      bounce: 0,
+      finalBounce: 0,
+      shadowScale: 1,
+      shadowWidth: 1,
+    }));
 
     const totalWidth = this.config.diceSize * 3 + this.config.gap * 2;
     const startX = (this.config.width - totalWidth) / 2;
-    const baseY = 185;
+    const baseY = 185 - this.config.height / 2;
 
     for (let index = 0; index < 3; index++) {
-      const x = startX + index * (this.config.diceSize + this.config.gap);
-      const state = {
-        rotationX: 0, rotationY: 0, rotationZ: 0,
-        skewX: 0, skewY: 0,
-        depthScale: 1, shadowScale: 1, shadowWidth: 1,
-        blur: 0, velocityX: 0, velocityY: 0,
-      };
-      drawDice(ctx, x, baseY, this.config.diceSize, diceResults[index], state, this.config);
+      const offsetX = startX + index * (this.config.diceSize + this.config.gap) - this.config.width / 2;
+      const offsetY = baseY;
+      renderSingleDie(ctx, finalStates[index], diceResults[index], this.config, offsetX, offsetY);
     }
 
-    drawResult(ctx, diceResults, this.config, 1);
+    drawFinalResultText(ctx, diceResults, this.config);
 
     return canvas.toBuffer('image/png');
   }
