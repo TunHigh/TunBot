@@ -1,81 +1,95 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed } from '../../utils/embeds.js';
+import { successEmbed, createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
-
 import { InteractionHelper } from '../../utils/interactionHelper.js';
+
+// Dice face emojis
+const DICE_FACES = {
+  1: '⚀',
+  2: '⚁',
+  3: '⚂',
+  4: '⚃',
+  5: '⚄',
+  6: '⚅',
+};
+
+// Rolling animation frames
+const ROLLING_FRAMES = ['🎲', '🎯', '🎲', '🎯', '🎲'];
+
 export default {
-    data: new SlashCommandBuilder()
-    .setName("roll")
-    .setDescription("Tung xúc xắc theo ký hiệu tiêu chuẩn (vd: 2d20, 1d6 + 5).")
-    .addStringOption((option) =>
-      option
-        .setName("notation")
-        .setDescription("Ký hiệu xúc xắc (vd: 2d6, 1d20 + 4)")
-        .setRequired(true)
-        .setMaxLength(50),
-    ),
+  data: new SlashCommandBuilder()
+    .setName('roll')
+    .setDescription('Tung 3 xúc xắc.'),
+
   category: 'Fun',
 
   async execute(interaction, config, client) {
     await InteractionHelper.safeDefer(interaction);
 
-    const notation = interaction.options
-      .getString("notation")
-      .toLowerCase()
-      .replace(/\s/g, "");
+    // Initial rolling message
+    const rollingEmbed = createEmbed({
+      title: '🎲 Đang lắc xúc xắc...',
+      description: '🎲 🎲 🎲',
+      color: 'primary',
+    });
 
-    const match = notation.match(/^(\d*)d(\d+)([\+\-]\d+)?$/);
+    await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed] });
 
-    if (!match) {
-      throw new TitanBotError(
-        `Invalid dice notation: ${notation}`,
-        ErrorTypes.USER_INPUT,
-        'Ký hiệu không hợp lệ. Hãy dùng định dạng như `1d20` hoặc `3d6+5`.'
-      );
+    // Animation: Show rolling frames
+    for (let i = 0; i < ROLLING_FRAMES.length; i++) {
+      const frame = ROLLING_FRAMES[i];
+      const animEmbed = createEmbed({
+        title: '🎲 Đang lắc xúc xắc...',
+        description: `${frame} ${frame} ${frame}`,
+        color: 'primary',
+      });
+      await InteractionHelper.safeEditReply(interaction, { embeds: [animEmbed] });
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
 
-    const numDice = parseInt(match[1] || "1", 10);
-    const numSides = parseInt(match[2], 10);
-    const modifier = parseInt(match[3] || "0", 10);
+    // Roll 3 dice (1-6 each)
+    const diceResults = [
+      Math.floor(Math.random() * 6) + 1,
+      Math.floor(Math.random() * 6) + 1,
+      Math.floor(Math.random() * 6) + 1,
+    ];
 
-    if (numDice < 1 || numDice > 20) {
-      throw new TitanBotError(
-        `Too many dice requested: ${numDice}`,
-        ErrorTypes.VALIDATION,
-        'Vui lòng giữ số lượng xúc xắc trong khoảng 1 đến 20.'
-      );
-    }
+    const total = diceResults.reduce((sum, val) => sum + val, 0);
 
-    if (numSides < 1 || numSides > 1000) {
-      throw new TitanBotError(
-        `Invalid number of sides: ${numSides}`,
-        ErrorTypes.VALIDATION,
-        'Vui lòng giữ số mặt trong khoảng 1 đến 1000.'
-      );
-    }
+    // Determine Tài/Xỉu
+    // Tài: 11-18, Xỉu: 3-10
+    const isTai = total >= 11;
+    const resultText = isTai ? '🟢 **TÀI**' : '🔴 **XỈU**';
+    const resultColor = isTai ? 'success' : 'error';
 
-    let rolls = [];
-    let totalRoll = 0;
+    // Final result embed
+    const diceEmojis = diceResults.map(d => DICE_FACES[d]).join(' ');
+    
+    const resultEmbed = createEmbed({
+      title: '🎲 Kết quả Tung Xúc Xắc',
+      description: `**${diceEmojis}**\n\n**Tổng điểm: ${total}**\n${resultText}`,
+      color: resultColor,
+      fields: [
+        {
+          name: '🎯 Xúc xắc 1',
+          value: `${DICE_FACES[diceResults[0]]} (${diceResults[0]})`,
+          inline: true,
+        },
+        {
+          name: '🎯 Xúc xắc 2',
+          value: `${DICE_FACES[diceResults[1]]} (${diceResults[1]})`,
+          inline: true,
+        },
+        {
+          name: '🎯 Xúc xắc 3',
+          value: `${DICE_FACES[diceResults[2]]} (${diceResults[2]})`,
+          inline: true,
+        },
+      ],
+      footer: { text: 'Tài: 11-18 | Xỉu: 3-10' },
+    });
 
-    for (let i = 0; i < numDice; i++) {
-      const roll = Math.floor(Math.random() * numSides) + 1;
-      rolls.push(roll);
-      totalRoll += roll;
-    }
-
-    const finalTotal = totalRoll + modifier;
-
-    const resultsDetail =
-      numDice > 1 ? `**Các lần tung:** ${rolls.join(" + ")}\n` : "";
-    const modifierText = modifier !== 0 ? `+ (${modifier})` : "";
-
-    const embed = successEmbed(
-      `🎲 Tung ${numDice}d${numSides}${modifier !== 0 ? match[3] : ""}`,
-      `${resultsDetail}**Tổng Điểm:** ${totalRoll}${modifierText} = **${finalTotal}**`,
-    );
-
-    await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
-    logger.debug(`Roll command executed by user ${interaction.user.id} with notation ${notation} in guild ${interaction.guildId}`);
+    await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed] });
+    logger.debug(`Roll command executed by user ${interaction.user.id} - Result: ${diceResults.join(', ')} = ${total} (${isTai ? 'Tài' : 'Xỉu'}) in guild ${interaction.guildId}`);
   },
 };
