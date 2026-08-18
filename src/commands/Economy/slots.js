@@ -111,7 +111,7 @@ export default {
 
         const encoder = new GIFEncoder(facade.width, facade.height, 'octree', false, totalFrames);
         encoder.setDelay(50);
-        encoder.setRepeat(1); // 1 = chạy 1 lần rồi dừng ở kết quả cuối (0 = loop vô hạn)
+        encoder.setRepeat(-1); // -1 = không viết Netscape ext → GIF chỉ chạy 1 lần rồi dừng
         encoder.start();
 
         for (let i = 1; i <= totalFrames; i++) {
