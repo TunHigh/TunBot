@@ -2,7 +2,7 @@ import { SlashCommandBuilder, AttachmentBuilder } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
-import { renderRollAnimation, renderFinalFrame } from '../../utils/diceRenderer.js';
+import path from 'path';
 
 export default {
   data: new SlashCommandBuilder()
@@ -26,35 +26,33 @@ export default {
     const resultText = isTai ? '🟢 **TÀI**' : '🔴 **XỈU**';
     const resultColor = isTai ? 'success' : 'error';
 
-    // Generate procedural 3D dice rolling animation WebP
-    const webpBuffer = await renderRollAnimation(diceResults);
-    
-    // Create attachment from generated WebP
-    const attachment = new AttachmentBuilder(webpBuffer, { name: 'dice-roll.webp' });
+    // Path to dice GIFs
+    const diceDir = path.join(process.cwd(), 'src', 'assets', 'dice');
 
-    // Show rolling animation with generated WebP
-    const rollingEmbed = createEmbed({
-      title: '🎲 Đang lắc 3 xúc xắc 3D...',
-      description: '🎲 🎲 🎲',
-      color: 'primary',
-      image: 'attachment://dice-roll.webp',
+    // Create attachments for the 3 dice GIFs (rolling animation for each face)
+    const attachments = diceResults.map((value, index) => {
+      const gifPath = path.join(diceDir, `dice${value}.gif`);
+      return new AttachmentBuilder(gifPath, { name: `dice${index + 1}.gif` });
     });
 
-    await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: [attachment] });
+    // Show rolling animation with the 3 dice GIFs
+    const rollingEmbed = createEmbed({
+      title: '🎲 Đang lắc 3 xúc xắc...',
+      description: '🎲 🎲 🎲',
+      color: 'primary',
+      image: 'attachment://dice1.gif', // Show first die as preview
+    });
 
-    // Let the animation play (45 frames @ 30fps = 1500ms, plus buffer)
-    await new Promise(resolve => setTimeout(resolve, 1700));
+    await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: attachments });
 
-    // Generate final frame as PNG (static image of settled dice)
-    const finalFrameBuffer = await renderFinalFrame(diceResults);
-    const finalAttachment = new AttachmentBuilder(finalFrameBuffer, { name: 'dice-final.png' });
+    // Let the animation play (GIFs are ~2-3 seconds each)
+    await new Promise(resolve => setTimeout(resolve, 2500));
 
-    // Final result embed with rendered dice image
+    // Final result embed with all 3 dice GIFs
     const resultEmbed = createEmbed({
-      title: '🎲 Kết quả Tung Xúc Xắc (3D Procedural)',
+      title: '🎲 Kết quả Tung Xúc Xắc (Tài Xỉu)',
       description: `**Tổng điểm: ${total}**\n${resultText}`,
       color: resultColor,
-      image: 'attachment://dice-final.png',
       fields: [
         {
           name: '🎯 Xúc xắc 1',
@@ -72,10 +70,11 @@ export default {
           inline: true,
         },
       ],
-      footer: { text: 'Tài: 11-18 | Xỉu: 3-10 | Rendered with @napi-rs/canvas + sharp' },
+      image: 'attachment://dice1.gif', // Show first die in embed
+      footer: { text: 'Tài: 11-18 | Xỉu: 3-10' },
     });
 
-    await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed], files: [finalAttachment] });
+    await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed], files: attachments });
     logger.debug(`Roll command executed by user ${interaction.user.id} - Result: ${diceResults.join(', ')} = ${total} (${isTai ? 'Tài' : 'Xỉu'}) in guild ${interaction.guildId}`);
   },
 };
