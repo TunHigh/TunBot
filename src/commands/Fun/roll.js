@@ -43,7 +43,6 @@ export default {
     // Show rolling animation with rollthedice.gif
     const rollingEmbed = createEmbed({
       title: '🎲 Đang Tung Xúc Xắc...',
-      description: '🎲 🎲 🎲',
       color: 'primary',
       image: 'attachment://rollthedice.gif',
     });
@@ -318,18 +317,19 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const dividerX = badgeX - 14;
 
   // ===== LEFT TEXT (CENTERED with purple glow) =====
-  const textY = panelY + (panelHeight - 36) / 2;
   ctx.font = 'bold 30px Arial';
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = 'middle';
 
   const leftText = `${dice1} · ${dice2} · ${dice3} = ${total}`;
   const textWidth = ctx.measureText(leftText).width;
 
-  // Center the left text within the area between panel left edge and divider
-  const textAreaLeft = panelX + 18;
-  const textAreaRight = dividerX - 14;
-  const leftX = textAreaLeft + (textAreaRight - textAreaLeft - textWidth) / 2;
+  // Center horizontally on the canvas center axis
+  // (aligns exactly with title "KẾT QUẢ" and the middle dice)
+  const leftX = (CANVAS_WIDTH - textWidth) / 2;
+
+  // Vertical center of the panel
+  const textY = panelY + panelHeight / 2;
 
   ctx.shadowColor = 'rgba(184, 100, 255, 0.6)';
   ctx.shadowBlur = 8;
