@@ -110,7 +110,7 @@ export default {
         const reelHeight = items * item;
 
         const encoder = new GIFEncoder(facade.width, facade.height, 'octree', false, totalFrames);
-        encoder.setDelay(50);
+        encoder.setDelay(50); //deo noi 
         encoder.setRepeat(-1); // -1 = không viết Netscape ext → GIF chỉ chạy 1 lần rồi dừng
         encoder.start();
 
