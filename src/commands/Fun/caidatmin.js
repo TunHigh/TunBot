@@ -22,7 +22,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName('caidatmin')
     .setDescription('Cài đặt trò chơi dò mìn cộng đồng')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .setDMPermission(false)
     .addSubcommand((subcommand) =>
       subcommand
@@ -55,10 +55,10 @@ export default {
   async execute(interaction) {
     await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
 
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
       return replyUserError(interaction, {
         type: ErrorTypes.PERMISSION,
-        message: 'Bạn cần quyền **Quản lý máy chủ** để dùng lệnh này.',
+        message: 'Chỉ **Admin** mới có thể dùng lệnh này.',
       });
     }
 
