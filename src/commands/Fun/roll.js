@@ -42,7 +42,7 @@ export default {
 
     // Show rolling animation with rollthedice.gif
     const rollingEmbed = createEmbed({
-      title: '🎲 Đang lắc 3 xúc xắc...',
+      title: '🎲 Đang Tung Xúc Xắc...',
       description: '🎲 🎲 🎲',
       color: 'primary',
       image: 'attachment://rollthedice.gif',
@@ -50,8 +50,7 @@ export default {
 
     await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: [rollingAttachment, ...gifAttachments] });
 
-    // Wait for GIFs to finish playing (~9.3 seconds)
-    await new Promise(resolve => setTimeout(resolve, 9000));
+    await new Promise(resolve => setTimeout(resolve, 8800));
 
     // Create combined image with all 3 dice side by side using PNG files
     const combinedBuffer = await createCombinedDiceImage(diceResults, diceDir, total, isTai);
@@ -100,7 +99,7 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const DICE_SIZE = 220;
   const GAP = 40;
   const CANVAS_WIDTH = DICE_SIZE * 3 + GAP * 2 + 80; // Extra padding
-  const CANVAS_HEIGHT = DICE_SIZE + 160; // Top title + dice + bottom result
+  const CANVAS_HEIGHT = DICE_SIZE + 180; // Top title + dice + bottom result (extra padding)
 
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   const ctx = canvas.getContext('2d');
@@ -118,18 +117,18 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   ctx.font = 'bold 42px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('TÀI XỈU', CANVAS_WIDTH / 2, 30);
+  ctx.fillText('TÀI XỈU', CANVAS_WIDTH / 2, 25);
 
   // Draw underline below title
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(CANVAS_WIDTH / 2 - 80, 82);
-  ctx.lineTo(CANVAS_WIDTH / 2 + 80, 82);
+  ctx.moveTo(CANVAS_WIDTH / 2 - 80, 75);
+  ctx.lineTo(CANVAS_WIDTH / 2 + 80, 75);
   ctx.stroke();
 
   // Load and draw each die using PNG files
-  const diceY = 100;
+  const diceY = 90;
   for (let i = 0; i < 3; i++) {
     const value = diceResults[i];
     const pngPath = path.join(diceDir, `dice${value}.png`);
@@ -155,7 +154,7 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   }
 
   // Draw bottom result line: "5 · 2 · 3 = 10 → XỈU"
-  const resultY = diceY + DICE_SIZE + 50;
+  const resultY = diceY + DICE_SIZE + 45;
   const dice1 = diceResults[0];
   const dice2 = diceResults[1];
   const dice3 = diceResults[2];
