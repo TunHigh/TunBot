@@ -93,7 +93,8 @@ export default {
 
 /**
  * Create a combined image with 3 dice side by side using PNG files
- * Enhanced with beautiful visual effects: gradients, shadows, glows, reflections
+ * Enhanced with beautiful visual effects: gradients, shadows, glows
+ * Theme: Purple gradient
  */
 async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const DICE_SIZE = 220;
@@ -104,61 +105,61 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   const ctx = canvas.getContext('2d');
 
-  // ===== ENHANCED BACKGROUND =====
-  // Multi-layer gradient
+  // ===== PURPLE THEME BACKGROUND =====
+  // Multi-layer purple gradient
   const bgGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-  bgGradient.addColorStop(0, '#0d0d1a');
-  bgGradient.addColorStop(0.3, '#1a1a3e');
-  bgGradient.addColorStop(0.6, '#16213e');
-  bgGradient.addColorStop(1, '#0f0f23');
+  bgGradient.addColorStop(0, '#1a0a2e');
+  bgGradient.addColorStop(0.3, '#2d1b4e');
+  bgGradient.addColorStop(0.6, '#3d1a5c');
+  bgGradient.addColorStop(1, '#1a0a2e');
   ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // Subtle radial glow in center
+  // Subtle radial glow in center (purple/pink)
   const centerGlow = ctx.createRadialGradient(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 0, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_WIDTH / 1.5);
-  centerGlow.addColorStop(0, 'rgba(255, 215, 0, 0.08)');
-  centerGlow.addColorStop(0.5, 'rgba(255, 140, 0, 0.04)');
+  centerGlow.addColorStop(0, 'rgba(180, 100, 255, 0.12)');
+  centerGlow.addColorStop(0.5, 'rgba(255, 100, 200, 0.06)');
   centerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = centerGlow;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // Decorative top accent line
+  // Decorative top accent line (purple/pink)
   const topAccent = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, 0);
   topAccent.addColorStop(0, 'transparent');
-  topAccent.addColorStop(0.5, '#ffd700');
+  topAccent.addColorStop(0.5, '#b864ff');
   topAccent.addColorStop(1, 'transparent');
   ctx.fillStyle = topAccent;
   ctx.fillRect(CANVAS_WIDTH * 0.15, 8, CANVAS_WIDTH * 0.7, 2);
 
-  // ===== TITLE WITH GLOW EFFECT =====
+  // ===== TITLE "KẾT QUẢ" WITH PURPLE GLOW =====
   const titleY = 25;
-  const titleText = 'TÀI XỈU';
+  const titleText = 'KẾT QUẢ';
   
-  // Title glow using shadow (cleaner than multiple draw calls)
+  // Title glow using shadow
   ctx.font = 'bold 42px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.shadowColor = '#ffd700';
+  ctx.shadowColor = '#b864ff';
   ctx.shadowBlur = 20;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
   
-  // Main title with gradient
+  // Main title with purple/pink gradient
   const titleGradient = ctx.createLinearGradient(0, titleY, 0, titleY + 50);
-  titleGradient.addColorStop(0, '#fff8e7');
-  titleGradient.addColorStop(0.3, '#ffd700');
-  titleGradient.addColorStop(0.7, '#ffaa00');
-  titleGradient.addColorStop(1, '#ff8800');
+  titleGradient.addColorStop(0, '#f0e6ff');
+  titleGradient.addColorStop(0.3, '#d4a5ff');
+  titleGradient.addColorStop(0.7, '#b864ff');
+  titleGradient.addColorStop(1, '#ff64c8');
   ctx.fillStyle = titleGradient;
   ctx.fillText(titleText, CANVAS_WIDTH / 2, titleY);
   
   // Reset shadow
   ctx.shadowBlur = 0;
 
-  // Title underline with gradient
+  // Title underline with purple gradient
   const underlineGradient = ctx.createLinearGradient(CANVAS_WIDTH / 2 - 100, 0, CANVAS_WIDTH / 2 + 100, 0);
   underlineGradient.addColorStop(0, 'transparent');
-  underlineGradient.addColorStop(0.5, '#ffd700');
+  underlineGradient.addColorStop(0.5, '#b864ff');
   underlineGradient.addColorStop(1, 'transparent');
   ctx.strokeStyle = underlineGradient;
   ctx.lineWidth = 3;
@@ -168,8 +169,8 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   ctx.lineTo(CANVAS_WIDTH / 2 + 100, 78);
   ctx.stroke();
 
-  // Subtle particles/dots near title
-  ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+  // Subtle particles/dots near title (purple)
+  ctx.fillStyle = 'rgba(184, 100, 255, 0.4)';
   for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2;
     const radius = 120;
@@ -180,7 +181,7 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
     ctx.fill();
   }
 
-  // ===== DICE WITH SHADOWS & REFLECTIONS =====
+  // ===== DICE WITH SHADOWS (NO REFLECTION - REMOVED BLACK BOX) =====
   const diceY = 90;
   const diceShadowOffset = 8;
   const diceShadowBlur = 20;
@@ -205,32 +206,26 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
       // Draw dice again on top (without shadow) for crisp edges
       ctx.drawImage(image, x, diceY, DICE_SIZE, DICE_SIZE);
       
-      // Subtle reflection at bottom of dice
-      const reflectionHeight = 30;
-      const reflectionGradient = ctx.createLinearGradient(0, diceY + DICE_SIZE, 0, diceY + DICE_SIZE + reflectionHeight);
-      reflectionGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-      reflectionGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = reflectionGradient;
-      ctx.fillRect(x, diceY + DICE_SIZE, DICE_SIZE, reflectionHeight);
+      // REMOVED: Reflection that caused black box
       
     } catch (err) {
-      // Fallback with enhanced styling
+      // Fallback with purple theme styling
       // Shadow
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(x + diceShadowOffset, diceY + diceShadowOffset, DICE_SIZE, DICE_SIZE);
       
-      // Dice body with gradient
+      // Dice body with purple gradient
       const diceGrad = ctx.createLinearGradient(x, diceY, x, diceY + DICE_SIZE);
-      diceGrad.addColorStop(0, '#2a2a4a');
-      diceGrad.addColorStop(0.5, '#1e1e3e');
-      diceGrad.addColorStop(1, '#151530');
+      diceGrad.addColorStop(0, '#2d1b4e');
+      diceGrad.addColorStop(0.5, '#1f1035');
+      diceGrad.addColorStop(1, '#150a25');
       ctx.fillStyle = diceGrad;
       ctx.fillRect(x, diceY, DICE_SIZE, DICE_SIZE);
       
-      // Border glow
-      ctx.strokeStyle = '#ffd700';
+      // Border glow (purple)
+      ctx.strokeStyle = '#b864ff';
       ctx.lineWidth = 2;
-      ctx.shadowColor = '#ffd700';
+      ctx.shadowColor = '#b864ff';
       ctx.shadowBlur = 10;
       ctx.strokeRect(x + 2, diceY + 2, DICE_SIZE - 4, DICE_SIZE - 4);
       ctx.shadowBlur = 0;
@@ -240,14 +235,14 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
       ctx.font = 'bold 100px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#ffd700';
+      ctx.shadowColor = '#b864ff';
       ctx.shadowBlur = 15;
       ctx.fillText(value.toString(), x + DICE_SIZE / 2, diceY + DICE_SIZE / 2);
       ctx.shadowBlur = 0;
     }
   }
 
-  // ===== RESULT TEXT WITH ENHANCED EFFECTS =====
+  // ===== RESULT TEXT WITH PURPLE THEME =====
   const resultY = diceY + DICE_SIZE + 45;
   const dice1 = diceResults[0];
   const dice2 = diceResults[1];
@@ -260,25 +255,25 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const panelWidth = CANVAS_WIDTH * 0.85;
   const panelX = (CANVAS_WIDTH - panelWidth) / 2;
   
-  // Panel background with gradient
+  // Panel background with purple gradient
   const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
-  panelGrad.addColorStop(0, 'rgba(255, 215, 0, 0.15)');
-  panelGrad.addColorStop(0.5, 'rgba(255, 140, 0, 0.1)');
-  panelGrad.addColorStop(1, 'rgba(255, 215, 0, 0.05)');
+  panelGrad.addColorStop(0, 'rgba(184, 100, 255, 0.2)');
+  panelGrad.addColorStop(0.5, 'rgba(255, 100, 200, 0.15)');
+  panelGrad.addColorStop(1, 'rgba(184, 100, 255, 0.1)');
   ctx.fillStyle = panelGrad;
   ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
   
-  // Panel border
+  // Panel border (purple/pink gradient)
   const borderGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelWidth, panelY);
-  borderGrad.addColorStop(0, '#ffd700');
-  borderGrad.addColorStop(0.5, '#ff8800');
-  borderGrad.addColorStop(1, '#ffd700');
+  borderGrad.addColorStop(0, '#b864ff');
+  borderGrad.addColorStop(0.5, '#ff64c8');
+  borderGrad.addColorStop(1, '#b864ff');
   ctx.strokeStyle = borderGrad;
   ctx.lineWidth = 2;
   ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
   
   // Inner glow lines
-  ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+  ctx.strokeStyle = 'rgba(184, 100, 255, 0.4)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(panelX + 10, panelY);
@@ -292,26 +287,26 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   
-  // Text glow using shadow
+  // Text glow using shadow (green for Tài, red for Xỉu)
   const glowColor = isTai ? '#00ff88' : '#ff4444';
   ctx.shadowColor = glowColor;
   ctx.shadowBlur = 25;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
   
-  // Main text with gradient
+  // Main text with purple/pink gradient
   const textGradient = ctx.createLinearGradient(0, resultY, 0, resultY + 45);
   textGradient.addColorStop(0, '#ffffff');
-  textGradient.addColorStop(0.5, '#fff8e7');
-  textGradient.addColorStop(1, '#ffd700');
+  textGradient.addColorStop(0.5, '#f0e6ff');
+  textGradient.addColorStop(1, '#d4a5ff');
   ctx.fillStyle = textGradient;
   ctx.fillText(resultText, CANVAS_WIDTH / 2, resultY);
   
   // Reset shadow
   ctx.shadowBlur = 0;
 
-  // Decorative sparkles around result (static positions, no animation)
-  ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
+  // Decorative sparkles around result (purple/pink)
+  ctx.fillStyle = 'rgba(184, 100, 255, 0.7)';
   const sparkleCount = isTai ? 6 : 4;
   for (let i = 0; i < sparkleCount; i++) {
     const angle = (i / sparkleCount) * Math.PI * 2;
