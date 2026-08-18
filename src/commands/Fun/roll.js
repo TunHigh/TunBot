@@ -8,7 +8,7 @@ import { createCanvas, loadImage } from '@napi-rs/canvas';
 export default {
   data: new SlashCommandBuilder()
     .setName('roll')
-    .setDescription('Tung 3 xúc xắc kiểu Tài Xỉu (3d6)'),
+    .setDescription('Tung 3 xúc xắc'),
 
   category: 'Fun',
 
@@ -51,7 +51,7 @@ export default {
     await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: [rollingAttachment, ...gifAttachments] });
 
     // Wait for GIFs to finish playing (~9.3 seconds)
-    await new Promise(resolve => setTimeout(resolve, 9300));
+    await new Promise(resolve => setTimeout(resolve, 9000));
 
     // Create combined image with all 3 dice side by side using PNG files
     const combinedBuffer = await createCombinedDiceImage(diceResults, diceDir, total, isTai);
@@ -59,7 +59,7 @@ export default {
 
     // Final result embed with combined image showing all 3 dice
     const resultEmbed = createEmbed({
-      title: '🎲 Kết quả Tung Xúc Xắc (Tài Xỉu)',
+      title: '🎲 Kết quả Tung Xúc Xắc',
       description: `**Tổng điểm: ${total}**\n${resultText}`,
       color: resultColor,
       fields: [
@@ -94,66 +94,78 @@ export default {
 
 /**
  * Create a combined image with 3 dice side by side using PNG files
+ * Style matches the clean "TÀI XỈU" sample design
  */
 async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
-  const DICE_SIZE = 200;
-  const GAP = 20;
-  const CANVAS_WIDTH = DICE_SIZE * 3 + GAP * 2;
-  const CANVAS_HEIGHT = DICE_SIZE + 80; // Extra space for labels and result
+  const DICE_SIZE = 220;
+  const GAP = 40;
+  const CANVAS_WIDTH = DICE_SIZE * 3 + GAP * 2 + 80; // Extra padding
+  const CANVAS_HEIGHT = DICE_SIZE + 160; // Top title + dice + bottom result
 
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   const ctx = canvas.getContext('2d');
 
-  // Dark background matching the sample
-  ctx.fillStyle = '#1a1a2e';
+  // Dark gradient background
+  const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+  gradient.addColorStop(0, '#1a1a2e');
+  gradient.addColorStop(0.5, '#16213e');
+  gradient.addColorStop(1, '#0f0f23');
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // Load and draw each die using PNG files (static final face)
+  // Draw title "TÀI XỈU"
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 42px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('TÀI XỈU', CANVAS_WIDTH / 2, 30);
+
+  // Draw underline below title
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(CANVAS_WIDTH / 2 - 80, 82);
+  ctx.lineTo(CANVAS_WIDTH / 2 + 80, 82);
+  ctx.stroke();
+
+  // Load and draw each die using PNG files
+  const diceY = 100;
   for (let i = 0; i < 3; i++) {
     const value = diceResults[i];
     const pngPath = path.join(diceDir, `dice${value}.png`);
+    const x = 40 + i * (DICE_SIZE + GAP);
     
     try {
       const image = await loadImage(pngPath);
-      const x = i * (DICE_SIZE + GAP);
-      const y = 10;
-      
-      // Draw die image
-      ctx.drawImage(image, x, y, DICE_SIZE, DICE_SIZE);
-      
-      // Draw label below each die
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 24px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(`Xúc xắc ${i + 1}: ${value}`, x + DICE_SIZE / 2, DICE_SIZE + 45);
+      // Draw die image centered
+      ctx.drawImage(image, x, diceY, DICE_SIZE, DICE_SIZE);
     } catch (err) {
       // Fallback: draw a simple colored rectangle with number
-      const x = i * (DICE_SIZE + GAP);
-      const y = 10;
       ctx.fillStyle = '#333';
-      ctx.fillRect(x, y, DICE_SIZE, DICE_SIZE);
+      ctx.fillRect(x, diceY, DICE_SIZE, DICE_SIZE);
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 3;
-      ctx.strokeRect(x, y, DICE_SIZE, DICE_SIZE);
+      ctx.strokeRect(x, diceY, DICE_SIZE, DICE_SIZE);
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 80px Arial';
+      ctx.font = 'bold 100px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(value.toString(), x + DICE_SIZE / 2, y + DICE_SIZE / 2);
-      
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 20px Arial';
-      ctx.textBaseline = 'top';
-      ctx.fillText(`Xúc xắc ${i + 1}`, x + DICE_SIZE / 2, DICE_SIZE + 20);
+      ctx.fillText(value.toString(), x + DICE_SIZE / 2, diceY + DICE_SIZE / 2);
     }
   }
 
-  // Draw total and result at bottom
-  ctx.fillStyle = isTai ? '#00ff88' : '#ff4444';
-  ctx.font = 'bold 28px Arial';
+  // Draw bottom result line: "5 · 2 · 3 = 10 → XỈU"
+  const resultY = diceY + DICE_SIZE + 50;
+  const dice1 = diceResults[0];
+  const dice2 = diceResults[1];
+  const dice3 = diceResults[2];
+  const resultText = `${dice1} · ${dice2} · ${dice3} = ${total}  →  ${isTai ? 'TÀI' : 'XỈU'}`;
+  
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 32px Arial';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText(`Tổng: ${total} → ${isTai ? 'TÀI' : 'XỈU'}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 15);
+  ctx.textBaseline = 'top';
+  ctx.fillText(resultText, CANVAS_WIDTH / 2, resultY);
 
   return canvas.toBuffer('image/png');
 }
