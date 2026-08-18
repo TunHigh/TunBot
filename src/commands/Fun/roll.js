@@ -50,7 +50,7 @@ export default {
 
     await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: [rollingAttachment, ...gifAttachments] });
 
-    await new Promise(resolve => setTimeout(resolve, 8800));
+    await new Promise(resolve => setTimeout(resolve, 9000));
 
     // Create combined image with all 3 dice side by side using PNG files
     const combinedBuffer = await createCombinedDiceImage(diceResults, diceDir, total, isTai);
@@ -105,7 +105,7 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const ctx = canvas.getContext('2d');
 
   // ===== ENHANCED BACKGROUND =====
-  // Multi-layer gradient with subtle pattern
+  // Multi-layer gradient
   const bgGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
   bgGradient.addColorStop(0, '#0d0d1a');
   bgGradient.addColorStop(0.3, '#1a1a3e');
@@ -132,21 +132,16 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
 
   // ===== TITLE WITH GLOW EFFECT =====
   const titleY = 25;
-  const titleText = 'KẾT QUẢ TUNG XÚC XẮC';
+  const titleText = 'TÀI XỈU';
   
-  // Outer glow (multiple layers for smooth glow)
-  ctx.font = 'bold 44px Arial';
+  // Title glow using shadow (cleaner than multiple draw calls)
+  ctx.font = 'bold 42px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  
-  // Glow layers
-  for (let i = 6; i >= 1; i--) {
-    ctx.fillStyle = `rgba(255, 215, 0, ${0.08 * i})`;
-    ctx.fillText(titleText, CANVAS_WIDTH / 2 + i, titleY + i);
-    ctx.fillText(titleText, CANVAS_WIDTH / 2 - i, titleY + i);
-    ctx.fillText(titleText, CANVAS_WIDTH / 2 + i, titleY - i);
-    ctx.fillText(titleText, CANVAS_WIDTH / 2 - i, titleY - i);
-  }
+  ctx.shadowColor = '#ffd700';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
   
   // Main title with gradient
   const titleGradient = ctx.createLinearGradient(0, titleY, 0, titleY + 50);
@@ -155,8 +150,10 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   titleGradient.addColorStop(0.7, '#ffaa00');
   titleGradient.addColorStop(1, '#ff8800');
   ctx.fillStyle = titleGradient;
-  ctx.font = 'bold 42px Arial';
   ctx.fillText(titleText, CANVAS_WIDTH / 2, titleY);
+  
+  // Reset shadow
+  ctx.shadowBlur = 0;
 
   // Title underline with gradient
   const underlineGradient = ctx.createLinearGradient(CANVAS_WIDTH / 2 - 100, 0, CANVAS_WIDTH / 2 + 100, 0);
@@ -290,20 +287,17 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   ctx.lineTo(panelX + panelWidth - 10, panelY + panelHeight);
   ctx.stroke();
 
-  // Result text with glow effect
+  // Result text with glow effect using shadow
   ctx.font = 'bold 34px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   
-  // Text glow (multiple layers)
+  // Text glow using shadow
   const glowColor = isTai ? '#00ff88' : '#ff4444';
-  for (let i = 5; i >= 1; i--) {
-    ctx.fillStyle = `${glowColor}${Math.floor(30 * i / 5).toString(16).padStart(2, '0')}`;
-    ctx.fillText(resultText, CANVAS_WIDTH / 2 + i, resultY + i);
-    ctx.fillText(resultText, CANVAS_WIDTH / 2 - i, resultY + i);
-    ctx.fillText(resultText, CANVAS_WIDTH / 2 + i, resultY - i);
-    ctx.fillText(resultText, CANVAS_WIDTH / 2 - i, resultY - i);
-  }
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur = 25;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
   
   // Main text with gradient
   const textGradient = ctx.createLinearGradient(0, resultY, 0, resultY + 45);
@@ -312,16 +306,19 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   textGradient.addColorStop(1, '#ffd700');
   ctx.fillStyle = textGradient;
   ctx.fillText(resultText, CANVAS_WIDTH / 2, resultY);
+  
+  // Reset shadow
+  ctx.shadowBlur = 0;
 
-  // Decorative sparkles around result
+  // Decorative sparkles around result (static positions, no animation)
   ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
   const sparkleCount = isTai ? 6 : 4;
   for (let i = 0; i < sparkleCount; i++) {
-    const angle = (i / sparkleCount) * Math.PI * 2 + Date.now() * 0.001;
-    const radius = 200 + Math.sin(Date.now() * 0.002 + i) * 10;
+    const angle = (i / sparkleCount) * Math.PI * 2;
+    const radius = 200;
     const sx = CANVAS_WIDTH / 2 + Math.cos(angle) * radius;
     const sy = resultY + 20 + Math.sin(angle) * 30;
-    const size = 2 + Math.sin(Date.now() * 0.003 + i) * 1;
+    const size = 2.5;
     ctx.beginPath();
     ctx.arc(sx, sy, size, 0, Math.PI * 2);
     ctx.fill();
