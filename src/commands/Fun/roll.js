@@ -301,22 +301,7 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   ctx.stroke();
   ctx.restore();
 
-  // LEFT: dice values + total (white with purple glow)
-  const textY = panelY + (panelHeight - 36) / 2;
-  ctx.font = 'bold 30px Arial';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-
-  const leftText = `${dice1} · ${dice2} · ${dice3} = ${total}`;
-  const leftX = panelX + 22;
-
-  ctx.shadowColor = 'rgba(184, 100, 255, 0.6)';
-  ctx.shadowBlur = 8;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(leftText, leftX, textY);
-  ctx.shadowBlur = 0;
-
-  // RIGHT: TÀI / XỈU pill badge
+  // ===== BADGE METRICS (calculated first for centering left text) =====
   const badgeText = isTai ? 'TÀI' : 'XỈU';
   const badgeColor = isTai ? '#00ff88' : '#ff4444';
   const badgeBg = isTai ? 'rgba(0, 255, 136, 0.15)' : 'rgba(255, 68, 68, 0.15)';
@@ -329,6 +314,30 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const badgeX = panelX + panelWidth - badgeWidth - 16;
   const badgeY = panelY + (panelHeight - badgeHeight) / 2;
 
+  // Divider position between left text and badge
+  const dividerX = badgeX - 14;
+
+  // ===== LEFT TEXT (CENTERED with purple glow) =====
+  const textY = panelY + (panelHeight - 36) / 2;
+  ctx.font = 'bold 30px Arial';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  const leftText = `${dice1} · ${dice2} · ${dice3} = ${total}`;
+  const textWidth = ctx.measureText(leftText).width;
+
+  // Center the left text within the area between panel left edge and divider
+  const textAreaLeft = panelX + 18;
+  const textAreaRight = dividerX - 14;
+  const leftX = textAreaLeft + (textAreaRight - textAreaLeft - textWidth) / 2;
+
+  ctx.shadowColor = 'rgba(184, 100, 255, 0.6)';
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(leftText, leftX, textY);
+  ctx.shadowBlur = 0;
+
+  // ===== RIGHT: TÀI / XỈU pill badge =====
   // Badge background (pill shape with glow)
   ctx.save();
   ctx.shadowColor = badgeColor;
@@ -357,7 +366,6 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   ctx.shadowBlur = 0;
 
   // Divider line between left text and badge
-  const dividerX = badgeX - 14;
   ctx.strokeStyle = 'rgba(184, 100, 255, 0.3)';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -365,31 +373,31 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   ctx.lineTo(dividerX, panelY + panelHeight - 12);
   ctx.stroke();
 
-  // Decorative corner dots on panel
-  ctx.fillStyle = 'rgba(184, 100, 255, 0.8)';
-  const cornerDots = [
-    { x: panelX + 14, y: panelY + 14 },
-    { x: panelX + panelWidth - 14, y: panelY + 14 },
-    { x: panelX + 14, y: panelY + panelHeight - 14 },
-    { x: panelX + panelWidth - 14, y: panelY + panelHeight - 14 },
-  ];
-  for (const dot of cornerDots) {
-    ctx.beginPath();
-    ctx.arc(dot.x, dot.y, 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  // Subtle top/bottom accent glow inside panel (clean, no scattered dots)
+  const insetGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelWidth, panelY);
+  insetGrad.addColorStop(0, 'rgba(184, 100, 255, 0)');
+  insetGrad.addColorStop(0.5, 'rgba(184, 100, 255, 0.25)');
+  insetGrad.addColorStop(1, 'rgba(184, 100, 255, 0)');
+  ctx.strokeStyle = insetGrad;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(panelX + 24, panelY + 3.5);
+  ctx.lineTo(panelX + panelWidth - 24, panelY + 3.5);
+  ctx.moveTo(panelX + 24, panelY + panelHeight - 3.5);
+  ctx.lineTo(panelX + panelWidth - 24, panelY + panelHeight - 3.5);
+  ctx.stroke();
 
-  // Decorative sparkles around panel (purple/pink)
-  ctx.fillStyle = 'rgba(184, 100, 255, 0.6)';
-  const sparkleCount = isTai ? 10 : 7;
-  for (let i = 0; i < sparkleCount; i++) {
-    const angle = (i / sparkleCount) * Math.PI * 2;
-    const radius = 300;
-    const sx = CANVAS_WIDTH / 2 + Math.cos(angle) * radius;
-    const sy = panelY + panelHeight / 2 + Math.sin(angle) * 32;
-    const size = 2.5;
+  // Two subtle sparkles on each side of panel only (clean)
+  ctx.fillStyle = 'rgba(184, 100, 255, 0.55)';
+  const sideSparkles = [
+    { x: panelX - 12, y: panelY + panelHeight / 2 - 14 },
+    { x: panelX - 12, y: panelY + panelHeight / 2 + 14 },
+    { x: panelX + panelWidth + 12, y: panelY + panelHeight / 2 - 14 },
+    { x: panelX + panelWidth + 12, y: panelY + panelHeight / 2 + 14 },
+  ];
+  for (const sparkle of sideSparkles) {
     ctx.beginPath();
-    ctx.arc(sx, sy, size, 0, Math.PI * 2);
+    ctx.arc(sparkle.x, sparkle.y, 2, 0, Math.PI * 2);
     ctx.fill();
   }
 
