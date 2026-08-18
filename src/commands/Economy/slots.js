@@ -93,23 +93,42 @@ export default {
             s3 = s3 === items ? s3 - 6 : s3;
         }
 
-        // Create GIF animation
+        // Create GIF animation - quay nhanh rồi chậm dần, dừng từng ô trái → phải
         const canvas = createCanvas(facade.width, facade.height);
         const ctx = canvas.getContext('2d');
-        const speed = 6;
-        const frameCount = Math.floor(item / speed);
 
-        const encoder = new GIFEncoder(facade.width, facade.height, 'octree', false, frameCount);
+        // Easing: bắt đầu nhanh, chậm dần về cuối
+        const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+        // Mỗi ô dừng tại frame khác nhau (trái → phải)
+        const stopFrames = [45, 60, 75];
+        // Số vòng quay thêm trước khi dừng (càng nhiều càng quay lâu)
+        const extraSpins = [3, 4, 5];
+        // Thêm 5 frame cuối giữ nguyên kết quả để người xem thấy rõ
+        const totalFrames = 80;
+        const results = [s1, s2, s3];
+        const reelHeight = items * item;
+
+        const encoder = new GIFEncoder(facade.width, facade.height, 'octree', false, totalFrames);
         encoder.setDelay(50);
         encoder.setRepeat(1); // 1 = chạy 1 lần rồi dừng ở kết quả cuối (0 = loop vô hạn)
         encoder.start();
 
-        for (let i = 1; i <= frameCount; i++) {
+        for (let i = 1; i <= totalFrames; i++) {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, facade.width, facade.height);
-            ctx.drawImage(reel, 25 + rw * 0, 100 - (speed * i * s1));
-            ctx.drawImage(reel, 25 + rw * 1, 100 - (speed * i * s2));
-            ctx.drawImage(reel, 25 + rw * 2, 100 - (speed * i * s3));
+
+            for (let reelIndex = 0; reelIndex < 3; reelIndex++) {
+                const stopFrame = stopFrames[reelIndex];
+                const t = Math.min(i / stopFrame, 1);
+                const eased = easeOutCubic(t);
+                // Tổng quãng đường: extraSpins vòng + vị trí kết quả
+                const totalDistance = (extraSpins[reelIndex] * items + results[reelIndex]) * item;
+                // Modulo reelHeight để reel luôn hiển thị trong cửa sổ
+                const y = 100 - Math.floor((totalDistance * eased) % reelHeight);
+                ctx.drawImage(reel, 25 + rw * reelIndex, y);
+            }
+
             ctx.drawImage(facade, 0, 0);
             encoder.addFrame(ctx);
         }
