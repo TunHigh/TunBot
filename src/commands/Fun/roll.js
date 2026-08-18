@@ -27,29 +27,33 @@ export default {
     const resultText = isTai ? '🟢 **TÀI**' : '🔴 **XỈU**';
     const resultColor = isTai ? 'success' : 'error';
 
-    // Path to dice GIFs
+    // Path to dice assets
     const diceDir = path.join(process.cwd(), 'src', 'assets', 'dice');
 
     // Create attachments for the 3 dice GIFs (rolling animation for each face)
-    const attachments = diceResults.map((value, index) => {
+    const gifAttachments = diceResults.map((value, index) => {
       const gifPath = path.join(diceDir, `dice${value}.gif`);
       return new AttachmentBuilder(gifPath, { name: `dice${index + 1}.gif` });
     });
 
-    // Show rolling animation with the 3 dice GIFs
+    // Rolling animation GIF (rollthedice.gif)
+    const rollingGifPath = path.join(diceDir, 'rollthedice.gif');
+    const rollingAttachment = new AttachmentBuilder(rollingGifPath, { name: 'rollthedice.gif' });
+
+    // Show rolling animation with rollthedice.gif
     const rollingEmbed = createEmbed({
       title: '🎲 Đang lắc 3 xúc xắc...',
       description: '🎲 🎲 🎲',
       color: 'primary',
-      image: 'attachment://dice1.gif',
+      image: 'attachment://rollthedice.gif',
     });
 
-    await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: attachments });
+    await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: [rollingAttachment, ...gifAttachments] });
 
-    // Let the animation play (GIFs are ~2-3 seconds each)
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    // Wait for GIFs to finish playing (~9.3 seconds)
+    await new Promise(resolve => setTimeout(resolve, 9300));
 
-    // Create combined image with all 3 dice side by side for final result
+    // Create combined image with all 3 dice side by side using PNG files
     const combinedBuffer = await createCombinedDiceImage(diceResults, diceDir, total, isTai);
     const combinedAttachment = new AttachmentBuilder(combinedBuffer, { name: 'dice-combined.png' });
 
@@ -82,35 +86,35 @@ export default {
     // Send combined image + all 3 GIFs as attachments
     await InteractionHelper.safeEditReply(interaction, { 
       embeds: [resultEmbed], 
-      files: [combinedAttachment, ...attachments] 
+      files: [combinedAttachment, ...gifAttachments] 
     });
     logger.debug(`Roll command executed by user ${interaction.user.id} - Result: ${diceResults.join(', ')} = ${total} (${isTai ? 'Tài' : 'Xỉu'}) in guild ${interaction.guildId}`);
   },
 };
 
 /**
- * Create a combined image with 3 dice side by side
+ * Create a combined image with 3 dice side by side using PNG files
  */
 async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const DICE_SIZE = 200;
   const GAP = 20;
   const CANVAS_WIDTH = DICE_SIZE * 3 + GAP * 2;
-  const CANVAS_HEIGHT = DICE_SIZE + 60; // Extra space for labels
+  const CANVAS_HEIGHT = DICE_SIZE + 80; // Extra space for labels and result
 
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   const ctx = canvas.getContext('2d');
 
-  // Dark background
+  // Dark background matching the sample
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // Load and draw each die's final frame (first frame of GIF as approximation)
+  // Load and draw each die using PNG files (static final face)
   for (let i = 0; i < 3; i++) {
     const value = diceResults[i];
-    const gifPath = path.join(diceDir, `dice${value}.gif`);
+    const pngPath = path.join(diceDir, `dice${value}.png`);
     
     try {
-      const image = await loadImage(gifPath);
+      const image = await loadImage(pngPath);
       const x = i * (DICE_SIZE + GAP);
       const y = 10;
       
@@ -149,7 +153,7 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   ctx.font = 'bold 28px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.fillText(`Tổng: ${total} → ${isTai ? 'TÀI' : 'XỈU'}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 10);
+  ctx.fillText(`Tổng: ${total} → ${isTai ? 'TÀI' : 'XỈU'}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 15);
 
   return canvas.toBuffer('image/png');
 }
