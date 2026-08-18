@@ -101,6 +101,7 @@ export default {
 
         const encoder = new GIFEncoder(facade.width, facade.height, 'octree', false, frameCount);
         encoder.setDelay(50);
+        encoder.setRepeat(1); // 1 = chạy 1 lần rồi dừng ở kết quả cuối (0 = loop vô hạn)
         encoder.start();
 
         for (let i = 1; i <= frameCount; i++) {
