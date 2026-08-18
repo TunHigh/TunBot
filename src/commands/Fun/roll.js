@@ -94,7 +94,7 @@ export default {
 /**
  * Create a combined image with 3 dice side by side using PNG files
  * Enhanced with beautiful visual effects: gradients, shadows, glows
- * Theme: Purple gradient
+ * Background: dicebg.png
  */
 async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const DICE_SIZE = 220;
@@ -105,20 +105,36 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   const ctx = canvas.getContext('2d');
 
-  // ===== PURPLE THEME BACKGROUND =====
-  // Multi-layer purple gradient
-  const bgGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-  bgGradient.addColorStop(0, '#1a0a2e');
-  bgGradient.addColorStop(0.3, '#2d1b4e');
-  bgGradient.addColorStop(0.6, '#3d1a5c');
-  bgGradient.addColorStop(1, '#1a0a2e');
-  ctx.fillStyle = bgGradient;
+  // ===== BACKGROUND: dicebg.png =====
+  // Load and draw the background image, scaled to fill canvas
+  const bgImagePath = path.join(diceDir, 'dicebg.png');
+  try {
+    const bgImage = await loadImage(bgImagePath);
+    // Draw background image covering entire canvas (scale to fill)
+    ctx.drawImage(bgImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  } catch (err) {
+    // Fallback: purple gradient if image fails to load
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+    bgGradient.addColorStop(0, '#1a0a2e');
+    bgGradient.addColorStop(0.3, '#2d1b4e');
+    bgGradient.addColorStop(0.6, '#3d1a5c');
+    bgGradient.addColorStop(1, '#1a0a2e');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  }
+
+  // Dark overlay to make text/elements pop (semi-transparent dark purple)
+  const overlayGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+  overlayGradient.addColorStop(0, 'rgba(10, 5, 20, 0.6)');
+  overlayGradient.addColorStop(0.5, 'rgba(20, 10, 40, 0.5)');
+  overlayGradient.addColorStop(1, 'rgba(10, 5, 20, 0.7)');
+  ctx.fillStyle = overlayGradient;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // Subtle radial glow in center (purple/pink)
+  // Subtle radial glow in center (purple/pink) - on top of overlay
   const centerGlow = ctx.createRadialGradient(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 0, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_WIDTH / 1.5);
-  centerGlow.addColorStop(0, 'rgba(180, 100, 255, 0.12)');
-  centerGlow.addColorStop(0.5, 'rgba(255, 100, 200, 0.06)');
+  centerGlow.addColorStop(0, 'rgba(180, 100, 255, 0.15)');
+  centerGlow.addColorStop(0.5, 'rgba(255, 100, 200, 0.08)');
   centerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = centerGlow;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
