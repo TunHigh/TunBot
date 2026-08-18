@@ -100,7 +100,7 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const DICE_SIZE = 220;
   const GAP = 40;
   const CANVAS_WIDTH = DICE_SIZE * 3 + GAP * 2 + 80;
-  const CANVAS_HEIGHT = DICE_SIZE + 180;
+  const CANVAS_HEIGHT = DICE_SIZE + 220;
 
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   const ctx = canvas.getContext('2d');
@@ -198,7 +198,7 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   }
 
   // ===== DICE WITH SHADOWS (NO REFLECTION - REMOVED BLACK BOX) =====
-  const diceY = 90;
+  const diceY = 78;
   const diceShadowOffset = 8;
   const diceShadowBlur = 20;
 
@@ -258,77 +258,135 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
     }
   }
 
-  // ===== RESULT TEXT WITH PURPLE THEME =====
-  const resultY = diceY + DICE_SIZE + 45;
+  // ===== RESULT PANEL (REDESIGNED - COMPACT, ROUNDED, WITH BADGE) =====
   const dice1 = diceResults[0];
   const dice2 = diceResults[1];
   const dice3 = diceResults[2];
-  const resultText = `${dice1} · ${dice2} · ${dice3} = ${total}  →  ${isTai ? 'TÀI' : 'XỈU'}`;
-  
-  // Result background panel
-  const panelY = resultY - 15;
-  const panelHeight = 60;
-  const panelWidth = CANVAS_WIDTH * 0.85;
-  const panelX = (CANVAS_WIDTH - panelWidth) / 2;
-  
-  // Panel background with purple gradient
-  const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
-  panelGrad.addColorStop(0, 'rgba(184, 100, 255, 0.2)');
-  panelGrad.addColorStop(0.5, 'rgba(255, 100, 200, 0.15)');
-  panelGrad.addColorStop(1, 'rgba(184, 100, 255, 0.1)');
-  ctx.fillStyle = panelGrad;
-  ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
-  
-  // Panel border (purple/pink gradient)
-  const borderGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelWidth, panelY);
-  borderGrad.addColorStop(0, '#b864ff');
-  borderGrad.addColorStop(0.5, '#ff64c8');
-  borderGrad.addColorStop(1, '#b864ff');
-  ctx.strokeStyle = borderGrad;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
-  
-  // Inner glow lines
-  ctx.strokeStyle = 'rgba(184, 100, 255, 0.4)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(panelX + 10, panelY);
-  ctx.lineTo(panelX + 10, panelY + panelHeight);
-  ctx.moveTo(panelX + panelWidth - 10, panelY);
-  ctx.lineTo(panelX + panelWidth - 10, panelY + panelHeight);
-  ctx.stroke();
 
-  // Result text with glow effect using shadow
-  ctx.font = 'bold 34px Arial';
-  ctx.textAlign = 'center';
+  // Result panel - positioned up, compact, and not touching the edges
+  const panelY = diceY + DICE_SIZE + 28;
+  const panelHeight = 62;
+  const panelWidth = CANVAS_WIDTH * 0.76;
+  const panelX = (CANVAS_WIDTH - panelWidth) / 2;
+
+  // Panel shadow (soft drop)
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  ctx.shadowBlur = 15;
+  ctx.shadowOffsetY = 4;
+
+  // Rounded panel background with purple/pink gradient
+  const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
+  panelGrad.addColorStop(0, 'rgba(184, 100, 255, 0.25)');
+  panelGrad.addColorStop(0.5, 'rgba(255, 100, 200, 0.15)');
+  panelGrad.addColorStop(1, 'rgba(184, 100, 255, 0.12)');
+  ctx.fillStyle = panelGrad;
+  ctx.beginPath();
+  ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 16);
+  ctx.fill();
+  ctx.restore();
+
+  // Panel border - purple/pink gradient with glow
+  ctx.save();
+  const borderGrad2 = ctx.createLinearGradient(panelX, panelY, panelX + panelWidth, panelY);
+  borderGrad2.addColorStop(0, '#b864ff');
+  borderGrad2.addColorStop(0.5, '#ff64c8');
+  borderGrad2.addColorStop(1, '#b864ff');
+  ctx.strokeStyle = borderGrad2;
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = '#b864ff';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 16);
+  ctx.stroke();
+  ctx.restore();
+
+  // LEFT: dice values + total (white with purple glow)
+  const textY = panelY + (panelHeight - 36) / 2;
+  ctx.font = 'bold 30px Arial';
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  
-  // Text glow using shadow (green for Tài, red for Xỉu)
-  const glowColor = isTai ? '#00ff88' : '#ff4444';
-  ctx.shadowColor = glowColor;
-  ctx.shadowBlur = 25;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-  
-  // Main text with purple/pink gradient
-  const textGradient = ctx.createLinearGradient(0, resultY, 0, resultY + 45);
-  textGradient.addColorStop(0, '#ffffff');
-  textGradient.addColorStop(0.5, '#f0e6ff');
-  textGradient.addColorStop(1, '#d4a5ff');
-  ctx.fillStyle = textGradient;
-  ctx.fillText(resultText, CANVAS_WIDTH / 2, resultY);
-  
-  // Reset shadow
+
+  const leftText = `${dice1} · ${dice2} · ${dice3} = ${total}`;
+  const leftX = panelX + 22;
+
+  ctx.shadowColor = 'rgba(184, 100, 255, 0.6)';
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(leftText, leftX, textY);
   ctx.shadowBlur = 0;
 
-  // Decorative sparkles around result (purple/pink)
-  ctx.fillStyle = 'rgba(184, 100, 255, 0.7)';
-  const sparkleCount = isTai ? 6 : 4;
+  // RIGHT: TÀI / XỈU pill badge
+  const badgeText = isTai ? 'TÀI' : 'XỈU';
+  const badgeColor = isTai ? '#00ff88' : '#ff4444';
+  const badgeBg = isTai ? 'rgba(0, 255, 136, 0.15)' : 'rgba(255, 68, 68, 0.15)';
+
+  ctx.font = 'bold 22px Arial';
+  const badgeTextWidth = ctx.measureText(badgeText).width;
+  const badgePaddingX = 18;
+  const badgeHeight = 36;
+  const badgeWidth = badgeTextWidth + badgePaddingX * 2;
+  const badgeX = panelX + panelWidth - badgeWidth - 16;
+  const badgeY = panelY + (panelHeight - badgeHeight) / 2;
+
+  // Badge background (pill shape with glow)
+  ctx.save();
+  ctx.shadowColor = badgeColor;
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = badgeBg;
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Badge border
+  ctx.strokeStyle = badgeColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2);
+  ctx.stroke();
+
+  // Badge text
+  ctx.font = 'bold 22px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = badgeColor;
+  ctx.shadowBlur = 10;
+  ctx.fillStyle = badgeColor;
+  ctx.fillText(badgeText, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2 + 1);
+  ctx.shadowBlur = 0;
+
+  // Divider line between left text and badge
+  const dividerX = badgeX - 14;
+  ctx.strokeStyle = 'rgba(184, 100, 255, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(dividerX, panelY + 12);
+  ctx.lineTo(dividerX, panelY + panelHeight - 12);
+  ctx.stroke();
+
+  // Decorative corner dots on panel
+  ctx.fillStyle = 'rgba(184, 100, 255, 0.8)';
+  const cornerDots = [
+    { x: panelX + 14, y: panelY + 14 },
+    { x: panelX + panelWidth - 14, y: panelY + 14 },
+    { x: panelX + 14, y: panelY + panelHeight - 14 },
+    { x: panelX + panelWidth - 14, y: panelY + panelHeight - 14 },
+  ];
+  for (const dot of cornerDots) {
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Decorative sparkles around panel (purple/pink)
+  ctx.fillStyle = 'rgba(184, 100, 255, 0.6)';
+  const sparkleCount = isTai ? 10 : 7;
   for (let i = 0; i < sparkleCount; i++) {
     const angle = (i / sparkleCount) * Math.PI * 2;
-    const radius = 200;
+    const radius = 300;
     const sx = CANVAS_WIDTH / 2 + Math.cos(angle) * radius;
-    const sy = resultY + 20 + Math.sin(angle) * 30;
+    const sy = panelY + panelHeight / 2 + Math.sin(angle) * 32;
     const size = 2.5;
     ctx.beginPath();
     ctx.arc(sx, sy, size, 0, Math.PI * 2);
