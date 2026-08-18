@@ -93,42 +93,101 @@ export default {
 
 /**
  * Create a combined image with 3 dice side by side using PNG files
- * Style matches the clean "TÀI XỈU" sample design
+ * Enhanced with beautiful visual effects: gradients, shadows, glows, reflections
  */
 async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
   const DICE_SIZE = 220;
   const GAP = 40;
-  const CANVAS_WIDTH = DICE_SIZE * 3 + GAP * 2 + 80; // Extra padding
-  const CANVAS_HEIGHT = DICE_SIZE + 180; // Top title + dice + bottom result (extra padding)
+  const CANVAS_WIDTH = DICE_SIZE * 3 + GAP * 2 + 80;
+  const CANVAS_HEIGHT = DICE_SIZE + 180;
 
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   const ctx = canvas.getContext('2d');
 
-  // Dark gradient background
-  const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-  gradient.addColorStop(0, '#1a1a2e');
-  gradient.addColorStop(0.5, '#16213e');
-  gradient.addColorStop(1, '#0f0f23');
-  ctx.fillStyle = gradient;
+  // ===== ENHANCED BACKGROUND =====
+  // Multi-layer gradient with subtle pattern
+  const bgGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+  bgGradient.addColorStop(0, '#0d0d1a');
+  bgGradient.addColorStop(0.3, '#1a1a3e');
+  bgGradient.addColorStop(0.6, '#16213e');
+  bgGradient.addColorStop(1, '#0f0f23');
+  ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // Draw title "TÀI XỈU"
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 42px Arial';
+  // Subtle radial glow in center
+  const centerGlow = ctx.createRadialGradient(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 0, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_WIDTH / 1.5);
+  centerGlow.addColorStop(0, 'rgba(255, 215, 0, 0.08)');
+  centerGlow.addColorStop(0.5, 'rgba(255, 140, 0, 0.04)');
+  centerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = centerGlow;
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // Decorative top accent line
+  const topAccent = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, 0);
+  topAccent.addColorStop(0, 'transparent');
+  topAccent.addColorStop(0.5, '#ffd700');
+  topAccent.addColorStop(1, 'transparent');
+  ctx.fillStyle = topAccent;
+  ctx.fillRect(CANVAS_WIDTH * 0.15, 8, CANVAS_WIDTH * 0.7, 2);
+
+  // ===== TITLE WITH GLOW EFFECT =====
+  const titleY = 25;
+  const titleText = 'KẾT QUẢ TUNG XÚC XẮC';
+  
+  // Outer glow (multiple layers for smooth glow)
+  ctx.font = 'bold 44px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('TÀI XỈU', CANVAS_WIDTH / 2, 25);
+  
+  // Glow layers
+  for (let i = 6; i >= 1; i--) {
+    ctx.fillStyle = `rgba(255, 215, 0, ${0.08 * i})`;
+    ctx.fillText(titleText, CANVAS_WIDTH / 2 + i, titleY + i);
+    ctx.fillText(titleText, CANVAS_WIDTH / 2 - i, titleY + i);
+    ctx.fillText(titleText, CANVAS_WIDTH / 2 + i, titleY - i);
+    ctx.fillText(titleText, CANVAS_WIDTH / 2 - i, titleY - i);
+  }
+  
+  // Main title with gradient
+  const titleGradient = ctx.createLinearGradient(0, titleY, 0, titleY + 50);
+  titleGradient.addColorStop(0, '#fff8e7');
+  titleGradient.addColorStop(0.3, '#ffd700');
+  titleGradient.addColorStop(0.7, '#ffaa00');
+  titleGradient.addColorStop(1, '#ff8800');
+  ctx.fillStyle = titleGradient;
+  ctx.font = 'bold 42px Arial';
+  ctx.fillText(titleText, CANVAS_WIDTH / 2, titleY);
 
-  // Draw underline below title
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
+  // Title underline with gradient
+  const underlineGradient = ctx.createLinearGradient(CANVAS_WIDTH / 2 - 100, 0, CANVAS_WIDTH / 2 + 100, 0);
+  underlineGradient.addColorStop(0, 'transparent');
+  underlineGradient.addColorStop(0.5, '#ffd700');
+  underlineGradient.addColorStop(1, 'transparent');
+  ctx.strokeStyle = underlineGradient;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(CANVAS_WIDTH / 2 - 80, 75);
-  ctx.lineTo(CANVAS_WIDTH / 2 + 80, 75);
+  ctx.moveTo(CANVAS_WIDTH / 2 - 100, 78);
+  ctx.lineTo(CANVAS_WIDTH / 2 + 100, 78);
   ctx.stroke();
 
-  // Load and draw each die using PNG files
+  // Subtle particles/dots near title
+  ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const radius = 120;
+    const px = CANVAS_WIDTH / 2 + Math.cos(angle) * radius;
+    const py = 50 + Math.sin(angle) * 20;
+    ctx.beginPath();
+    ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ===== DICE WITH SHADOWS & REFLECTIONS =====
   const diceY = 90;
+  const diceShadowOffset = 8;
+  const diceShadowBlur = 20;
+
   for (let i = 0; i < 3; i++) {
     const value = diceResults[i];
     const pngPath = path.join(diceDir, `dice${value}.png`);
@@ -136,35 +195,137 @@ async function createCombinedDiceImage(diceResults, diceDir, total, isTai) {
     
     try {
       const image = await loadImage(pngPath);
-      // Draw die image centered
+      
+      // Draw dice shadow (soft drop shadow)
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = diceShadowBlur;
+      ctx.shadowOffsetX = diceShadowOffset;
+      ctx.shadowOffsetY = diceShadowOffset;
       ctx.drawImage(image, x, diceY, DICE_SIZE, DICE_SIZE);
+      ctx.restore();
+      
+      // Draw dice again on top (without shadow) for crisp edges
+      ctx.drawImage(image, x, diceY, DICE_SIZE, DICE_SIZE);
+      
+      // Subtle reflection at bottom of dice
+      const reflectionHeight = 30;
+      const reflectionGradient = ctx.createLinearGradient(0, diceY + DICE_SIZE, 0, diceY + DICE_SIZE + reflectionHeight);
+      reflectionGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+      reflectionGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = reflectionGradient;
+      ctx.fillRect(x, diceY + DICE_SIZE, DICE_SIZE, reflectionHeight);
+      
     } catch (err) {
-      // Fallback: draw a simple colored rectangle with number
-      ctx.fillStyle = '#333';
+      // Fallback with enhanced styling
+      // Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(x + diceShadowOffset, diceY + diceShadowOffset, DICE_SIZE, DICE_SIZE);
+      
+      // Dice body with gradient
+      const diceGrad = ctx.createLinearGradient(x, diceY, x, diceY + DICE_SIZE);
+      diceGrad.addColorStop(0, '#2a2a4a');
+      diceGrad.addColorStop(0.5, '#1e1e3e');
+      diceGrad.addColorStop(1, '#151530');
+      ctx.fillStyle = diceGrad;
       ctx.fillRect(x, diceY, DICE_SIZE, DICE_SIZE);
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(x, diceY, DICE_SIZE, DICE_SIZE);
+      
+      // Border glow
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur = 10;
+      ctx.strokeRect(x + 2, diceY + 2, DICE_SIZE - 4, DICE_SIZE - 4);
+      ctx.shadowBlur = 0;
+      
+      // Number
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 100px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur = 15;
       ctx.fillText(value.toString(), x + DICE_SIZE / 2, diceY + DICE_SIZE / 2);
+      ctx.shadowBlur = 0;
     }
   }
 
-  // Draw bottom result line: "5 · 2 · 3 = 10 → XỈU"
+  // ===== RESULT TEXT WITH ENHANCED EFFECTS =====
   const resultY = diceY + DICE_SIZE + 45;
   const dice1 = diceResults[0];
   const dice2 = diceResults[1];
   const dice3 = diceResults[2];
   const resultText = `${dice1} · ${dice2} · ${dice3} = ${total}  →  ${isTai ? 'TÀI' : 'XỈU'}`;
   
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 32px Arial';
+  // Result background panel
+  const panelY = resultY - 15;
+  const panelHeight = 60;
+  const panelWidth = CANVAS_WIDTH * 0.85;
+  const panelX = (CANVAS_WIDTH - panelWidth) / 2;
+  
+  // Panel background with gradient
+  const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
+  panelGrad.addColorStop(0, 'rgba(255, 215, 0, 0.15)');
+  panelGrad.addColorStop(0.5, 'rgba(255, 140, 0, 0.1)');
+  panelGrad.addColorStop(1, 'rgba(255, 215, 0, 0.05)');
+  ctx.fillStyle = panelGrad;
+  ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+  
+  // Panel border
+  const borderGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelWidth, panelY);
+  borderGrad.addColorStop(0, '#ffd700');
+  borderGrad.addColorStop(0.5, '#ff8800');
+  borderGrad.addColorStop(1, '#ffd700');
+  ctx.strokeStyle = borderGrad;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
+  
+  // Inner glow lines
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(panelX + 10, panelY);
+  ctx.lineTo(panelX + 10, panelY + panelHeight);
+  ctx.moveTo(panelX + panelWidth - 10, panelY);
+  ctx.lineTo(panelX + panelWidth - 10, panelY + panelHeight);
+  ctx.stroke();
+
+  // Result text with glow effect
+  ctx.font = 'bold 34px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
+  
+  // Text glow (multiple layers)
+  const glowColor = isTai ? '#00ff88' : '#ff4444';
+  for (let i = 5; i >= 1; i--) {
+    ctx.fillStyle = `${glowColor}${Math.floor(30 * i / 5).toString(16).padStart(2, '0')}`;
+    ctx.fillText(resultText, CANVAS_WIDTH / 2 + i, resultY + i);
+    ctx.fillText(resultText, CANVAS_WIDTH / 2 - i, resultY + i);
+    ctx.fillText(resultText, CANVAS_WIDTH / 2 + i, resultY - i);
+    ctx.fillText(resultText, CANVAS_WIDTH / 2 - i, resultY - i);
+  }
+  
+  // Main text with gradient
+  const textGradient = ctx.createLinearGradient(0, resultY, 0, resultY + 45);
+  textGradient.addColorStop(0, '#ffffff');
+  textGradient.addColorStop(0.5, '#fff8e7');
+  textGradient.addColorStop(1, '#ffd700');
+  ctx.fillStyle = textGradient;
   ctx.fillText(resultText, CANVAS_WIDTH / 2, resultY);
+
+  // Decorative sparkles around result
+  ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
+  const sparkleCount = isTai ? 6 : 4;
+  for (let i = 0; i < sparkleCount; i++) {
+    const angle = (i / sparkleCount) * Math.PI * 2 + Date.now() * 0.001;
+    const radius = 200 + Math.sin(Date.now() * 0.002 + i) * 10;
+    const sx = CANVAS_WIDTH / 2 + Math.cos(angle) * radius;
+    const sy = resultY + 20 + Math.sin(angle) * 30;
+    const size = 2 + Math.sin(Date.now() * 0.003 + i) * 1;
+    ctx.beginPath();
+    ctx.arc(sx, sy, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   return canvas.toBuffer('image/png');
 }
