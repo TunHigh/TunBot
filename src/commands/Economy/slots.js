@@ -145,7 +145,7 @@ export default {
         const attachment = new AttachmentBuilder(gifBuffer, { name: 'slots.gif' });
         resultEmbed.setImage('attachment://slots.gif');
         resultEmbed.addFields({
-            name: 'Số dư tiền mặt mới',
+            name: 'Số dư hiện tại',
             value: `$${userData.wallet.toLocaleString()}`,
             inline: true,
         });
