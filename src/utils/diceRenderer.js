@@ -1,766 +1,1355 @@
-import { Canvas } from '@napi-rs/canvas';
-import GIFEncoder from 'gif-encoder-2';
+import { createCanvas } from '@napi-rs/canvas';
+import sharp from 'sharp';
 
-/**
- * Optimized Tài Xỉu Dice Renderer - True 3D Perspective
- * - Smaller canvas (720x400) for speed
- * - 20 FPS, shorter duration
- * - Darker dice faces with strong contrast
- * - Hand-drawn organic pips
- * - Physics-based tumble & settle
- * - Final frame hold
- */
+// ============================================================
+// DICE ANIMATED WEBP - 3 DICE (TÀI XỈU STYLE)
+// @napi-rs/canvas + sharp
+//
+// Output:
+//     renderRollAnimation([dice1, dice2, dice3]) -> Buffer (WebP)
+//     renderFinalFrame([dice1, dice2, dice3]) -> Buffer (PNG)
+//
+// Transparent background
+// ============================================================
 
-const DEFAULTS = {
-  width: 720,
-  height: 400,
-  fps: 20,
-  duration: 1200,      // ms rolling (shorter = faster)
-  resultPause: 400,    // ms hold final frame
-  diceSize: 110,       // logical size (half-edge in 3D units)
-  gap: 35,             // gap between dice centers
-  background: '#111318',
-  title: 'TÀI XỈU',
-  showResultText: true,
-  // 3D camera
-  cameraZ: 350,
-  focal: 250,
-  // Colors - DARKER faces for contrast on dark bg
-  faceLight: '#e8eaeF',      // bright but not white
-  faceMid: '#c8ccd4',
-  faceDark: '#a8adb8',
-  faceShadow: '#888c96',
-  faceShadowDark: '#686c76',
-  outlineColor: '#5a5e66',   // darker outline
-  pipColor: '#0d0d0d',       // very dark pips
-  pipHighlight: '#ffffff',
-  shadowColor: '#000000',
+const SIZE = 240;           // Single die size
+const CANVAS_WIDTH = 800;   // 3 dice + gaps
+const CANVAS_HEIGHT = 320;
+const FPS = 30;
+const FRAME_COUNT = 45;     // Reduced to fit WebP 16383px height limit (320*45=14400)
+const FRAME_DELAY = Math.round(1000 / FPS);
+const DICE_GAP = 30;
+
+// ============================================================
+// STYLE
+// ============================================================
+
+const STYLE = {
+    cubeSize: 72,
+
+    // Main faces
+    front: '#F8F8F5',
+    right: '#E7E9E7',
+    top: '#FFFFFF',
+
+    left: '#E1E4E3',
+    bottom: '#D8DBDA',
+    back: '#D2D6D5',
+
+    // Outline
+    outline: '#999E9F',
+
+    // Pips
+    pip: '#777C7D',
+    pipShadow: 'rgba(60,65,65,0.22)',
+    pipHighlight: 'rgba(255,255,255,0.55)',
+
+    // Shadow
+    groundShadow: 'rgba(65,70,70,0.18)',
+
+    // Motion
+    motion: 'rgba(125,132,132,0.40)',
+
+    // Background
+    background: '#111318',
+    titleColor: 'rgba(255,255,255,0.9)',
+    textColor: 'rgba(255,255,255,0.45)',
+    resultTextColor: '#ffffff',
 };
 
-// ── 3D Math ──
+// ============================================================
+// MATH
+// ============================================================
 
-function rotX(p, a) {
-  const c = Math.cos(a), s = Math.sin(a);
-  return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c };
-}
-
-function rotY(p, a) {
-  const c = Math.cos(a), s = Math.sin(a);
-  return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c };
-}
-
-function rotZ(p, a) {
-  const c = Math.cos(a), s = Math.sin(a);
-  return { x: p.x * c - p.y * s, y: p.x * s + p.y * c, z: p.z };
-}
-
-function rotate(p, rx, ry, rz) {
-  p = rotX(p, rx);
-  p = rotY(p, ry);
-  p = rotZ(p, rz);
-  return p;
-}
-
-function dot(a, b) {
-  return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-function cross(a, b) {
-  return {
-    x: a.y * b.z - a.z * b.y,
-    y: a.z * b.x - a.x * b.z,
-    z: a.x * b.y - a.y * b.x,
-  };
-}
-
-function sub(a, b) {
-  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
-}
-
-function normalize(v) {
-  const l = Math.sqrt(dot(v, v)) || 1;
-  return { x: v.x / l, y: v.y / l, z: v.z / l };
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
 }
 
 function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
+    return 1 - Math.pow(1 - t, 3);
 }
 
-function easeOutBack(t) {
-  const c1 = 1.70158;
-  const c3 = c1 + 1;
-  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+function easeInOutSine(t) {
+    return -(Math.cos(Math.PI * t) - 1) / 2;
 }
 
-// ── Cube Geometry (unit cube, scaled by diceSize) ──
+function rotatePoint(point, rx, ry, rz) {
+    let { x, y, z } = point;
 
-function createCubeGeometry(size) {
-  const S = size / 2;
-  const vertices = [
-    { x: -S, y: -S, z: -S }, // 0
-    { x:  S, y: -S, z: -S }, // 1
-    { x:  S, y:  S, z: -S }, // 2
-    { x: -S, y:  S, z: -S }, // 3
-    { x: -S, y: -S, z:  S }, // 4
-    { x:  S, y: -S, z:  S }, // 5
-    { x:  S, y:  S, z:  S }, // 6
-    { x: -S, y:  S, z:  S }, // 7
-  ];
+    // X rotation
+    const cosX = Math.cos(rx);
+    const sinX = Math.sin(rx);
 
-  const faces = [
-    {
-      name: 'front',
-      indices: [4, 5, 6, 7],
-      normal: { x: 0, y: 0, z: 1 },
-      u: { x: 1, y: 0, z: 0 },
-      v: { x: 0, y: 1, z: 0 },
-    },
-    {
-      name: 'right',
-      indices: [1, 5, 6, 2],
-      normal: { x: 1, y: 0, z: 0 },
-      u: { x: 0, y: 0, z: -1 },
-      v: { x: 0, y: 1, z: 0 },
-    },
-    {
-      name: 'top',
-      indices: [0, 1, 5, 4],
-      normal: { x: 0, y: -1, z: 0 },
-      u: { x: 1, y: 0, z: 0 },
-      v: { x: 0, y: 0, z: 1 },
-    },
-    {
-      name: 'back',
-      indices: [0, 3, 2, 1],
-      normal: { x: 0, y: 0, z: -1 },
-      u: { x: -1, y: 0, z: 0 },
-      v: { x: 0, y: 1, z: 0 },
-    },
-    {
-      name: 'left',
-      indices: [0, 4, 7, 3],
-      normal: { x: -1, y: 0, z: 0 },
-      u: { x: 0, y: 0, z: 1 },
-      v: { x: 0, y: 1, z: 0 },
-    },
-    {
-      name: 'bottom',
-      indices: [3, 7, 6, 2],
-      normal: { x: 0, y: 1, z: 0 },
-      u: { x: 1, y: 0, z: 0 },
-      v: { x: 0, y: 0, z: -1 },
-    },
-  ];
+    const y1 = y * cosX - z * sinX;
+    const z1 = y * sinX + z * cosX;
 
-  return { vertices, faces };
-}
+    y = y1;
+    z = z1;
 
-// ── Pip Positions (normalized -0.5 to 0.5) ──
+    // Y rotation
+    const cosY = Math.cos(ry);
+    const sinY = Math.sin(ry);
 
-const pipPositions = {
-  1: [[0, 0]],
-  2: [[-0.48, -0.48], [0.48, 0.48]],
-  3: [[-0.48, -0.48], [0, 0], [0.48, 0.48]],
-  4: [[-0.48, -0.48], [0.48, -0.48], [-0.48, 0.48], [0.48, 0.48]],
-  5: [[-0.48, -0.48], [0.48, -0.48], [0, 0], [-0.48, 0.48], [0.48, 0.48]],
-  6: [[-0.48, -0.5], [-0.48, 0], [-0.48, 0.5], [0.48, -0.5], [0.48, 0], [0.48, 0.5]],
-};
+    const x1 = x * cosY + z * sinY;
+    const z2 = -x * sinY + z * cosY;
 
-// ── Hand-drawn Pip (organic oval via bezier) ──
+    x = x1;
+    z = z2;
 
-function drawPip(ctx, x, y, radius, angle = 0) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
+    // Z rotation
+    const cosZ = Math.cos(rz);
+    const sinZ = Math.sin(rz);
 
-  ctx.beginPath();
-  // Organic hand-drawn oval shape
-  ctx.moveTo(-radius * 0.95, 0);
-  ctx.bezierCurveTo(
-    -radius * 0.85, -radius * 0.75,
-    -radius * 0.15, -radius,
-    radius * 0.55, -radius * 0.65
-  );
-  ctx.bezierCurveTo(
-    radius * 1.0, -radius * 0.25,
-    radius * 0.9, radius * 0.5,
-    radius * 0.45, radius * 0.75
-  );
-  ctx.bezierCurveTo(
-    -radius * 0.1, radius * 1.0,
-    -radius * 0.85, radius * 0.7,
-    -radius * 0.95, 0
-  );
-  ctx.closePath();
+    const x2 = x * cosZ - y * sinZ;
+    const y2 = x * sinZ + y * cosZ;
 
-  ctx.fillStyle = '#0d0d0d';
-  ctx.fill();
-
-  // Tiny soft highlight
-  ctx.globalAlpha = 0.15;
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.ellipse(
-    -radius * 0.25, -radius * 0.28,
-    radius * 0.25, radius * 0.12,
-    -0.25, 0, Math.PI * 2
-  );
-  ctx.fill();
-
-  ctx.restore();
-}
-
-// ── Draw pips on a 3D face ──
-
-function drawFacePips(ctx, face, number, rx, ry, rz, cameraZ, focal, canvasW, canvasH) {
-  const positions = pipPositions[number];
-
-  // Face center slightly in front of surface
-  const center = {
-    x: face.normal.x * 1.002,
-    y: face.normal.y * 1.002,
-    z: face.normal.z * 1.002,
-  };
-
-  for (const [px, py] of positions) {
-    // Local position on face
-    let p = {
-      x: center.x + face.u.x * px * 1.25 + face.v.x * py * 1.25,
-      y: center.y + face.u.y * px * 1.25 + face.v.y * py * 1.25,
-      z: center.z + face.u.z * px * 1.25 + face.v.z * py * 1.25,
+    return {
+        x: x2,
+        y: y2,
+        z
     };
-
-    // Rotate with cube
-    p = rotate(p, rx, ry, rz);
-
-    // Project to 2D
-    const z = cameraZ - p.z;
-    const scale = focal / z;
-    const projX = canvasW / 2 + p.x * scale;
-    const projY = canvasH / 2 + p.y * scale;
-
-    const pipRadius = 4.8 * scale;
-
-    // Subtle wobble based on position
-    const wobble = Math.sin(p.x * 0.2 + p.y * 0.13) * 0.18;
-
-    drawPip(ctx, projX, projY, pipRadius, wobble);
-  }
 }
 
-// ── Face Gradient (lighting based on visibility) ──
+// ============================================================
+// CAMERA
+// ============================================================
 
-function faceGradient(ctx, points, visibility, config) {
-  const minX = Math.min(...points.map(p => p.x));
-  const maxX = Math.max(...points.map(p => p.x));
-  const minY = Math.min(...points.map(p => p.y));
-  const maxY = Math.max(...points.map(p => p.y));
+function project(point) {
+    const camera = 520;
 
-  const g = ctx.createLinearGradient(minX, minY, maxX, maxY);
-  const light = clamp(visibility, 0, 1);
+    const denominator =
+        Math.max(
+            120,
+            camera - point.z
+        );
 
-  // Much darker, more contrasty colors
-  if (light > 0.7) {
-    g.addColorStop(0, config.faceLight);
-    g.addColorStop(0.5, config.faceMid);
-    g.addColorStop(1, config.faceDark);
-  } else if (light > 0.35) {
-    g.addColorStop(0, config.faceMid);
-    g.addColorStop(0.5, config.faceDark);
-    g.addColorStop(1, config.faceShadow);
-  } else {
-    g.addColorStop(0, config.faceShadow);
-    g.addColorStop(1, config.faceShadowDark);
-  }
-  return g;
+    const scale =
+        camera / denominator;
+
+    return {
+        x:
+            SIZE / 2 +
+            point.x * scale,
+
+        y:
+            SIZE / 2 +
+            point.y * scale,
+
+        z: point.z,
+
+        scale
+    };
 }
 
-// ── Render a single die with all its faces ──
+// ============================================================
+// ROUNDED FACE
+// ============================================================
 
-function renderSingleDie(ctx, state, value, config, offsetX, offsetY) {
-  const { vertices, faces } = createCubeGeometry(config.diceSize);
-  const canvasW = config.width;
-  const canvasH = config.height;
+function roundedPolygon(
+    ctx,
+    points,
+    radius = 10
+) {
+    if (points.length < 3) {
+        return;
+    }
 
-  // Transform vertices
-  const transformed = vertices.map(v => rotate(v, state.rx, state.ry, state.rz));
-
-  const camera = { x: 0, y: 0, z: config.cameraZ };
-
-  // Determine visible faces with depth sorting
-  const visibleFaces = [];
-
-  for (const face of faces) {
-    const a = transformed[face.indices[0]];
-    const b = transformed[face.indices[1]];
-    const c = transformed[face.indices[2]];
-
-    const normal = normalize(cross(sub(b, a), sub(c, a)));
-
-    const center = face.indices
-      .map(i => transformed[i])
-      .reduce(
-        (acc, p) => ({ x: acc.x + p.x / 4, y: acc.y + p.y / 4, z: acc.z + p.z / 4 }),
-        { x: 0, y: 0, z: 0 }
-      );
-
-    const toCamera = normalize({
-      x: camera.x - center.x,
-      y: camera.y - center.y,
-      z: camera.z - center.z,
-    });
-
-    const visibility = dot(normal, toCamera);
-
-    if (visibility <= 0) continue;
-
-    const points = face.indices.map(i => {
-      const v = transformed[i];
-      const z = config.cameraZ - v.z;
-      const scale = config.focal / z;
-      return {
-        x: canvasW / 2 + v.x * scale + offsetX,
-        y: canvasH / 2 + v.y * scale + offsetY,
-        scale,
-      };
-    });
-
-    visibleFaces.push({
-      face,
-      points,
-      center,
-      visibility,
-      depth: center.z,
-    });
-  }
-
-  // Painter's algorithm
-  visibleFaces.sort((a, b) => a.depth - b.depth);
-
-  // Shadow (draw first, behind everything)
-  drawDieShadow(ctx, state, config, offsetX, offsetY);
-
-  // Render faces
-  for (const item of visibleFaces) {
-    const { face, points, visibility } = item;
-
-    ctx.save();
     ctx.beginPath();
 
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const cur = points[i];
-      const mx = (prev.x + cur.x) / 2;
-      const my = (prev.y + cur.y) / 2;
-      ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
-    }
-    const last = points[points.length - 1];
-    const first = points[0];
-    const mx = (last.x + first.x) / 2;
-    const my = (last.y + first.y) / 2;
-    ctx.quadraticCurveTo(last.x, last.y, mx, my);
-    ctx.quadraticCurveTo(first.x, first.y, first.x, first.y);
-    ctx.closePath();
+    for (
+        let i = 0;
+        i < points.length;
+        i++
+    ) {
+        const previous =
+            points[
+                (i - 1 + points.length) %
+                    points.length
+            ];
 
-    ctx.fillStyle = faceGradient(ctx, points, visibility, config);
+        const current =
+            points[i];
+
+        const next =
+            points[
+                (i + 1) %
+                    points.length
+            ];
+
+        const dx1 =
+            previous.x -
+            current.x;
+
+        const dy1 =
+            previous.y -
+            current.y;
+
+        const len1 =
+            Math.sqrt(
+                dx1 * dx1 +
+                dy1 * dy1
+            );
+
+        const dx2 =
+            next.x -
+            current.x;
+
+        const dy2 =
+            next.y -
+            current.y;
+
+        const len2 =
+            Math.sqrt(
+                dx2 * dx2 +
+                dy2 * dy2
+            );
+
+        const r =
+            Math.min(
+                radius,
+                len1 * 0.22,
+                len2 * 0.22
+            );
+
+        const p1 = {
+            x:
+                current.x +
+                (previous.x -
+                    current.x) *
+                    (r / len1),
+
+            y:
+                current.y +
+                (previous.y -
+                    current.y) *
+                    (r / len1)
+        };
+
+        const p2 = {
+            x:
+                current.x +
+                (next.x -
+                    current.x) *
+                    (r / len2),
+
+            y:
+                current.y +
+                (next.y -
+                    current.y) *
+                    (r / len2)
+        };
+
+        if (i === 0) {
+            ctx.moveTo(
+                p1.x,
+                p1.y
+            );
+        } else {
+            ctx.lineTo(
+                p1.x,
+                p1.y
+            );
+        }
+
+        ctx.quadraticCurveTo(
+            current.x,
+            current.y,
+            p2.x,
+            p2.y
+        );
+    }
+
+    ctx.closePath();
+}
+
+// ============================================================
+// PIP PATTERNS
+// ============================================================
+
+function getPipPattern(number) {
+    const d = 0.27;
+
+    const patterns = {
+        1: [
+            [0, 0]
+        ],
+
+        2: [
+            [-d, -d],
+            [d, d]
+        ],
+
+        3: [
+            [-d, -d],
+            [0, 0],
+            [d, d]
+        ],
+
+        4: [
+            [-d, -d],
+            [d, -d],
+            [-d, d],
+            [d, d]
+        ],
+
+        5: [
+            [-d, -d],
+            [d, -d],
+            [0, 0],
+            [-d, d],
+            [d, d]
+        ],
+
+        6: [
+            [-d, -d],
+            [-d, 0],
+            [-d, d],
+            [d, -d],
+            [d, 0],
+            [d, d]
+        ]
+    };
+
+    return patterns[number] || patterns[1];
+}
+
+// ============================================================
+// PIP
+// ============================================================
+
+function drawPip(
+    ctx,
+    x,
+    y,
+    radius,
+    alpha = 1
+) {
+    ctx.save();
+
+    ctx.globalAlpha = alpha;
+
+    // Shadow
+    ctx.beginPath();
+
+    ctx.arc(
+        x + radius * 0.12,
+        y + radius * 0.16,
+        radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        STYLE.pipShadow;
+
     ctx.fill();
 
-    // Stronger outline
-    ctx.strokeStyle = config.outlineColor;
-    ctx.lineWidth = 1.5;
-    ctx.lineJoin = 'round';
+    // Main pip
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        STYLE.pip;
+
+    ctx.fill();
+
+    // Highlight
+    ctx.beginPath();
+
+    ctx.arc(
+        x - radius * 0.28,
+        y - radius * 0.30,
+        radius * 0.25,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        STYLE.pipHighlight;
+
+    ctx.fill();
+
+    ctx.restore();
+}
+
+// ============================================================
+// FACE PIPS
+// ============================================================
+
+function drawFacePips(
+    ctx,
+    face,
+    number,
+    half,
+    rx,
+    ry,
+    rz
+) {
+    const pattern =
+        getPipPattern(number);
+
+    const distance =
+        half * 0.48;
+
+    const radius =
+        half * 0.105;
+
+    for (const [px, py] of pattern) {
+        let point;
+
+        if (face === 'front') {
+            point = {
+                x:
+                    px * distance,
+
+                y:
+                    py * distance,
+
+                z:
+                    half + 1
+            };
+        }
+
+        else if (face === 'right') {
+            point = {
+                x:
+                    half + 1,
+
+                y:
+                    py * distance,
+
+                z:
+                    px * distance
+            };
+        }
+
+        else if (face === 'top') {
+            point = {
+                x:
+                    px * distance,
+
+                y:
+                    -half - 1,
+
+                z:
+                    py * distance
+            };
+        }
+
+        const rotated =
+            rotatePoint(
+                point,
+                rx,
+                ry,
+                rz
+            );
+
+        const projected =
+            project(rotated);
+
+        drawPip(
+            ctx,
+            projected.x,
+            projected.y,
+            radius *
+                projected.scale
+        );
+    }
+}
+
+// ============================================================
+// CUBE FACES
+// ============================================================
+
+function getCubeFaces(half) {
+    return [
+        {
+            name: 'front',
+
+            points: [
+                {
+                    x: -half,
+                    y: -half,
+                    z: half
+                },
+                {
+                    x: half,
+                    y: -half,
+                    z: half
+                },
+                {
+                    x: half,
+                    y: half,
+                    z: half
+                },
+                {
+                    x: -half,
+                    y: half,
+                    z: half
+                }
+            ],
+
+            color: STYLE.front
+        },
+
+        {
+            name: 'right',
+
+            points: [
+                {
+                    x: half,
+                    y: -half,
+                    z: -half
+                },
+                {
+                    x: half,
+                    y: -half,
+                    z: half
+                },
+                {
+                    x: half,
+                    y: half,
+                    z: half
+                },
+                {
+                    x: half,
+                    y: half,
+                    z: -half
+                }
+            ],
+
+            color: STYLE.right
+        },
+
+        {
+            name: 'top',
+
+            points: [
+                {
+                    x: -half,
+                    y: -half,
+                    z: -half
+                },
+                {
+                    x: half,
+                    y: -half,
+                    z: -half
+                },
+                {
+                    x: half,
+                    y: -half,
+                    z: half
+                },
+                {
+                    x: -half,
+                    y: -half,
+                    z: half
+                }
+            ],
+
+            color: STYLE.top
+        },
+
+        {
+            name: 'left',
+
+            points: [
+                {
+                    x: -half,
+                    y: -half,
+                    z: -half
+                },
+                {
+                    x: -half,
+                    y: -half,
+                    z: half
+                },
+                {
+                    x: -half,
+                    y: half,
+                    z: half
+                },
+                {
+                    x: -half,
+                    y: half,
+                    z: -half
+                }
+            ],
+
+            color: STYLE.left
+        },
+
+        {
+            name: 'bottom',
+
+            points: [
+                {
+                    x: -half,
+                    y: half,
+                    z: -half
+                },
+                {
+                    x: half,
+                    y: half,
+                    z: -half
+                },
+                {
+                    x: half,
+                    y: half,
+                    z: half
+                },
+                {
+                    x: -half,
+                    y: half,
+                    z: half
+                }
+            ],
+
+            color: STYLE.bottom
+        },
+
+        {
+            name: 'back',
+
+            points: [
+                {
+                    x: -half,
+                    y: -half,
+                    z: -half
+                },
+                {
+                    x: half,
+                    y: -half,
+                    z: -half
+                },
+                {
+                    x: half,
+                    y: half,
+                    z: -half
+                },
+                {
+                    x: -half,
+                    y: half,
+                    z: -half
+                }
+            ],
+
+            color: STYLE.back
+        }
+    ];
+}
+
+// ============================================================
+// DRAW SINGLE DIE
+// ============================================================
+
+function drawDice(
+    ctx,
+    {
+        rx,
+        ry,
+        rz,
+        scale,
+        values
+    }
+) {
+    const half =
+        STYLE.cubeSize *
+        scale;
+
+    const faces =
+        getCubeFaces(half);
+
+    const transformed =
+        faces.map(face => {
+            const rotated =
+                face.points.map(point =>
+                    rotatePoint(
+                        point,
+                        rx,
+                        ry,
+                        rz
+                    )
+                );
+
+            const projected =
+                rotated.map(project);
+
+            const averageZ =
+                rotated.reduce(
+                    (sum, point) =>
+                        sum + point.z,
+                    0
+                ) / rotated.length;
+
+            return {
+                ...face,
+
+                rotated,
+                projected,
+
+                averageZ
+            };
+        });
+
+    // Painter's algorithm
+    transformed.sort(
+        (a, b) =>
+            a.averageZ -
+            b.averageZ
+    );
+
+    // --------------------------------------------------------
+    // Faces
+    // --------------------------------------------------------
+
+    for (const face of transformed) {
+        roundedPolygon(
+            ctx,
+            face.projected,
+            11
+        );
+
+        ctx.fillStyle =
+            face.color;
+
+        ctx.fill();
+
+        ctx.strokeStyle =
+            STYLE.outline;
+
+        ctx.lineWidth = 2.2;
+
+        ctx.lineJoin =
+            'round';
+
+        ctx.stroke();
+    }
+
+    // --------------------------------------------------------
+    // Soft highlight on front
+    // --------------------------------------------------------
+
+    const front =
+        transformed.find(
+            face =>
+                face.name ===
+                'front'
+        );
+
+    if (front) {
+        const p =
+            front.projected;
+
+        ctx.save();
+
+        ctx.globalAlpha =
+            0.18;
+
+        roundedPolygon(
+            ctx,
+            [
+                {
+                    x:
+                        p[0].x +
+                        (p[1].x -
+                            p[0].x) *
+                            0.08,
+
+                    y:
+                        p[0].y +
+                        (p[1].y -
+                            p[0].y) *
+                            0.08
+                },
+
+                {
+                    x:
+                        p[0].x +
+                        (p[1].x -
+                            p[0].x) *
+                            0.92,
+
+                    y:
+                        p[0].y +
+                        (p[1].y -
+                            p[0].y) *
+                            0.08
+                },
+
+                {
+                    x:
+                        p[3].x +
+                        (p[2].x -
+                            p[3].x) *
+                            0.78,
+
+                    y:
+                        p[3].y +
+                        (p[2].y -
+                            p[3].y) *
+                            0.20
+                },
+
+                {
+                    x:
+                        p[3].x +
+                        (p[2].x -
+                            p[3].x) *
+                            0.18,
+
+                    y:
+                        p[3].y +
+                        (p[2].y -
+                            p[3].y) *
+                            0.20
+                }
+            ],
+            8
+        );
+
+        ctx.fillStyle =
+            '#FFFFFF';
+
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // --------------------------------------------------------
+    // Pips
+    // --------------------------------------------------------
+
+    drawFacePips(
+        ctx,
+        'front',
+        values.front,
+        half,
+        rx,
+        ry,
+        rz
+    );
+
+    drawFacePips(
+        ctx,
+        'right',
+        values.right,
+        half,
+        rx,
+        ry,
+        rz
+    );
+
+    drawFacePips(
+        ctx,
+        'top',
+        values.top,
+        half,
+        rx,
+        ry,
+        rz
+    );
+}
+
+// ============================================================
+// MOTION LINES
+// ============================================================
+
+function drawMotionLines(
+    ctx,
+    t,
+    offsetX
+) {
+    if (
+        t < 0.08 ||
+        t > 0.72
+    ) {
+        return;
+    }
+
+    const progress =
+        (t - 0.08) /
+        0.64;
+
+    const strength =
+        Math.sin(
+            progress *
+                Math.PI
+        );
+
+    ctx.save();
+
+    ctx.globalAlpha =
+        strength * 0.55;
+
+    ctx.strokeStyle =
+        STYLE.motion;
+
+    ctx.lineWidth = 3;
+
+    ctx.lineCap =
+        'round';
+
+    const baseX = offsetX + SIZE / 2;
+
+    // Left top
+    ctx.beginPath();
+
+    ctx.moveTo(
+        baseX - 84,
+        98
+    );
+
+    ctx.quadraticCurveTo(
+        baseX - 120,
+        112,
+        baseX - 101,
+        141
+    );
+
+    ctx.stroke();
+
+    // Left bottom
+    ctx.beginPath();
+
+    ctx.moveTo(
+        baseX - 89,
+        191
+    );
+
+    ctx.quadraticCurveTo(
+        baseX - 122,
+        205,
+        baseX - 93,
+        220
+    );
+
+    ctx.stroke();
+
+    // Right top
+    ctx.beginPath();
+
+    ctx.moveTo(
+        baseX + 84,
+        98
+    );
+
+    ctx.quadraticCurveTo(
+        baseX + 120,
+        113,
+        baseX + 101,
+        142
+    );
+
+    ctx.stroke();
+
+    // Right bottom
+    ctx.beginPath();
+
+    ctx.moveTo(
+        baseX + 89,
+        190
+    );
+
+    ctx.quadraticCurveTo(
+        baseX + 122,
+        204,
+        baseX + 91,
+        220
+    );
+
     ctx.stroke();
 
     ctx.restore();
-
-    // Draw pips on this face
-    drawFacePips(ctx, face, value, state.rx, state.ry, state.rz, 
-                 config.cameraZ, config.focal, canvasW, canvasH);
-  }
 }
 
-// ── Die Shadow ──
+// ============================================================
+// GROUND SHADOW
+// ============================================================
 
-function drawDieShadow(ctx, state, config, offsetX, offsetY) {
-  const canvasW = config.width;
-  const canvasH = config.height;
+function drawGroundShadow(
+    ctx,
+    t,
+    squash,
+    offsetX
+) {
+    let alpha = 0.08;
 
-  // Project bottom center
-  const bottomCenter = rotate({ x: 0, y: config.diceSize / 2, z: 0 }, state.rx, state.ry, state.rz);
-  const z = config.cameraZ - bottomCenter.z;
-  const scale = config.focal / z;
-  const shadowX = canvasW / 2 + bottomCenter.x * scale + offsetX;
-  const shadowY = canvasH / 2 + bottomCenter.y * scale + offsetY + config.diceSize * 0.6 * scale;
-
-  ctx.save();
-  ctx.globalAlpha = 0.3 * state.shadowScale;
-  ctx.filter = 'blur(10px)';
-  ctx.beginPath();
-  ctx.ellipse(
-    shadowX,
-    shadowY,
-    config.diceSize * 0.42 * scale * state.shadowWidth,
-    config.diceSize * 0.09 * scale,
-    0, 0, Math.PI * 2
-  );
-  ctx.fillStyle = config.shadowColor;
-  ctx.fill();
-  ctx.restore();
-}
-
-// ── Render all 3 dice ──
-
-function renderDice(ctx, diceStates, diceValues, config) {
-  const canvasW = config.width;
-  const canvasH = config.height;
-
-  // Clear
-  ctx.clearRect(0, 0, canvasW, canvasH);
-  ctx.fillStyle = config.background;
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // Central glow (subtle)
-  const glow = ctx.createRadialGradient(
-    canvasW / 2, canvasH * 0.47, 20,
-    canvasW / 2, canvasH * 0.47, canvasW * 0.5
-  );
-  glow.addColorStop(0, 'rgba(255,255,255,0.06)');
-  glow.addColorStop(0.5, 'rgba(255,255,255,0.02)');
-  glow.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // Floor glow
-  const floor = ctx.createRadialGradient(
-    canvasW / 2, canvasH * 0.85, 15,
-    canvasW / 2, canvasH * 0.85, 300
-  );
-  floor.addColorStop(0, 'rgba(255,255,255,0.03)');
-  floor.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = floor;
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // Title
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 26px Arial';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillText(config.title, canvasW / 2, 50);
-  const lineWidth = 75;
-  const grad = ctx.createLinearGradient(
-    canvasW / 2 - lineWidth, 0,
-    canvasW / 2 + lineWidth, 0
-  );
-  grad.addColorStop(0, 'rgba(255,255,255,0)');
-  grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(canvasW / 2 - lineWidth, 64, lineWidth * 2, 1);
-  ctx.restore();
-
-  // Positions for 3 dice
-  const totalWidth = config.diceSize * 3 + config.gap * 2;
-  const startX = (canvasW - totalWidth) / 2;
-  const baseY = 150 - canvasH / 2; // offset from center
-
-  // Render each die
-  for (let i = 0; i < 3; i++) {
-    const state = diceStates[i];
-    const offsetX = startX + i * (config.diceSize + config.gap) - canvasW / 2;
-    const offsetY = baseY - state.bounce - state.finalBounce;
-
-    renderSingleDie(ctx, state, diceValues[i], config, offsetX, offsetY);
-  }
-
-  // Result text
-  drawResultText(ctx, diceValues, config);
-}
-
-// ── Result Text ──
-
-function drawResultText(ctx, diceValues, config) {
-  if (!config.showResultText) return;
-
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.font = '600 17px Arial';
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.fillText('ĐANG LẮC...', config.width / 2, 360);
-  ctx.restore();
-}
-
-function drawFinalResultText(ctx, diceValues, config) {
-  if (!config.showResultText) return;
-
-  const total = diceValues[0] + diceValues[1] + diceValues[2];
-  const type = total >= 11 ? 'TÀI' : 'XỈU';
-
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 23px Arial';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(
-    `${diceValues[0]}  •  ${diceValues[1]}  •  ${diceValues[2]}    =    ${total}    →    ${type}`,
-    config.width / 2, 360
-  );
-  ctx.restore();
-}
-
-// ── Main Renderer Class ──
-
-export class DiceRenderer {
-  constructor(options = {}) {
-    this.config = { ...DEFAULTS, ...options };
-    this.frameCount = Math.max(1, Math.floor(this.config.duration / (1000 / this.config.fps)));
-    this.pauseFrames = Math.floor(this.config.resultPause / (1000 / this.config.fps));
-    this.totalFrames = this.frameCount + this.pauseFrames;
-  }
-
-  async renderRollAnimation(diceResults, seed = Date.now()) {
-    // Validate
-    if (!Array.isArray(diceResults) || diceResults.length !== 3) {
-      throw new TypeError('result phải là [dice1, dice2, dice3]');
-    }
-    for (const v of diceResults) {
-      if (!Number.isInteger(v) || v < 1 || v > 6) {
-        throw new RangeError('Giá trị xúc xắc phải từ 1 đến 6.');
-      }
+    if (t > 0.45) {
+        alpha =
+            0.08 +
+            ((t - 0.45) /
+                0.55) *
+                0.14;
     }
 
-    const encoder = new GIFEncoder(this.config.width, this.config.height);
-    encoder.setRepeat(0);
-    encoder.setDelay(Math.round(1000 / this.config.fps));
-    encoder.setQuality(10); // Lower quality = faster encoding
-    encoder.start();
+    let width =
+        44;
 
-    const canvas = new Canvas(this.config.width, this.config.height);
-    const ctx = canvas.getContext('2d');
-
-    // Per-dice random initial state
-    const diceStates = [0, 1, 2].map(i => {
-      return {
-        // Initial random orientation
-        rx: Math.random() * Math.PI * 2,
-        ry: Math.random() * Math.PI * 2,
-        rz: Math.random() * Math.PI * 2,
-        // Spin speeds (radians per frame at full speed)
-        spinX: (7 + Math.random() * 5) * Math.PI / 20,
-        spinY: (8 + Math.random() * 6) * Math.PI / 20,
-        spinZ: (4 + Math.random() * 4) * Math.PI / 20,
-        // Bounce
-        bouncePhase: Math.random() * Math.PI * 2,
-        bounce: 0,
-        finalBounce: 0,
-        // Shadow
-        shadowScale: 1,
-        shadowWidth: 1,
-        // Final settled orientation (slightly randomized)
-        finalRx: Math.sin(i * 1.7) * 0.04,
-        finalRy: Math.sin(i * 2.3) * 0.06,
-        finalRz: Math.sin(i) * 0.025,
-      };
-    });
-
-    // Rolling frames
-    for (let frame = 0; frame < this.frameCount; frame++) {
-      const rawProgress = frame / Math.max(1, this.frameCount - 1);
-
-      const rollProgress = clamp(rawProgress / 0.7, 0, 1);
-      const settleProgress = clamp((rawProgress - 0.7) / 0.3, 0, 1);
-
-      const rollingEase = easeOutCubic(rollProgress);
-      const settleEase = easeOutBack(settleProgress);
-
-      // Update each die
-      diceStates.forEach((state, index) => {
-        const roll = 1 - rollingEase;
-
-        // Spin during roll phase
-        state.rx = lerp(state.rx + roll * state.spinX * 20, state.finalRx, settleEase);
-        state.ry = lerp(state.ry + roll * state.spinY * 20, state.finalRy, settleEase);
-        state.rz = lerp(state.rz + roll * state.spinZ * 20, state.finalRz, settleEase);
-
-        // Bounce
-        const bounceWave = Math.abs(Math.sin(frame * 0.75 + state.bouncePhase));
-        state.bounce = bounceWave * 35 * (1 - rollingEase) * (1 - settleProgress);
-
-        // Final settle bounce
-        state.finalBounce = Math.sin(settleProgress * Math.PI * 3) * 6 * (1 - settleProgress);
-
-        // Shadow
-        state.shadowScale = 0.75 + (1 - state.bounce / 35) * 0.25;
-        state.shadowWidth = 1 + state.bounce / 70;
-      });
-
-      renderDice(ctx, diceStates, diceResults, this.config);
-      encoder.addFrame(ctx);
+    if (t < 0.75) {
+        width +=
+            Math.sin(
+                t *
+                    Math.PI *
+                    8
+            ) * 8;
     }
 
-    // Hold final frames
-    for (let i = 0; i < this.pauseFrames; i++) {
-      // Final settled state
-      const finalStates = diceStates.map((state, index) => ({
-        rx: state.finalRx,
-        ry: state.finalRy,
-        rz: state.finalRz,
-        bounce: 0,
-        finalBounce: 0,
-        shadowScale: 1,
-        shadowWidth: 1,
-      }));
+    ctx.save();
 
-      // Clear and render
-      ctx.clearRect(0, 0, this.config.width, this.config.height);
-      ctx.fillStyle = this.config.background;
-      ctx.fillRect(0, 0, this.config.width, this.config.height);
+    ctx.globalAlpha =
+        clamp(
+            alpha,
+            0,
+            0.22
+        );
 
-      // Glows
-      const glow = ctx.createRadialGradient(
-        this.config.width / 2, this.config.height * 0.47, 20,
-        this.config.width / 2, this.config.height * 0.47, this.config.width * 0.5
-      );
-      glow.addColorStop(0, 'rgba(255,255,255,0.06)');
-      glow.addColorStop(0.5, 'rgba(255,255,255,0.02)');
-      glow.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, this.config.width, this.config.height);
+    ctx.beginPath();
 
-      const floor = ctx.createRadialGradient(
-        this.config.width / 2, this.config.height * 0.85, 15,
-        this.config.width / 2, this.config.height * 0.85, 300
-      );
-      floor.addColorStop(0, 'rgba(255,255,255,0.03)');
-      floor.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = floor;
-      ctx.fillRect(0, 0, this.config.width, this.config.height);
+    ctx.ellipse(
+        offsetX + SIZE / 2,
+        CANVAS_HEIGHT / 2 + 77,
+        width * squash,
+        11,
+        0,
+        0,
+        Math.PI * 2
+    );
 
-      // Title
-      ctx.save();
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 26px Arial';
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.fillText(this.config.title, this.config.width / 2, 50);
-      const lineWidth = 75;
-      const grad = ctx.createLinearGradient(
-        this.config.width / 2 - lineWidth, 0,
-        this.config.width / 2 + lineWidth, 0
-      );
-      grad.addColorStop(0, 'rgba(255,255,255,0)');
-      grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
-      grad.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(this.config.width / 2 - lineWidth, 64, lineWidth * 2, 1);
-      ctx.restore();
+    ctx.fillStyle =
+        STYLE.groundShadow;
 
-      // Render dice at final positions
-      const totalWidth = this.config.diceSize * 3 + this.config.gap * 2;
-      const startX = (this.config.width - totalWidth) / 2;
-      const baseY = 150 - this.config.height / 2;
+    ctx.fill();
 
-      for (let index = 0; index < 3; index++) {
-        const offsetX = startX + index * (this.config.diceSize + this.config.gap) - this.config.width / 2;
-        const offsetY = baseY;
-        renderSingleDie(ctx, finalStates[index], diceResults[index], this.config, offsetX, offsetY);
-      }
+    ctx.restore();
+}
 
-      drawFinalResultText(ctx, diceResults, this.config);
-      encoder.addFrame(ctx);
-    }
+// ============================================================
+// DRAW BACKGROUND
+// ============================================================
 
-    encoder.finish();
-    return encoder.out.getData();
-  }
+function drawBackground(ctx) {
+    ctx.fillStyle = STYLE.background;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  async renderFinalFrame(diceResults) {
-    const canvas = new Canvas(this.config.width, this.config.height);
-    const ctx = canvas.getContext('2d');
-
-    // Background
-    ctx.fillStyle = this.config.background;
-    ctx.fillRect(0, 0, this.config.width, this.config.height);
-
-    // Glows
+    // Central glow
     const glow = ctx.createRadialGradient(
-      this.config.width / 2, this.config.height * 0.47, 20,
-      this.config.width / 2, this.config.height * 0.47, this.config.width * 0.5
+        CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.47, 20,
+        CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.47, CANVAS_WIDTH * 0.5
     );
     glow.addColorStop(0, 'rgba(255,255,255,0.06)');
     glow.addColorStop(0.5, 'rgba(255,255,255,0.02)');
     glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, this.config.width, this.config.height);
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    // Floor glow
     const floor = ctx.createRadialGradient(
-      this.config.width / 2, this.config.height * 0.85, 15,
-      this.config.width / 2, this.config.height * 0.85, 300
+        CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.85, 15,
+        CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.85, 300
     );
     floor.addColorStop(0, 'rgba(255,255,255,0.03)');
     floor.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = floor;
-    ctx.fillRect(0, 0, this.config.width, this.config.height);
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Title
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = 'bold 26px Arial';
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fillText(this.config.title, this.config.width / 2, 50);
+    ctx.fillStyle = STYLE.titleColor;
+    ctx.fillText('TÀI XỈU', CANVAS_WIDTH / 2, 50);
     const lineWidth = 75;
     const grad = ctx.createLinearGradient(
-      this.config.width / 2 - lineWidth, 0,
-      this.config.width / 2 + lineWidth, 0
+        CANVAS_WIDTH / 2 - lineWidth, 0,
+        CANVAS_WIDTH / 2 + lineWidth, 0
     );
     grad.addColorStop(0, 'rgba(255,255,255,0)');
     grad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(this.config.width / 2 - lineWidth, 64, lineWidth * 2, 1);
+    ctx.fillRect(CANVAS_WIDTH / 2 - lineWidth, 64, lineWidth * 2, 1);
     ctx.restore();
+}
 
-    // Final dice states
-    const finalStates = [0, 1, 2].map(i => ({
-      rx: Math.sin(i * 1.7) * 0.04,
-      ry: Math.sin(i * 2.3) * 0.06,
-      rz: Math.sin(i) * 0.025,
-      bounce: 0,
-      finalBounce: 0,
-      shadowScale: 1,
-      shadowWidth: 1,
-    }));
+// ============================================================
+// DRAW RESULT TEXT
+// ============================================================
 
-    const totalWidth = this.config.diceSize * 3 + this.config.gap * 2;
-    const startX = (this.config.width - totalWidth) / 2;
-    const baseY = 150 - this.config.height / 2;
+function drawRollingText(ctx) {
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = '600 17px Arial';
+    ctx.fillStyle = STYLE.textColor;
+    ctx.fillText('ĐANG LẮC...', CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30);
+    ctx.restore();
+}
 
-    for (let index = 0; index < 3; index++) {
-      const offsetX = startX + index * (this.config.diceSize + this.config.gap) - this.config.width / 2;
-      const offsetY = baseY;
-      renderSingleDie(ctx, finalStates[index], diceResults[index], this.config, offsetX, offsetY);
+function drawFinalResultText(ctx, diceValues) {
+    const total = diceValues[0] + diceValues[1] + diceValues[2];
+    const type = total >= 11 ? 'TÀI' : 'XỈU';
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 23px Arial';
+    ctx.fillStyle = STYLE.resultTextColor;
+    ctx.fillText(
+        `${diceValues[0]}  •  ${diceValues[1]}  •  ${diceValues[2]}    =    ${total}    →    ${type}`,
+        CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30
+    );
+    ctx.restore();
+}
+
+// ============================================================
+// RENDER ONE FRAME FOR 3 DICE
+// ============================================================
+
+function renderFrame(
+    ctx,
+    frame,
+    diceResults,
+    diceStates
+) {
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    drawBackground(ctx);
+
+    const t = frame / (FRAME_COUNT - 1);
+
+    // Positions for 3 dice
+    const totalWidth = SIZE * 3 + DICE_GAP * 2;
+    const startX = (CANVAS_WIDTH - totalWidth) / 2;
+
+    for (let i = 0; i < 3; i++) {
+        const state = diceStates[i];
+        const offsetX = startX + i * (SIZE + DICE_GAP);
+
+        // --------------------------------------------------------
+        // Rotation
+        // --------------------------------------------------------
+
+        const spin = easeOutCubic(t);
+
+        let rx = state.initialRx + spin * Math.PI * 7.0;
+        let ry = state.initialRy + spin * Math.PI * 10.0;
+        let rz = state.initialRz + spin * Math.PI * 3.0;
+
+        // --------------------------------------------------------
+        // Landing wobble
+        // --------------------------------------------------------
+
+        if (t > 0.68) {
+            const landing = (t - 0.68) / 0.32;
+            const wobble = Math.sin(landing * Math.PI * 4) * (1 - landing);
+            rx += wobble * 0.18;
+            ry += wobble * 0.15;
+            rz += wobble * 0.07;
+        }
+
+        // --------------------------------------------------------
+        // Bounce
+        // --------------------------------------------------------
+
+        let bounce = 0;
+        if (t < 0.80) {
+            bounce = Math.sin(t * Math.PI * 5) * (1 - t) * 5;
+        }
+
+        // --------------------------------------------------------
+        // Squash
+        // --------------------------------------------------------
+
+        let squash = 1;
+        if (t > 0.70) {
+            const landing = (t - 0.70) / 0.30;
+            const impact = Math.sin(landing * Math.PI * 3) * (1 - landing);
+            squash = 1 + impact * 0.085;
+        }
+
+        // --------------------------------------------------------
+        // Scale
+        // --------------------------------------------------------
+
+        let scale = 1;
+        if (t < 0.70) {
+            scale = 1 + Math.sin(t * Math.PI * 2) * 0.025;
+        }
+
+        // --------------------------------------------------------
+        // Shadow
+        // --------------------------------------------------------
+
+        drawGroundShadow(ctx, t, squash, offsetX);
+
+        // --------------------------------------------------------
+        // Motion
+        // --------------------------------------------------------
+
+        drawMotionLines(ctx, t, offsetX);
+
+        // --------------------------------------------------------
+        // Dice
+        // --------------------------------------------------------
+
+        ctx.save();
+        ctx.translate(offsetX, -bounce);
+
+        // --------------------------------------------------------
+        // Result transition
+        // --------------------------------------------------------
+
+        let resultProgress = 0;
+        if (t > 0.58) {
+            resultProgress = easeInOutSine((t - 0.58) / 0.42);
+        }
+
+        const values = {
+            front: resultProgress < 0.50 ? state.startValues.front : diceResults[i],
+            right: resultProgress < 0.50 ? state.startValues.right : (diceResults[i] === 6 ? 3 : 6),
+            top: resultProgress < 0.50 ? state.startValues.top : (diceResults[i] === 1 ? 6 : 1)
+        };
+
+        drawDice(ctx, {
+            rx,
+            ry,
+            rz,
+            scale: scale * squash,
+            values
+        });
+
+        ctx.restore();
     }
 
-    drawFinalResultText(ctx, diceResults, this.config);
+    // Text
+    if (t < 0.95) {
+        drawRollingText(ctx);
+    } else {
+        drawFinalResultText(ctx, diceResults);
+    }
+}
+
+// ============================================================
+// CREATE ANIMATED WEBP
+// ============================================================
+
+export async function renderRollAnimation(diceResults) {
+    // Validate
+    if (!Array.isArray(diceResults) || diceResults.length !== 3) {
+        throw new TypeError('result phải là [dice1, dice2, dice3]');
+    }
+    for (const v of diceResults) {
+        if (!Number.isInteger(v) || v < 1 || v > 6) {
+            throw new RangeError('Giá trị xúc xắc phải từ 1 đến 6.');
+        }
+    }
+
+    const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    const ctx = canvas.getContext('2d');
+
+    // Per-dice random initial state
+    const diceStates = [0, 1, 2].map(i => {
+        return {
+            initialRx: (Math.random() - 0.5) * 0.5,
+            initialRy: (Math.random() - 0.5) * 0.5,
+            initialRz: (Math.random() - 0.5) * 0.5,
+            startValues: {
+                front: Math.floor(Math.random() * 6) + 1,
+                right: Math.floor(Math.random() * 6) + 1,
+                top: Math.floor(Math.random() * 6) + 1
+            }
+        };
+    });
+
+    const frameSize = CANVAS_WIDTH * CANVAS_HEIGHT * 4;
+    const allFrames = Buffer.allocUnsafe(frameSize * FRAME_COUNT);
+
+    for (let frame = 0; frame < FRAME_COUNT; frame++) {
+        renderFrame(ctx, frame, diceResults, diceStates);
+
+        const imageData = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        const frameOffset = frame * frameSize;
+        Buffer.from(imageData.data).copy(allFrames, frameOffset);
+    }
+
+    // Encode animated WebP
+    const webp = await sharp(allFrames, {
+        raw: {
+            width: CANVAS_WIDTH,
+            height: CANVAS_HEIGHT * FRAME_COUNT,
+            channels: 4
+        }
+    })
+        .webp({
+            quality: 90,
+            alphaQuality: 100,
+            lossless: false,
+            loop: 0,
+            delay: FRAME_DELAY
+        })
+        .toBuffer();
+
+    return webp;
+}
+
+// ============================================================
+// CREATE FINAL FRAME (PNG)
+// ============================================================
+
+export async function renderFinalFrame(diceResults) {
+    if (!Array.isArray(diceResults) || diceResults.length !== 3) {
+        throw new TypeError('result phải là [dice1, dice2, dice3]');
+    }
+    for (const v of diceResults) {
+        if (!Number.isInteger(v) || v < 1 || v > 6) {
+            throw new RangeError('Giá trị xúc xắc phải từ 1 đến 6.');
+        }
+    }
+
+    const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    const ctx = canvas.getContext('2d');
+
+    drawBackground(ctx);
+
+    // Final settled states
+    const finalStates = [0, 1, 2].map(i => ({
+        initialRx: Math.sin(i * 1.7) * 0.04,
+        initialRy: Math.sin(i * 2.3) * 0.06,
+        initialRz: Math.sin(i) * 0.025,
+        startValues: {
+            front: diceResults[i],
+            right: diceResults[i] === 6 ? 3 : 6,
+            top: diceResults[i] === 1 ? 6 : 1
+        }
+    }));
+
+    const totalWidth = SIZE * 3 + DICE_GAP * 2;
+    const startX = (CANVAS_WIDTH - totalWidth) / 2;
+
+    for (let i = 0; i < 3; i++) {
+        const state = finalStates[i];
+        const offsetX = startX + i * (SIZE + DICE_GAP);
+
+        ctx.save();
+        ctx.translate(offsetX, 0);
+
+        drawDice(ctx, {
+            rx: state.initialRx,
+            ry: state.initialRy,
+            rz: state.initialRz,
+            scale: 1,
+            values: state.startValues
+        });
+
+        ctx.restore();
+    }
+
+    drawFinalResultText(ctx, diceResults);
 
     return canvas.toBuffer('image/png');
-  }
 }
-
-// Singleton
-let rendererInstance = null;
-
-export function getDiceRenderer(options) {
-  if (!rendererInstance) {
-    rendererInstance = new DiceRenderer(options);
-  }
-  return rendererInstance;
-}
-
-export default DiceRenderer;

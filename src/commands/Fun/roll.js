@@ -2,21 +2,7 @@ import { SlashCommandBuilder, AttachmentBuilder } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
-import { getDiceRenderer } from '../../utils/diceRenderer.js';
-
-// Initialize dice renderer (singleton) - Optimized for speed & visibility
-const diceRenderer = getDiceRenderer({
-  width: 720,
-  height: 400,
-  fps: 20,
-  duration: 1200,      // ms rolling (shorter = faster)
-  resultPause: 400,    // ms hold final frame
-  diceSize: 110,
-  gap: 35,
-  background: '#111318',
-  title: 'TÀI XỈU',
-  showResultText: true,
-});
+import { renderRollAnimation, renderFinalFrame } from '../../utils/diceRenderer.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -40,28 +26,27 @@ export default {
     const resultText = isTai ? '🟢 **TÀI**' : '🔴 **XỈU**';
     const resultColor = isTai ? 'success' : 'error';
 
-    // Generate procedural 3D dice rolling animation GIF
-    const seed = Date.now();
-    const gifBuffer = await diceRenderer.renderRollAnimation(diceResults, seed);
+    // Generate procedural 3D dice rolling animation WebP
+    const webpBuffer = await renderRollAnimation(diceResults);
     
-    // Create attachment from generated GIF
-    const attachment = new AttachmentBuilder(gifBuffer, { name: 'dice-roll.gif' });
+    // Create attachment from generated WebP
+    const attachment = new AttachmentBuilder(webpBuffer, { name: 'dice-roll.webp' });
 
-    // Show rolling animation with generated GIF
+    // Show rolling animation with generated WebP
     const rollingEmbed = createEmbed({
       title: '🎲 Đang lắc 3 xúc xắc 3D...',
       description: '🎲 🎲 🎲',
       color: 'primary',
-      image: 'attachment://dice-roll.gif',
+      image: 'attachment://dice-roll.webp',
     });
 
     await InteractionHelper.safeEditReply(interaction, { embeds: [rollingEmbed], files: [attachment] });
 
-    // Let the animation play (1200ms rolling + 400ms pause = 1600ms, plus buffer)
-    await new Promise(resolve => setTimeout(resolve, 1800));
+    // Let the animation play (45 frames @ 30fps = 1500ms, plus buffer)
+    await new Promise(resolve => setTimeout(resolve, 1700));
 
     // Generate final frame as PNG (static image of settled dice)
-    const finalFrameBuffer = await diceRenderer.renderFinalFrame(diceResults);
+    const finalFrameBuffer = await renderFinalFrame(diceResults);
     const finalAttachment = new AttachmentBuilder(finalFrameBuffer, { name: 'dice-final.png' });
 
     // Final result embed with rendered dice image
@@ -87,7 +72,7 @@ export default {
           inline: true,
         },
       ],
-      footer: { text: 'Tài: 11-18 | Xỉu: 3-10 | Rendered with @napi-rs/canvas' },
+      footer: { text: 'Tài: 11-18 | Xỉu: 3-10 | Rendered with @napi-rs/canvas + sharp' },
     });
 
     await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed], files: [finalAttachment] });
