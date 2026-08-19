@@ -86,12 +86,12 @@ export default {
 
         // Tham số animation - quay nhiều vòng, chậm dần và chỉ chạy 1 lần
         // Mỗi reel có số frame riêng → dừng lần lượt từ trái → phải (như máy thật)
-        const spinFramesPerReel = [40, 46, 52, 58]; // reel trái dừng trước, reel phải dừng sau
+        const spinFramesPerReel = [50, 60, 70, 80]; // reel trái dừng trước, reel phải dừng sau
         const totalFrames = Math.max(...spinFramesPerReel) + 1; // +1 frame giữ kết quả
-        const frameDelay = 45;               // ms/frame khi quay
-        const holdDelay = 900;               // ms giữ kết quả ở frame cuối
+        const frameDelay = 50;               // ms/frame khi quay
+        const holdDelay = 1000;              // ms giữ kết quả ở frame cuối
         // Số vòng quay thêm cho mỗi reel (trái → phải, reel phải nhất quay nhiều như máy thật)
-        const extraSpins = [2, 3, 3, 4];
+        const extraSpins = [3, 4, 5, 6];
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
         const windowHeightOriginal = 140; // chiều cao cửa sổ trong ảnh gốc
@@ -113,10 +113,10 @@ export default {
 
         // Speed profile giống máy thật: tăng tốc nhanh → quay đều tốc độ cao →
         // chậm dần về 0 ở cuối để dừng chính xác tại symbol kết quả
-        // 8% đầu: tăng tốc từ 0 lên tối đa | 62% giữa: quay đều | 30% cuối: giảm tốc dần (quadratic)
+        // 10% đầu: tăng tốc từ 0 lên tối đa | 50% giữa: quay đều | 40% cuối: giảm tốc dần (cubic ease-out)
         function buildReelPositions(startPos, totalDistance, frames) {
-            const accelF = Math.max(1, Math.round(frames * 0.08));
-            const decelF = Math.max(1, Math.round(frames * 0.30));
+            const accelF = Math.max(1, Math.round(frames * 0.10));
+            const decelF = Math.max(1, Math.round(frames * 0.40));
             const cruiseF = frames - accelF - decelF;
 
             // Trọng số tốc độ từng frame (chưa chuẩn hóa)
@@ -130,9 +130,9 @@ export default {
                     // Quay đều ở tốc độ tối đa
                     w = 1;
                 } else {
-                    // Chậm dần (quadratic ease-out) về 0
+                    // Chậm dần (cubic ease-out) về 0 - mượt hơn quadratic
                     const u = (i - accelF - cruiseF + 0.5) / decelF;
-                    w = (1 - u) * (1 - u);
+                    w = (1 - u) * (1 - u) * (1 - u);
                 }
                 weights.push(w);
             }

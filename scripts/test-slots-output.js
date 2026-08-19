@@ -52,11 +52,11 @@ const canvasHeight = facade.height;
 const canvas = createCanvas(canvasWidth, canvasHeight);
 const ctx = canvas.getContext('2d');
 
-const spinFramesPerReel = [40, 46, 52, 58];
+const spinFramesPerReel = [50, 60, 70, 80];
 const totalFrames = Math.max(...spinFramesPerReel) + 1;
-const frameDelay = 45;
-const holdDelay = 900;
-const extraSpins = [2, 3, 3, 4];
+const frameDelay = 50;
+const holdDelay = 1000;
+const extraSpins = [3, 4, 5, 6];
 const results = [s1, s2, s3, s4];
 const reelHeight = items * item;
 const windowHeightOriginal = 140;
@@ -71,8 +71,8 @@ const reelAnimations = results.map((result, index) => {
 });
 
 function buildReelPositions(startPos, totalDistance, frames) {
-    const accelF = Math.max(1, Math.round(frames * 0.08));
-    const decelF = Math.max(1, Math.round(frames * 0.30));
+    const accelF = Math.max(1, Math.round(frames * 0.10));
+    const decelF = Math.max(1, Math.round(frames * 0.40));
     const cruiseF = frames - accelF - decelF;
     const weights = [];
     for (let i = 0; i < frames; i++) {
@@ -83,7 +83,7 @@ function buildReelPositions(startPos, totalDistance, frames) {
             w = 1;
         } else {
             const u = (i - accelF - cruiseF + 0.5) / decelF;
-            w = (1 - u) * (1 - u);
+            w = (1 - u) * (1 - u) * (1 - u);
         }
         weights.push(w);
     }
