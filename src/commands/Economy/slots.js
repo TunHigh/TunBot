@@ -111,11 +111,12 @@ export default {
         const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
         // Mỗi ô dừng tại frame khác nhau (trái → phải) - 4 ô
-        // 15 frames tổng, mỗi ô dừng cách nhau ~3-4 frames
+        // 15 frames quay, frame 16 = hold kết quả 1s
         const stopFrames = [8, 11, 13, 15];
         // Số vòng quay thêm trước khi dừng
         const extraSpins = [2, 2, 2, 3];
-        const totalFrames = 15;
+        const loopFrames = 15;
+        const totalFrames = loopFrames + 1; // +1 frame hold kết quả
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
 
@@ -131,6 +132,8 @@ export default {
         ];
         const baseY = Math.floor(140 * scale);
         const windowHeight = Math.floor(300 * scale); // 135px
+        const symbolScaledHeight = Math.floor(item * scale); // 81px
+        const yOffset = Math.floor((windowHeight - symbolScaledHeight) / 2); // căn giữa dọc
 
         const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'octree', false, totalFrames);
         encoder.setDelay(50); // 50ms/frame = 20fps
@@ -138,6 +141,13 @@ export default {
         encoder.start();
 
         for (let i = 1; i <= totalFrames; i++) {
+            // Frame cuối: hold kết quả 1 giây
+            if (i === totalFrames) {
+                encoder.setDelay(1000);
+            } else {
+                encoder.setDelay(50);
+            }
+
             // KHÔNG fill nền trắng - để trong suốt của facade hiển thị đúng
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
@@ -152,9 +162,6 @@ export default {
                 const winPos = windowPositions[reelIndex];
 
                 // Chỉ vẽ 1 symbol cao tại cửa sổ slot (clipping) - căn giữa symbol trong cửa sổ
-                const symbolScaledHeight = Math.floor(item * scale); // 81px
-                const yOffset = Math.floor((windowHeight - symbolScaledHeight) / 2); // căn giữa dọc
-                
                 ctx.drawImage(
                     reel,
                     0, sourceY, rw, item,  // source rect: 1 symbol cao
