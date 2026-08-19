@@ -115,8 +115,8 @@ export default {
         // chậm dần về 0 ở cuối để dừng chính xác tại symbol kết quả
         // 10% đầu: tăng tốc từ 0 lên tối đa | 50% giữa: quay đều | 40% cuối: giảm tốc dần (cubic ease-out)
         function buildReelPositions(startPos, totalDistance, frames) {
-            const accelF = Math.max(1, Math.round(frames * 0.10));
-            const decelF = Math.max(1, Math.round(frames * 0.40));
+            const accelF = Math.max(1, Math.round(frames * 0.08));
+            const decelF = Math.max(1, Math.round(frames * 0.50));
             const cruiseF = frames - accelF - decelF;
 
             // Trọng số tốc độ từng frame (chưa chuẩn hóa)
