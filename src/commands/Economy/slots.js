@@ -97,39 +97,44 @@ export default {
         }
 
         // Create GIF animation - quay nhanh rồi chậm dần, dừng từng ô trái → phải
-        // Giảm canvas size để tăng tốc độ render
-        const scale = 0.4; // Scale 40% để giảm từ 1301x1209 xuống ~520x483
+        // Scale 40% để tối ưu tốc độ (1301x1209 -> ~520x483)
+        const scale = 0.4;
         const canvasWidth = Math.floor(facade.width * scale);
         const canvasHeight = Math.floor(facade.height * scale);
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
+        // Bật high quality scaling
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
         // Easing: bắt đầu nhanh, chậm dần về cuối
         const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
         // Mỗi ô dừng tại frame khác nhau (trái → phải) - 4 ô
-        // Giảm frames: 20 frames tổng, mỗi ô dừng cách nhau ~5 frames
-        const stopFrames = [10, 14, 17, 20];
+        // 15 frames tổng, mỗi ô dừng cách nhau ~4 frames
+        const stopFrames = [8, 11, 13, 15];
         // Số vòng quay thêm trước khi dừng
-        const extraSpins = [2, 2, 3, 3];
-        const totalFrames = 20;
+        const extraSpins = [2, 2, 2, 3];
+        const totalFrames = 15;
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
 
         // Tính vị trí x để căn giữa 4 reel trong canvas scaled
         const scaledRw = Math.floor(rw * scale);
         const startX = Math.floor((canvasWidth - scaledRw * 4) / 2);
-        // Vị trí y của cửa sổ slot (scaled)
+        // Vị trí y của cửa sổ slot trong facade (scale từ baseY=100 gốc)
         const baseY = Math.floor(100 * scale);
+        // Chiều cao cửa sổ hiển thị (1 symbol = 180px)
+        const windowHeight = Math.floor(item * scale); // 72px
 
         const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'octree', false, totalFrames);
-        encoder.setDelay(50);
-        encoder.setRepeat(-1); // -1 = không viết Netscape ext → GIF chỉ chạy 1 lần rồi dừng
+        encoder.setDelay(50); // 50ms/frame = 20fps
+        encoder.setRepeat(0); // 0 = lặp vô hạn (chuẩn GIF)
         encoder.start();
 
         for (let i = 1; i <= totalFrames; i++) {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            // KHÔNG fill nền trắng - để trong suốt của facade hiển thị đúng
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
             for (let reelIndex = 0; reelIndex < 4; reelIndex++) {
                 const stopFrame = stopFrames[reelIndex];
@@ -137,14 +142,19 @@ export default {
                 const eased = easeOutCubic(t);
                 // Tổng quãng đường: extraSpins vòng + vị trí kết quả
                 const totalDistance = (extraSpins[reelIndex] * items + results[reelIndex]) * item;
-                // Modulo reelHeight để reel luôn hiển thị trong cửa sổ
-                const y = baseY - Math.floor((totalDistance * eased) % reelHeight) * scale;
+                // Vị trí sourceY trên reel gốc (modulo reelHeight để loop)
+                const sourceY = (Math.floor((totalDistance * eased) % reelHeight) * item) % rh;
                 const x = startX + scaledRw * reelIndex;
-                // Draw reel scaled
-                ctx.drawImage(reel, x, y, scaledRw, Math.floor(rh * scale));
+
+                // Chỉ vẽ 1 symbol cao tại cửa sổ slot (clipping)
+                ctx.drawImage(
+                    reel,
+                    0, sourceY, rw, item,  // source rect: 1 symbol cao
+                    x, baseY, scaledRw, windowHeight  // dest rect: cửa sổ slot
+                );
             }
 
-            // Draw facade scaled
+            // Draw facade scaled lên trên (có cửa sổ trong suốt)
             ctx.drawImage(facade, 0, 0, canvasWidth, canvasHeight);
             encoder.addFrame(ctx);
         }
