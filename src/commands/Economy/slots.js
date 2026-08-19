@@ -96,23 +96,20 @@ export default {
             s4 = s4 === items ? s4 - 6 : s4;
         }
 
-        // Create GIF animation - quay nhanh rồi chậm dần, dừng từng ô trái → phải
+        // Create GIF animation - quay nhiều vòng, nhanh rồi chậm dần, dừng ở kết quả (giống máy thật)
         // Dùng kích thước gốc 752x423 (không scale để ảnh không bị vỡ)
         const canvasWidth = facade.width;
         const canvasHeight = facade.height;
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
 
-        // Easing: bắt đầu nhanh, chậm dần về cuối (giống máy quay slots thật)
-        const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-
-        // Mỗi ô dừng tại frame khác nhau (trái → phải) - 4 ô
-        // 20 frames quay (~1s), frame 21 = hold kết quả 0.8s
-        const stopFrames = [10, 13, 17, 20];
-        // Số vòng quay thêm trước khi dừng
-        const extraSpins = [1, 1, 1, 2];
-        const loopFrames = 20;
-        const totalFrames = loopFrames + 1; // +1 frame hold kết quả
+        // Tham số animation - quay nhiều vòng, chậm dần và chỉ chạy 1 lần
+        const spinFrames = 55;               // 55 frame quay (~2.5 giây)
+        const totalFrames = spinFrames + 1;  // +1 frame giữ kết quả
+        const frameDelay = 45;               // ms/frame khi quay
+        const holdDelay = 900;               // ms giữ kết quả ở frame cuối
+        // Số vòng quay thêm cho mỗi reel (trái → phải, reel phải nhất quay nhiều như máy thật)
+        const extraSpins = [2, 3, 3, 4];
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
         const windowHeightOriginal = 140; // chiều cao cửa sổ trong ảnh gốc
@@ -132,6 +129,47 @@ export default {
             return { finalPos, startPos, totalDistance };
         });
 
+        // Speed profile giống máy thật: tăng tốc nhanh → quay đều tốc độ cao →
+        // chậm dần về 0 ở cuối để dừng chính xác tại symbol kết quả
+        // 8% đầu: tăng tốc từ 0 lên tối đa | 62% giữa: quay đều | 30% cuối: giảm tốc dần (quadratic)
+        function buildReelPositions(startPos, totalDistance, frames) {
+            const accelF = Math.max(1, Math.round(frames * 0.08));
+            const decelF = Math.max(1, Math.round(frames * 0.30));
+            const cruiseF = frames - accelF - decelF;
+
+            // Trọng số tốc độ từng frame (chưa chuẩn hóa)
+            const weights = [];
+            for (let i = 0; i < frames; i++) {
+                let w;
+                if (i < accelF) {
+                    // Tăng tốc tuyến tính từ 0 → 1
+                    w = (i + 0.5) / accelF;
+                } else if (i < accelF + cruiseF) {
+                    // Quay đều ở tốc độ tối đa
+                    w = 1;
+                } else {
+                    // Chậm dần (quadratic ease-out) về 0
+                    const u = (i - accelF - cruiseF + 0.5) / decelF;
+                    w = (1 - u) * (1 - u);
+                }
+                weights.push(w);
+            }
+
+            const totalW = weights.reduce((a, b) => a + b, 0);
+            const positions = [startPos];
+            let y = startPos;
+            for (let i = 0; i < frames; i++) {
+                y -= totalDistance * weights[i] / totalW;
+                positions.push(y);
+            }
+            return positions; // frames+1 điểm, điểm cuối = finalPos (dừng đúng kết quả)
+        }
+
+        // Đường đi của từng reel cho mọi frame
+        const reelPaths = reelAnimations.map(anim =>
+            buildReelPositions(anim.startPos, anim.totalDistance, spinFrames)
+        );
+
         // Vị trí 4 cửa sổ trong suốt trên slot-face.png (từ phân tích ảnh mới 752x423)
         // Window 1: x=109, width=114 | Window 2: x=252, width=108
         // Window 3: x=392, width=108 | Window 4: x=529, width=114
@@ -148,29 +186,25 @@ export default {
 
         const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'neuquant', false, totalFrames);
         encoder.setQuality(1);
-        encoder.setDelay(50); // 50ms/frame = 20fps
-        encoder.setRepeat(0); // 0 = lặp vô hạn (chuẩn GIF)
+        encoder.setDelay(frameDelay);
+        encoder.setRepeat(1); // 1 = chỉ quay 1 lần rồi dừng ở frame kết quả
         encoder.start();
 
-        for (let i = 1; i <= totalFrames; i++) {
-            // Frame cuối: hold kết quả 0.8 giây
-            if (i === totalFrames) {
-                encoder.setDelay(800);
+        for (let i = 0; i < totalFrames; i++) {
+            // Frame cuối: giữ kết quả lâu hơn để hiển thị rõ
+            if (i === totalFrames - 1) {
+                encoder.setDelay(holdDelay);
             } else {
-                encoder.setDelay(50);
+                encoder.setDelay(frameDelay);
             }
 
             // KHÔNG fill nền trắng - để trong suốt của facade hiển thị đúng
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
             for (let reelIndex = 0; reelIndex < 4; reelIndex++) {
-                const stopFrame = stopFrames[reelIndex];
-                const t = Math.min(i / stopFrame, 1);
-                const eased = easeOutCubic(t);
-                const anim = reelAnimations[reelIndex];
                 // Vị trí sourceY liên tục trên reel gốc - reel chạy từ trên xuống dưới
                 // sourceY giảm dần → symbol di chuyển từ trên xuống dưới trong cửa sổ (giống máy quay thật)
-                const rawY = anim.startPos - anim.totalDistance * eased;
+                const rawY = reelPaths[reelIndex][i];
                 const sourceY = Math.floor(((rawY % reelHeight) + reelHeight) % reelHeight);
                 const winPos = windowPositions[reelIndex];
 
