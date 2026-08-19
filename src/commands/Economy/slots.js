@@ -2,7 +2,7 @@ import { SlashCommandBuilder, AttachmentBuilder } from 'discord.js';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { createRequire } from 'module';
 import path from 'path';
-import { successEmbed } from '../../utils/embeds.js';
+import { successEmbed, warningEmbed } from '../../utils/embeds.js';
 import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
@@ -12,14 +12,15 @@ const GIFEncoder = require('gif-encoder-2');
 
 const SLOT_COOLDOWN = 3 * 1000;
 
-// Symbol rewards: [1 match, 2 matches, 3 matches, 4 matches] - multiplier of bet
+// Symbol rewards: [1 match, 2 matches, 3 matches, 4 matches] - bonus amount added to bet
+// 1 match = no win (0), 2+ matches = bet back + bonus
 const SYMBOL_REWARDS = {
-    diamond: [80, 160, 240, 320],
-    coin:    [40, 80, 120, 160],
-    gold:    [25, 50, 75, 100],
-    cherry:  [10, 20, 30, 40],
-    lemon:   [5, 10, 15, 20],
-    seven:   [4, 8, 12, 16]
+    diamond: [0, 160, 240, 320],
+    coin:    [0, 80, 120, 160],
+    gold:    [0, 50, 75, 100],
+    cherry:  [0, 20, 30, 40],
+    lemon:   [0, 10, 15, 20],
+    seven:   [0, 8, 12, 16]
 };
 
 // Map reel position to symbol name
@@ -258,14 +259,25 @@ export default {
         }
 
         // Calculate reward based on symbol and match count
-        const multiplier = SYMBOL_REWARDS[bestSymbol][bestCount - 1];
-        const amountWon = Math.floor(betAmount * multiplier);
-        const cashChange = amountWon - betAmount;
+        // 1 match = no win (lose bet), 2+ matches = bet back + bonus
+        const bonus = SYMBOL_REWARDS[bestSymbol][bestCount - 1];
+        let cashChange;
+        let resultEmbed;
 
-        let resultEmbed = successEmbed(
-            '🎰 Bạn Đã Thắng!',
-            `Bạn đã đặt cược **$${betAmount.toLocaleString()}** và trúng **${bestCount} ${SYMBOL_EMOJIS[bestSymbol]} ${bestSymbol}** với hệ số **x${multiplier}**!\nThắng **$${amountWon.toLocaleString()}**!`
-        );
+        if (bonus > 0) {
+            const amountWon = betAmount + bonus;
+            cashChange = bonus;
+            resultEmbed = successEmbed(
+                '🎰 Bạn Đã Thắng!',
+                `Bạn đã đặt cược **$${betAmount.toLocaleString()}** và trúng **${bestCount} ${SYMBOL_EMOJIS[bestSymbol]} ${bestSymbol}**!\nNhận lại tiền cược + thưởng **$${bonus.toLocaleString()}** = **$${amountWon.toLocaleString()}**!`
+            );
+        } else {
+            cashChange = -betAmount;
+            resultEmbed = warningEmbed(
+                '💔 Bạn Đã Thua...',
+                `Vận may chưa mỉm cười với bạn. Bạn đã mất **$${betAmount.toLocaleString()}**.`
+            );
+        }
 
         userData.wallet = (userData.wallet || 0) + cashChange;
         userData.lastSlots = now;
