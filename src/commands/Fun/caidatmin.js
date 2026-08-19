@@ -55,7 +55,12 @@ export default {
   async execute(interaction) {
     await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
 
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+    const isAdmin =
+      interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ||
+      interaction.member?.permissions?.has(PermissionFlagsBits.Administrator) ||
+      false;
+
+    if (!isAdmin) {
       return replyUserError(interaction, {
         type: ErrorTypes.PERMISSION,
         message: 'Chỉ **Admin** mới có thể dùng lệnh này.',

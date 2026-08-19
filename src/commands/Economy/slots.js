@@ -107,18 +107,30 @@ export default {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // Easing: bắt đầu nhanh, chậm dần về cuối
+        // Easing: bắt đầu nhanh, chậm dần về cuối (giống máy quay slots thật)
         const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
         // Mỗi ô dừng tại frame khác nhau (trái → phải) - 4 ô
-        // 15 frames quay, frame 16 = hold kết quả 1s
-        const stopFrames = [8, 11, 13, 15];
+        // 36 frames quay, frame 37 = hold kết quả 1s
+        const stopFrames = [18, 24, 30, 36];
         // Số vòng quay thêm trước khi dừng
-        const extraSpins = [2, 2, 2, 3];
-        const loopFrames = 15;
+        const extraSpins = [1, 1, 1, 2];
+        const loopFrames = 36;
         const totalFrames = loopFrames + 1; // +1 frame hold kết quả
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
+        const windowHeightOriginal = 300; // chiều cao cửa sổ trong ảnh gốc
+
+        // Tính toán vị trí bắt đầu và tổng quãng đường cho từng reel
+        // Reel chạy từ trên xuống dưới (sourceY giảm dần), dừng tại symbol kết quả
+        const reelAnimations = results.map((result, index) => {
+            const finalPos = result * item - (windowHeightOriginal - item) / 2;
+            const startPos = Math.floor(Math.random() * reelHeight);
+            // Quãng đường đi xuống (chiều giảm sourceY) từ start đến final
+            const distanceToFinal = (startPos - finalPos + reelHeight) % reelHeight;
+            const totalDistance = distanceToFinal + extraSpins[index] * reelHeight;
+            return { finalPos, startPos, totalDistance };
+        });
 
         // Vị trí 4 cửa sổ trong suốt trên slot-face.png (từ phân tích ảnh mới 1672x941)
         // Window 1: x=230, width=240 | Window 2: x=550, width=240
@@ -132,8 +144,8 @@ export default {
         ];
         const baseY = Math.floor(140 * scale);
         const windowHeight = Math.floor(300 * scale); // 135px
-        const symbolScaledHeight = Math.floor(item * scale); // 81px
-        const yOffset = Math.floor((windowHeight - symbolScaledHeight) / 2); // căn giữa dọc
+        // Chiều cao strip reel cần vẽ (bằng chiều cao cửa sổ, tính theo pixel gốc)
+        const stripHeightOriginal = Math.ceil(windowHeight / scale); // 300px
 
         const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'octree', false, totalFrames);
         encoder.setDelay(50); // 50ms/frame = 20fps
@@ -155,18 +167,30 @@ export default {
                 const stopFrame = stopFrames[reelIndex];
                 const t = Math.min(i / stopFrame, 1);
                 const eased = easeOutCubic(t);
-                // Tổng quãng đường: extraSpins vòng + vị trí kết quả
-                const totalDistance = (extraSpins[reelIndex] * items + results[reelIndex]) * item;
-                // Vị trí sourceY trên reel gốc (modulo reelHeight để loop)
-                const sourceY = (Math.floor((totalDistance * eased) % reelHeight) * item) % rh;
+                const anim = reelAnimations[reelIndex];
+                // Vị trí sourceY liên tục trên reel gốc - reel chạy từ trên xuống dưới
+                // sourceY giảm dần → symbol di chuyển từ trên xuống dưới trong cửa sổ (giống máy quay thật)
+                const rawY = anim.startPos - anim.totalDistance * eased;
+                const sourceY = Math.floor(((rawY % reelHeight) + reelHeight) % reelHeight);
                 const winPos = windowPositions[reelIndex];
 
-                // Chỉ vẽ 1 symbol cao tại cửa sổ slot (clipping) - căn giữa symbol trong cửa sổ
-                ctx.drawImage(
-                    reel,
-                    0, sourceY, rw, item,  // source rect: 1 symbol cao
-                    winPos.x, baseY + yOffset, winPos.width, symbolScaledHeight  // dest rect: cửa sổ slot
-                );
+                // Vẽ strip reel (nhiều symbol) chạy qua cửa sổ - giống máy quay slots thật
+                // Xử lý wrap-around khi strip vượt qua cuối reel
+                let sy = sourceY;
+                let remaining = stripHeightOriginal;
+                let destY = baseY;
+                while (remaining > 0) {
+                    const chunk = Math.min(remaining, rh - sy);
+                    const chunkScaled = Math.ceil(chunk * scale);
+                    ctx.drawImage(
+                        reel,
+                        0, sy, rw, chunk,  // source rect: phần reel cần vẽ
+                        winPos.x, destY, winPos.width, chunkScaled  // dest rect: cửa sổ slot
+                    );
+                    destY += chunkScaled;
+                    sy = (sy + chunk) % rh;
+                    remaining -= chunk;
+                }
             }
 
             // Draw facade scaled lên trên (có cửa sổ trong suốt)
