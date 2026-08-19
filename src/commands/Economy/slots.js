@@ -97,34 +97,34 @@ export default {
         }
 
         // Create GIF animation - quay nhanh rồi chậm dần, dừng từng ô trái → phải
-        // Scale 45% để tối ưu tốc độ (1672x941 -> ~752x423)
-        const scale = 0.45;
-        const canvasWidth = Math.floor(facade.width * scale);
-        const canvasHeight = Math.floor(facade.height * scale);
+        // Dùng kích thước gốc 752x423 (không scale để ảnh không bị vỡ)
+        const canvasWidth = facade.width;
+        const canvasHeight = facade.height;
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
-        // Bật high quality scaling
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
 
         // Easing: bắt đầu nhanh, chậm dần về cuối (giống máy quay slots thật)
         const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
         // Mỗi ô dừng tại frame khác nhau (trái → phải) - 4 ô
-        // 36 frames quay, frame 37 = hold kết quả 1s
-        const stopFrames = [18, 24, 30, 36];
+        // 20 frames quay (~1s), frame 21 = hold kết quả 0.8s
+        const stopFrames = [10, 13, 17, 20];
         // Số vòng quay thêm trước khi dừng
         const extraSpins = [1, 1, 1, 2];
-        const loopFrames = 36;
+        const loopFrames = 20;
         const totalFrames = loopFrames + 1; // +1 frame hold kết quả
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
-        const windowHeightOriginal = 300; // chiều cao cửa sổ trong ảnh gốc
+        const windowHeightOriginal = 140; // chiều cao cửa sổ trong ảnh gốc
+
+        // Vẽ reel đầy width cửa sổ, không scale để không có viền đen
+        // Lấy chiều cao strip từ reel gốc = chiều cao cửa sổ (140px)
+        const stripSourceHeight = windowHeightOriginal; // 140px
 
         // Tính toán vị trí bắt đầu và tổng quãng đường cho từng reel
         // Reel chạy từ trên xuống dưới (sourceY giảm dần), dừng tại symbol kết quả
         const reelAnimations = results.map((result, index) => {
-            const finalPos = result * item - (windowHeightOriginal - item) / 2;
+            const finalPos = result * item - (stripSourceHeight - item) / 2;
             const startPos = Math.floor(Math.random() * reelHeight);
             // Quãng đường đi xuống (chiều giảm sourceY) từ start đến final
             const distanceToFinal = (startPos - finalPos + reelHeight) % reelHeight;
@@ -132,30 +132,30 @@ export default {
             return { finalPos, startPos, totalDistance };
         });
 
-        // Vị trí 4 cửa sổ trong suốt trên slot-face.png (từ phân tích ảnh mới 1672x941)
-        // Window 1: x=230, width=240 | Window 2: x=550, width=240
-        // Window 3: x=890, width=240 | Window 4: x=1210, width=240
-        // Y range: 140-440 (height=300)
+        // Vị trí 4 cửa sổ trong suốt trên slot-face.png (từ phân tích ảnh mới 752x423)
+        // Window 1: x=109, width=114 | Window 2: x=252, width=108
+        // Window 3: x=392, width=108 | Window 4: x=529, width=114
+        // Y range: 73-212 (height=140)
         const windowPositions = [
-            { x: Math.floor(230 * scale), width: Math.floor(240 * scale) },
-            { x: Math.floor(550 * scale), width: Math.floor(240 * scale) },
-            { x: Math.floor(890 * scale), width: Math.floor(240 * scale) },
-            { x: Math.floor(1210 * scale), width: Math.floor(240 * scale) }
+            { x: 109, width: 114 },
+            { x: 252, width: 108 },
+            { x: 392, width: 108 },
+            { x: 529, width: 114 }
         ];
-        const baseY = Math.floor(140 * scale);
-        const windowHeight = Math.floor(300 * scale); // 135px
-        // Chiều cao strip reel cần vẽ (bằng chiều cao cửa sổ, tính theo pixel gốc)
-        const stripHeightOriginal = Math.ceil(windowHeight / scale); // 300px
+        const baseY = 73;
+        const windowHeight = 140;
+        const stripHeightOriginal = stripSourceHeight; // 140px
 
-        const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'octree', false, totalFrames);
+        const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'neuquant', false, totalFrames);
+        encoder.setQuality(1);
         encoder.setDelay(50); // 50ms/frame = 20fps
         encoder.setRepeat(0); // 0 = lặp vô hạn (chuẩn GIF)
         encoder.start();
 
         for (let i = 1; i <= totalFrames; i++) {
-            // Frame cuối: hold kết quả 1 giây
+            // Frame cuối: hold kết quả 0.8 giây
             if (i === totalFrames) {
-                encoder.setDelay(1000);
+                encoder.setDelay(800);
             } else {
                 encoder.setDelay(50);
             }
@@ -174,27 +174,25 @@ export default {
                 const sourceY = Math.floor(((rawY % reelHeight) + reelHeight) % reelHeight);
                 const winPos = windowPositions[reelIndex];
 
-                // Vẽ strip reel (nhiều symbol) chạy qua cửa sổ - giống máy quay slots thật
-                // Xử lý wrap-around khi strip vượt qua cuối reel
+                // Vẽ strip reel đầy width cửa sổ - không scale, không viền đen
                 let sy = sourceY;
                 let remaining = stripHeightOriginal;
                 let destY = baseY;
                 while (remaining > 0) {
                     const chunk = Math.min(remaining, rh - sy);
-                    const chunkScaled = Math.ceil(chunk * scale);
                     ctx.drawImage(
                         reel,
-                        0, sy, rw, chunk,  // source rect: phần reel cần vẽ
-                        winPos.x, destY, winPos.width, chunkScaled  // dest rect: cửa sổ slot
+                        0, sy, rw, chunk,
+                        winPos.x, destY, winPos.width, chunk
                     );
-                    destY += chunkScaled;
+                    destY += chunk;
                     sy = (sy + chunk) % rh;
                     remaining -= chunk;
                 }
             }
 
-            // Draw facade scaled lên trên (có cửa sổ trong suốt)
-            ctx.drawImage(facade, 0, 0, canvasWidth, canvasHeight);
+            // Draw facade lên trên (có cửa sổ trong suốt)
+            ctx.drawImage(facade, 0, 0);
             encoder.addFrame(ctx);
         }
 
