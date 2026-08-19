@@ -2,7 +2,7 @@ import { SlashCommandBuilder, AttachmentBuilder } from 'discord.js';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { createRequire } from 'module';
 import path from 'path';
-import { successEmbed, warningEmbed } from '../../utils/embeds.js';
+import { successEmbed } from '../../utils/embeds.js';
 import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
@@ -11,8 +11,31 @@ const require = createRequire(import.meta.url);
 const GIFEncoder = require('gif-encoder-2');
 
 const SLOT_COOLDOWN = 3 * 1000;
-const WIN_RATE = 0.25;
-const PAYOUT_MULTIPLIER = 2.0;
+
+// Symbol rewards: [1 match, 2 matches, 3 matches, 4 matches] - multiplier of bet
+const SYMBOL_REWARDS = {
+    diamond: [80, 160, 240, 320],
+    coin:    [40, 80, 120, 160],
+    gold:    [25, 50, 75, 100],
+    cherry:  [10, 20, 30, 40],
+    lemon:   [5, 10, 15, 20],
+    seven:   [4, 8, 12, 16]
+};
+
+// Map reel position to symbol name
+// Reel positions 0-5 correspond to symbol types (1+s)%6:
+// s=0 → type 1 (cherry), s=1 → type 2 (diamond), s=2 → type 3 (gold),
+// s=3 → type 4 (coin), s=4 → type 5 (seven), s=5 → type 0 (lemon)
+const REEL_SYMBOLS = ['cherry', 'diamond', 'gold', 'coin', 'seven', 'lemon'];
+
+const SYMBOL_EMOJIS = {
+    diamond: '💎',
+    coin: '🪙',
+    gold: '🥇',
+    cherry: '🍒',
+    lemon: '🍋',
+    seven: '7️⃣'
+};
 
 export default {
     data: new SlashCommandBuilder()
@@ -217,25 +240,32 @@ export default {
         encoder.finish();
         const gifBuffer = encoder.out.getData();
 
-        // Determine win/loss - 4 ô phải trùng nhau
-        const isWin = (1 + s1) % 6 === (1 + s2) % 6 && (1 + s2) % 6 === (1 + s3) % 6 && (1 + s3) % 6 === (1 + s4) % 6;
-        let cashChange = 0;
-        let resultEmbed;
-
-        if (isWin) {
-            const amountWon = Math.floor(betAmount * PAYOUT_MULTIPLIER);
-            cashChange = amountWon - betAmount;
-            resultEmbed = successEmbed(
-                '🎰 Bạn Đã Thắng!',
-                `Bạn đã đặt cược **$${betAmount.toLocaleString()}** và thắng **$${amountWon.toLocaleString()}**!`
-            );
-        } else {
-            cashChange = -betAmount;
-            resultEmbed = warningEmbed(
-                '💔 Bạn Đã Thua...',
-                `Vận may chưa mỉm cười với bạn. Bạn đã mất **$${betAmount.toLocaleString()}**.`
-            );
+        // Determine win/loss - count matching symbols
+        const symbols = [s1, s2, s3, s4].map(s => REEL_SYMBOLS[s % 6]);
+        const counts = {};
+        for (const sym of symbols) {
+            counts[sym] = (counts[sym] || 0) + 1;
         }
+
+        // Find the best symbol (highest count, then highest reward value)
+        let bestSymbol = null;
+        let bestCount = 0;
+        for (const [sym, count] of Object.entries(counts)) {
+            if (count > bestCount || (count === bestCount && bestSymbol && SYMBOL_REWARDS[sym][0] > SYMBOL_REWARDS[bestSymbol][0])) {
+                bestCount = count;
+                bestSymbol = sym;
+            }
+        }
+
+        // Calculate reward based on symbol and match count
+        const multiplier = SYMBOL_REWARDS[bestSymbol][bestCount - 1];
+        const amountWon = Math.floor(betAmount * multiplier);
+        const cashChange = amountWon - betAmount;
+
+        let resultEmbed = successEmbed(
+            '🎰 Bạn Đã Thắng!',
+            `Bạn đã đặt cược **$${betAmount.toLocaleString()}** và trúng **${bestCount} ${SYMBOL_EMOJIS[bestSymbol]} ${bestSymbol}** với hệ số **x${multiplier}**!\nThắng **$${amountWon.toLocaleString()}**!`
+        );
 
         userData.wallet = (userData.wallet || 0) + cashChange;
         userData.lastSlots = now;
