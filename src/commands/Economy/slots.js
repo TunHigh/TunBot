@@ -97,8 +97,8 @@ export default {
         }
 
         // Create GIF animation - quay nhanh rồi chậm dần, dừng từng ô trái → phải
-        // Scale 40% để tối ưu tốc độ (1301x1209 -> ~520x483)
-        const scale = 0.4;
+        // Scale 45% để tối ưu tốc độ (1672x941 -> ~752x423)
+        const scale = 0.45;
         const canvasWidth = Math.floor(facade.width * scale);
         const canvasHeight = Math.floor(facade.height * scale);
         const canvas = createCanvas(canvasWidth, canvasHeight);
@@ -111,7 +111,7 @@ export default {
         const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
         // Mỗi ô dừng tại frame khác nhau (trái → phải) - 4 ô
-        // 15 frames tổng, mỗi ô dừng cách nhau ~4 frames
+        // 15 frames tổng, mỗi ô dừng cách nhau ~3-4 frames
         const stopFrames = [8, 11, 13, 15];
         // Số vòng quay thêm trước khi dừng
         const extraSpins = [2, 2, 2, 3];
@@ -119,13 +119,18 @@ export default {
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
 
-        // Tính vị trí x để căn giữa 4 reel trong canvas scaled
-        const scaledRw = Math.floor(rw * scale);
-        const startX = Math.floor((canvasWidth - scaledRw * 4) / 2);
-        // Vị trí y của cửa sổ slot trong facade (scale từ baseY=100 gốc)
-        const baseY = Math.floor(100 * scale);
-        // Chiều cao cửa sổ hiển thị (1 symbol = 180px)
-        const windowHeight = Math.floor(item * scale); // 72px
+        // Vị trí 4 cửa sổ trong suốt trên slot-face.png (từ phân tích ảnh mới 1672x941)
+        // Window 1: x=230, width=240 | Window 2: x=550, width=240
+        // Window 3: x=890, width=240 | Window 4: x=1210, width=240
+        // Y range: 140-440 (height=300)
+        const windowPositions = [
+            { x: Math.floor(230 * scale), width: Math.floor(240 * scale) },
+            { x: Math.floor(550 * scale), width: Math.floor(240 * scale) },
+            { x: Math.floor(890 * scale), width: Math.floor(240 * scale) },
+            { x: Math.floor(1210 * scale), width: Math.floor(240 * scale) }
+        ];
+        const baseY = Math.floor(140 * scale);
+        const windowHeight = Math.floor(300 * scale); // 135px
 
         const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'octree', false, totalFrames);
         encoder.setDelay(50); // 50ms/frame = 20fps
@@ -144,13 +149,16 @@ export default {
                 const totalDistance = (extraSpins[reelIndex] * items + results[reelIndex]) * item;
                 // Vị trí sourceY trên reel gốc (modulo reelHeight để loop)
                 const sourceY = (Math.floor((totalDistance * eased) % reelHeight) * item) % rh;
-                const x = startX + scaledRw * reelIndex;
+                const winPos = windowPositions[reelIndex];
 
-                // Chỉ vẽ 1 symbol cao tại cửa sổ slot (clipping)
+                // Chỉ vẽ 1 symbol cao tại cửa sổ slot (clipping) - căn giữa symbol trong cửa sổ
+                const symbolScaledHeight = Math.floor(item * scale); // 81px
+                const yOffset = Math.floor((windowHeight - symbolScaledHeight) / 2); // căn giữa dọc
+                
                 ctx.drawImage(
                     reel,
                     0, sourceY, rw, item,  // source rect: 1 symbol cao
-                    x, baseY, scaledRw, windowHeight  // dest rect: cửa sổ slot
+                    winPos.x, baseY + yOffset, winPos.width, symbolScaledHeight  // dest rect: cửa sổ slot
                 );
             }
 
