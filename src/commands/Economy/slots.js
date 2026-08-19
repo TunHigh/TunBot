@@ -97,9 +97,11 @@ export default {
         }
 
         // Create GIF animation - quay nhiều vòng, nhanh rồi chậm dần, dừng ở kết quả (giống máy thật)
-        // Dùng kích thước gốc 752x423 (không scale để ảnh không bị vỡ)
-        const canvasWidth = facade.width;
-        const canvasHeight = facade.height;
+        // Scale 40% (300x169) - Discord hiển thị embed ~400px nên không cần 752px
+        // Giảm ~6 lần số pixels → encoding nhanh, bot không bị "đang suy nghĩ..." lâu
+        const SCALE = 0.4;
+        const canvasWidth = Math.floor(facade.width * SCALE);
+        const canvasHeight = Math.floor(facade.height * SCALE);
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
 
@@ -107,10 +109,12 @@ export default {
         // Mỗi reel có số frame riêng → dừng lần lượt từ trái → phải (như máy thật)
         // Số frame được tính ĐỘNG dựa trên quãng đường thực tế của từng reel
         // để đảm bảo tốc độ tối đa ≤ 1.5 symbol/frame (270px) → không bị giật/khựng
-        const frameDelay = 35;               // ms/frame khi quay
+        const frameDelay = 30;               // ms/frame khi quay
         const holdDelay = 900;               // ms giữ kết quả ở frame cuối
-        const MAX_SPEED = item * 1.5;        // 270px/frame tối đa (1.5 symbol) - không gây giật
+        const MAX_SPEED = item * 2.5;        // 450px/frame tối đa (2.5 symbol) - quay nhanh như máy thật
         // Số vòng quay thêm cho mỗi reel (trái → phải, reel phải nhất quay nhiều như máy thật)
+        // [1,1,1,2] = reel 1-3 quay thêm 1 vòng, reel 4 quay thêm 2 vòng
+        // (tổng ~2-3 vòng mỗi reel tính cả quãng đường đến kết quả - vẫn giống máy thật)
         const extraSpins = [1, 1, 1, 2];
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
@@ -191,21 +195,22 @@ export default {
             buildReelPositions(anim.startPos, anim.totalDistance, spinFramesPerReel[index])
         );
 
-        // Vị trí 4 cửa sổ trong suốt trên slot-face.png (từ phân tích ảnh mới 752x423)
-        // Window 1: x=109, width=114 | Window 2: x=252, width=108
-        // Window 3: x=392, width=108 | Window 4: x=529, width=114
-        // Y range: 73-212 (height=140)
+        // Vị trí 4 cửa sổ trong suốt trên slot-face.png (scale 40% từ ảnh gốc 752x423)
+        // Window 1: x=43, width=45 | Window 2: x=100, width=43
+        // Window 3: x=156, width=43 | Window 4: x=211, width=45
+        // Y range: 29-85 (height=56)
         const windowPositions = [
-            { x: 109, width: 114 },
-            { x: 252, width: 108 },
-            { x: 392, width: 108 },
-            { x: 529, width: 114 }
+            { x: Math.floor(109 * SCALE), width: Math.floor(114 * SCALE) },
+            { x: Math.floor(252 * SCALE), width: Math.floor(108 * SCALE) },
+            { x: Math.floor(392 * SCALE), width: Math.floor(108 * SCALE) },
+            { x: Math.floor(529 * SCALE), width: Math.floor(114 * SCALE) }
         ];
-        const baseY = 73;
-        const windowHeight = 140;
-        const stripHeightOriginal = stripSourceHeight; // 140px
+        const baseY = Math.floor(73 * SCALE);
+        const stripHeightOriginal = stripSourceHeight; // 140px (source reel gốc)
 
-        const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'neuquant', false, totalFrames);
+        // Dùng octree (nhanh hơn nhiều so với neuquant) + useOptimizer=true
+        // (tái sử dụng palette khi frame giống frame trước ≥ 90% - frame giữ kết quả)
+        const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'octree', true, totalFrames);
         encoder.setQuality(1);
         encoder.setDelay(frameDelay);
         encoder.setRepeat(1); // 1 = chỉ quay 1 lần rồi dừng ở frame kết quả
@@ -231,7 +236,7 @@ export default {
                 const sourceY = Math.floor(((rawY % reelHeight) + reelHeight) % reelHeight);
                 const winPos = windowPositions[reelIndex];
 
-                // Vẽ strip reel đầy width cửa sổ - không scale, không viền đen
+                // Vẽ strip reel đầy width cửa sổ - scale 50% theo SCALE, không viền đen
                 let sy = sourceY;
                 let remaining = stripHeightOriginal;
                 let destY = baseY;
@@ -240,9 +245,9 @@ export default {
                     ctx.drawImage(
                         reel,
                         0, sy, rw, chunk,
-                        winPos.x, destY, winPos.width, chunk
+                        winPos.x, destY, winPos.width, chunk * SCALE
                     );
-                    destY += chunk;
+                    destY += chunk * SCALE;
                     sy = (sy + chunk) % rh;
                     remaining -= chunk;
                 }
