@@ -105,13 +105,12 @@ export default {
 
         // Tham số animation - quay nhiều vòng, chậm dần và chỉ chạy 1 lần
         // Mỗi reel có số frame riêng → dừng lần lượt từ trái → phải (như máy thật)
-        // Số frame được tính ĐỘNG dựa trên quãng đường thực tế của từng reel
-        // để đảm bảo tốc độ tối đa ≤ 1.5 symbol/frame (270px) → không bị giật/khựng
-        const frameDelay = 35;               // ms/frame khi quay
+        const spinFramesPerReel = [40, 46, 52, 58]; // reel trái dừng trước, reel phải dừng sau
+        const totalFrames = Math.max(...spinFramesPerReel) + 1; // +1 frame giữ kết quả
+        const frameDelay = 45;               // ms/frame khi quay
         const holdDelay = 900;               // ms giữ kết quả ở frame cuối
-        const MAX_SPEED = item * 1.5;        // 270px/frame tối đa (1.5 symbol) - không gây giật
         // Số vòng quay thêm cho mỗi reel (trái → phải, reel phải nhất quay nhiều như máy thật)
-        const extraSpins = [1, 1, 1, 2];
+        const extraSpins = [2, 3, 3, 4];
         const results = [s1, s2, s3, s4];
         const reelHeight = items * item; // 10800
         const windowHeightOriginal = 140; // chiều cao cửa sổ trong ảnh gốc
@@ -131,25 +130,9 @@ export default {
             return { finalPos, startPos, totalDistance };
         });
 
-        // Số frame mỗi reel: tính từ quãng đường thực tế để tốc độ tối đa ≤ MAX_SPEED
-        // Profile 8% tăng tốc + 62% quay đều + 30% giảm tốc:
-        //   tổng quãng đường ≈ frames × cruiseSpeed × 0.81
-        //   → frames = totalDistance / (MAX_SPEED × 0.75)
-        // Dùng hệ số 0.75 (an toàn) thay vì 0.81 vì làm tròn accelF/decelF
-        // có thể làm tổng trọng số thực < 0.81 → cruise speed vượt giới hạn
-        // Đảm bảo frames tăng dần trái → phải để reel dừng lần lượt
-        let minFrames = 0;
-        const spinFramesPerReel = reelAnimations.map((anim, index) => {
-            const needed = Math.max(30, Math.ceil(anim.totalDistance / (MAX_SPEED * 0.75)));
-            minFrames = Math.max(minFrames + 10, needed);
-            return minFrames;
-        });
-        const totalFrames = Math.max(...spinFramesPerReel) + 1; // +1 frame giữ kết quả
-
         // Speed profile giống máy thật: tăng tốc nhanh → quay đều tốc độ cao →
         // chậm dần về 0 ở cuối để dừng chính xác tại symbol kết quả
-        // 8% đầu: tăng tốc (smoothstep) | 62% giữa: quay đều | 30% cuối: giảm tốc (smoothstep)
-        // Smoothstep có đạo hàm = 0 ở cả 2 đầu → chuyển động liên tục, không bị khựng rồi nhảy
+        // 8% đầu: tăng tốc từ 0 lên tối đa | 62% giữa: quay đều | 30% cuối: giảm tốc dần (quadratic)
         function buildReelPositions(startPos, totalDistance, frames) {
             const accelF = Math.max(1, Math.round(frames * 0.08));
             const decelF = Math.max(1, Math.round(frames * 0.30));
@@ -160,18 +143,15 @@ export default {
             for (let i = 0; i < frames; i++) {
                 let w;
                 if (i < accelF) {
-                    // Tăng tốc smoothstep từ 0 → 1 (mượt, không giật lúc khởi động)
-                    const u = (i + 0.5) / accelF;
-                    w = u * u * (3 - 2 * u);
+                    // Tăng tốc tuyến tính từ 0 → 1
+                    w = (i + 0.5) / accelF;
                 } else if (i < accelF + cruiseF) {
                     // Quay đều ở tốc độ tối đa
                     w = 1;
                 } else {
-                    // Chậm dần smoothstep từ 1 → 0 (đạo hàm = 0 ở cả 2 đầu,
-                    // không bị dính rồi nhảy nốt quãng đường còn lại)
+                    // Chậm dần (quadratic ease-out) về 0
                     const u = (i - accelF - cruiseF + 0.5) / decelF;
-                    const s = u * u * (3 - 2 * u);
-                    w = 1 - s;
+                    w = (1 - u) * (1 - u);
                 }
                 weights.push(w);
             }
