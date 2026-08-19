@@ -104,8 +104,9 @@ export default {
         const ctx = canvas.getContext('2d');
 
         // Tham số animation - quay nhiều vòng, chậm dần và chỉ chạy 1 lần
-        const spinFrames = 55;               // 55 frame quay (~2.5 giây)
-        const totalFrames = spinFrames + 1;  // +1 frame giữ kết quả
+        // Mỗi reel có số frame riêng → dừng lần lượt từ trái → phải (như máy thật)
+        const spinFramesPerReel = [40, 46, 52, 58]; // reel trái dừng trước, reel phải dừng sau
+        const totalFrames = Math.max(...spinFramesPerReel) + 1; // +1 frame giữ kết quả
         const frameDelay = 45;               // ms/frame khi quay
         const holdDelay = 900;               // ms giữ kết quả ở frame cuối
         // Số vòng quay thêm cho mỗi reel (trái → phải, reel phải nhất quay nhiều như máy thật)
@@ -165,9 +166,9 @@ export default {
             return positions; // frames+1 điểm, điểm cuối = finalPos (dừng đúng kết quả)
         }
 
-        // Đường đi của từng reel cho mọi frame
-        const reelPaths = reelAnimations.map(anim =>
-            buildReelPositions(anim.startPos, anim.totalDistance, spinFrames)
+        // Đường đi của từng reel - mỗi reel có số frame riêng (dừng lần lượt trái → phải)
+        const reelPaths = reelAnimations.map((anim, index) =>
+            buildReelPositions(anim.startPos, anim.totalDistance, spinFramesPerReel[index])
         );
 
         // Vị trí 4 cửa sổ trong suốt trên slot-face.png (từ phân tích ảnh mới 752x423)
@@ -204,7 +205,9 @@ export default {
             for (let reelIndex = 0; reelIndex < 4; reelIndex++) {
                 // Vị trí sourceY liên tục trên reel gốc - reel chạy từ trên xuống dưới
                 // sourceY giảm dần → symbol di chuyển từ trên xuống dưới trong cửa sổ (giống máy quay thật)
-                const rawY = reelPaths[reelIndex][i];
+                // Reel đã dừng (i > số frame của reel) sẽ giữ nguyên vị trí kết quả
+                const path = reelPaths[reelIndex];
+                const rawY = path[Math.min(i, path.length - 1)];
                 const sourceY = Math.floor(((rawY % reelHeight) + reelHeight) % reelHeight);
                 const winPos = windowPositions[reelIndex];
 
