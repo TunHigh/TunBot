@@ -24,14 +24,14 @@ const SYMBOL_REWARDS = {
 
 // Map reel position to symbol name
 // Reel positions 0-5 correspond to symbol types (1+s)%6:
-// s=0 → type 1 (cherry), s=1 → type 2 (diamond), s=2 → type 3 (gold),
-// s=3 → type 4 (coin), s=4 → type 5 (seven), s=5 → type 0 (lemon)
-const REEL_SYMBOLS = ['cherry', 'diamond', 'gold', 'coin', 'seven', 'lemon'];
+// s=0 → type 1 (cherry), s=1 → type 2 (diamond), s=2 → type 3 (coin),
+// s=3 → type 4 (gold/bell), s=4 → type 5 (seven), s=5 → type 0 (lemon)
+const REEL_SYMBOLS = ['cherry', 'diamond', 'coin', 'gold', 'seven', 'lemon'];
 
 const SYMBOL_EMOJIS = {
     diamond: '💎',
     coin: '🪙',
-    gold: '🥇',
+    gold: '🔔',
     cherry: '🍒',
     lemon: '🍋',
     seven: '7️⃣'
