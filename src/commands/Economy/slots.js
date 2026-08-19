@@ -65,15 +65,16 @@ export default {
         const facade = await loadImage(path.join(assetsDir, 'slot-face.png'));
         const reel = await loadImage(path.join(assetsDir, 'slot-reel.png'));
 
-        const rw = reel.width;
-        const rh = reel.height;
-        const item = 180;
-        const items = Math.floor(rh / item);
+        const rw = reel.width; // 151
+        const rh = reel.height; // 10800
+        const item = 180; // chiều cao mỗi symbol
+        const items = Math.floor(rh / item); // 60 symbols
 
-        // Random reel positions
+        // Random reel positions cho 4 ô
         let s1 = Math.floor(Math.random() * (items - 1)) + 1;
         let s2 = Math.floor(Math.random() * (items - 1)) + 1;
         let s3 = Math.floor(Math.random() * (items - 1)) + 1;
+        let s4 = Math.floor(Math.random() * (items - 1)) + 1;
 
         // Win logic - 25% win rate (bisect equivalent of Python's bisect.bisect)
         if (Math.random() < WIN_RATE) {
@@ -88,29 +89,37 @@ export default {
             s1 = pos + (Math.floor(Math.random() * (offset - 1)) + 1) * 6;
             s2 = pos + (Math.floor(Math.random() * (offset - 1)) + 1) * 6;
             s3 = pos + (Math.floor(Math.random() * (offset - 1)) + 1) * 6;
+            s4 = pos + (Math.floor(Math.random() * (offset - 1)) + 1) * 6;
             s1 = s1 === items ? s1 - 6 : s1;
             s2 = s2 === items ? s2 - 6 : s2;
             s3 = s3 === items ? s3 - 6 : s3;
+            s4 = s4 === items ? s4 - 6 : s4;
         }
 
         // Create GIF animation - quay nhanh rồi chậm dần, dừng từng ô trái → phải
-        const canvas = createCanvas(facade.width, facade.height);
+        const canvas = createCanvas(facade.width, facade.height); // 1301 x 1209
         const ctx = canvas.getContext('2d');
 
         // Easing: bắt đầu nhanh, chậm dần về cuối
         const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
-        // Mỗi ô dừng tại frame khác nhau (trái → phải)
-        const stopFrames = [45, 60, 75];
+        // Mỗi ô dừng tại frame khác nhau (trái → phải) - 4 ô
+        const stopFrames = [45, 60, 75, 85];
         // Số vòng quay thêm trước khi dừng (càng nhiều càng quay lâu)
-        const extraSpins = [3, 4, 5];
-        // Thêm 5 frame cuối giữ nguyên kết quả để người xem thấy rõ
-        const totalFrames = 80;
-        const results = [s1, s2, s3];
-        const reelHeight = items * item;
+        const extraSpins = [3, 4, 5, 6];
+        // Thêm frame cuối giữ nguyên kết quả để người xem thấy rõ
+        const totalFrames = 90;
+        const results = [s1, s2, s3, s4];
+        const reelHeight = items * item; // 10800
+
+        // Tính vị trí x để căn giữa 4 reel trong canvas 1301 rộng
+        // 4 reel * 151 = 604, còn lại 1301 - 604 = 697, chia 2 = 348.5
+        const startX = Math.floor((facade.width - rw * 4) / 2); // 348
+        // Vị trí y của cửa sổ slot (giữ tương đối như thiết kế cũ)
+        const baseY = 100;
 
         const encoder = new GIFEncoder(facade.width, facade.height, 'octree', false, totalFrames);
-        encoder.setDelay(50); //deo noi 
+        encoder.setDelay(50);
         encoder.setRepeat(-1); // -1 = không viết Netscape ext → GIF chỉ chạy 1 lần rồi dừng
         encoder.start();
 
@@ -118,15 +127,16 @@ export default {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, facade.width, facade.height);
 
-            for (let reelIndex = 0; reelIndex < 3; reelIndex++) {
+            for (let reelIndex = 0; reelIndex < 4; reelIndex++) {
                 const stopFrame = stopFrames[reelIndex];
                 const t = Math.min(i / stopFrame, 1);
                 const eased = easeOutCubic(t);
                 // Tổng quãng đường: extraSpins vòng + vị trí kết quả
                 const totalDistance = (extraSpins[reelIndex] * items + results[reelIndex]) * item;
                 // Modulo reelHeight để reel luôn hiển thị trong cửa sổ
-                const y = 100 - Math.floor((totalDistance * eased) % reelHeight);
-                ctx.drawImage(reel, 25 + rw * reelIndex, y);
+                const y = baseY - Math.floor((totalDistance * eased) % reelHeight);
+                const x = startX + rw * reelIndex;
+                ctx.drawImage(reel, x, y);
             }
 
             ctx.drawImage(facade, 0, 0);
@@ -136,8 +146,8 @@ export default {
         encoder.finish();
         const gifBuffer = encoder.out.getData();
 
-        // Determine win/loss
-        const isWin = (1 + s1) % 6 === (1 + s2) % 6 && (1 + s2) % 6 === (1 + s3) % 6;
+        // Determine win/loss - 4 ô phải trùng nhau
+        const isWin = (1 + s1) % 6 === (1 + s2) % 6 && (1 + s2) % 6 === (1 + s3) % 6 && (1 + s3) % 6 === (1 + s4) % 6;
         let cashChange = 0;
         let resultEmbed;
 
