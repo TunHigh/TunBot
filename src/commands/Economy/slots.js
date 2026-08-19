@@ -70,31 +70,12 @@ export default {
         const item = 180; // chiều cao mỗi symbol
         const items = Math.floor(rh / item); // 60 symbols
 
-        // Random reel positions cho 4 ô
-        let s1 = Math.floor(Math.random() * (items - 1)) + 1;
-        let s2 = Math.floor(Math.random() * (items - 1)) + 1;
-        let s3 = Math.floor(Math.random() * (items - 1)) + 1;
-        let s4 = Math.floor(Math.random() * (items - 1)) + 1;
-
-        // Win logic - 25% win rate (bisect equivalent of Python's bisect.bisect)
-        if (Math.random() < WIN_RATE) {
-            const symbolsWeights = [3.5, 7, 15, 25, 55];
-            const x = Math.random() * 100;
-            // bisect_right: returns insertion point to keep array sorted
-            let pos = 0;
-            while (pos < symbolsWeights.length && x >= symbolsWeights[pos]) {
-                pos++;
-            }
-            const offset = Math.floor(items / 6);
-            s1 = pos + (Math.floor(Math.random() * (offset - 1)) + 1) * 6;
-            s2 = pos + (Math.floor(Math.random() * (offset - 1)) + 1) * 6;
-            s3 = pos + (Math.floor(Math.random() * (offset - 1)) + 1) * 6;
-            s4 = pos + (Math.floor(Math.random() * (offset - 1)) + 1) * 6;
-            s1 = s1 === items ? s1 - 6 : s1;
-            s2 = s2 === items ? s2 - 6 : s2;
-            s3 = s3 === items ? s3 - 6 : s3;
-            s4 = s4 === items ? s4 - 6 : s4;
-        }
+        // Random reel positions cho 4 ô - RANDOM THUẦN TÚY, không ép kết quả
+        // Mỗi reel quay độc lập, kết quả thắng/thua hoàn toàn ngẫu nhiên
+        const s1 = Math.floor(Math.random() * (items - 1)) + 1;
+        const s2 = Math.floor(Math.random() * (items - 1)) + 1;
+        const s3 = Math.floor(Math.random() * (items - 1)) + 1;
+        const s4 = Math.floor(Math.random() * (items - 1)) + 1;
 
         // Create GIF animation - quay nhiều vòng, nhanh rồi chậm dần, dừng ở kết quả (giống máy thật)
         // Dùng kích thước gốc 752x423 (không scale để ảnh không bị vỡ)
