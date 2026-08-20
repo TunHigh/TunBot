@@ -306,14 +306,19 @@ export default {
 
         await setEconomyData(client, guildId, userId, userData);
 
+        // Send GIF first, then result embed
         const attachment = new AttachmentBuilder(gifBuffer, { name: 'slots.gif' });
-        resultEmbed.setImage('attachment://slots.gif');
+        
+        // First message: just the GIF
+        await interaction.followUp({ files: [attachment] });
+        
+        // Second message: result embed with balance
         resultEmbed.addFields({
             name: 'Số dư hiện tại',
             value: `$${userData.wallet.toLocaleString()}`,
             inline: true,
         });
-
-        await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed], files: [attachment] });
+        
+        await interaction.followUp({ embeds: [resultEmbed] });
     }, { command: 'slots' })
 };
