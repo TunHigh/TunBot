@@ -29,6 +29,61 @@ const SYMBOL_REWARDS = {
 // s=3 → type 4 (gold/bell), s=4 → type 5 (seven), s=5 → type 0 (lemon)
 const REEL_SYMBOLS = ['cherry', 'diamond', 'coin', 'bell', 'seven', 'lemon'];
 
+// Win rate configuration - lowered to reduce how often players win
+// Previous pure-random rates: 2 matches ~62.5%, 3 matches ~9.3%, 4 matches ~0.5%
+// New rates: 2 matches 10%, 3 matches 2%, 4 matches 0.2% (total ~12.2% win rate)
+const WIN_RATES = {
+    twoMatch: 0.10,    // 10% chance of exactly 2 matching symbols
+    threeMatch: 0.02,  // 2% chance of exactly 3 matching symbols
+    fourMatch: 0.002   // 0.2% chance of exactly 4 matching symbols (jackpot)
+};
+
+// Generate reel results with controlled win rates
+// Returns array of 4 symbol names
+function generateReelResults() {
+    const roll = Math.random();
+    const symbols = [...REEL_SYMBOLS];
+
+    if (roll < WIN_RATES.fourMatch) {
+        // Jackpot: all 4 reels show the same symbol
+        const sym = symbols[Math.floor(Math.random() * symbols.length)];
+        return [sym, sym, sym, sym];
+    }
+
+    if (roll < WIN_RATES.fourMatch + WIN_RATES.threeMatch) {
+        // 3 matches: 3 reels same symbol, 1 different
+        const sym = symbols[Math.floor(Math.random() * symbols.length)];
+        const others = symbols.filter(s => s !== sym);
+        const diff = others[Math.floor(Math.random() * others.length)];
+        const result = [sym, sym, sym, sym];
+        result[Math.floor(Math.random() * 4)] = diff;
+        return result;
+    }
+
+    if (roll < WIN_RATES.fourMatch + WIN_RATES.threeMatch + WIN_RATES.twoMatch) {
+        // 2 matches: 2 reels same symbol, 2 different (distinct from each other and the pair)
+        const sym = symbols[Math.floor(Math.random() * symbols.length)];
+        const others = symbols.filter(s => s !== sym);
+        const diff1 = others[Math.floor(Math.random() * others.length)];
+        const diff2 = others.filter(s => s !== diff1)[Math.floor(Math.random() * (others.length - 1))];
+        const result = [sym, sym, diff1, diff2];
+        // Shuffle positions
+        for (let i = result.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
+    }
+
+    // Loss: all 4 symbols different
+    const shuffled = [...symbols];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 4);
+}
+
 const SYMBOL_EMOJIS = {
     diamond: '💎',
     coin: '🪙',
@@ -124,11 +179,12 @@ export default {
         const symbolsPerReel = 6;
         const virtualReelHeight = symbolsPerReel * windowHeight;
 
-        // Random reel positions for 4 reels - completely random, no forced results
-        const s1 = Math.floor(Math.random() * symbolsPerReel);
-        const s2 = Math.floor(Math.random() * symbolsPerReel);
-        const s3 = Math.floor(Math.random() * symbolsPerReel);
-        const s4 = Math.floor(Math.random() * symbolsPerReel);
+        // Generate reel results with controlled (lower) win rates
+        const resultSymbols = generateReelResults();
+        const s1 = REEL_SYMBOLS.indexOf(resultSymbols[0]);
+        const s2 = REEL_SYMBOLS.indexOf(resultSymbols[1]);
+        const s3 = REEL_SYMBOLS.indexOf(resultSymbols[2]);
+        const s4 = REEL_SYMBOLS.indexOf(resultSymbols[3]);
 
         // Animation parameters - optimized for file size
         const spinFramesPerReel = [30, 36, 42, 48]; // left reel stops first, right stops last (more frames for more spins)
