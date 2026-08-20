@@ -131,12 +131,12 @@ export default {
         const s4 = Math.floor(Math.random() * symbolsPerReel);
 
         // Animation parameters - optimized for file size
-        const spinFramesPerReel = [20, 24, 28, 32]; // left reel stops first, right stops last
+        const spinFramesPerReel = [30, 36, 42, 48]; // left reel stops first, right stops last (more frames for more spins)
         const totalFrames = Math.max(...spinFramesPerReel) + 1; // +1 frame to hold result
         const frameDelay = 50;               // ms/frame during spin
         const holdDelay = 1000;              // ms to hold final frame
         // Extra spins for each reel (left → right, rightmost spins most like real machine)
-        const extraSpins = [3, 4, 5, 6];
+        const extraSpins = [5, 6, 7, 8]; // More full rotations for realistic feel
         const results = [s1, s2, s3, s4];
 
         // Calculate animation paths for each reel
