@@ -110,8 +110,7 @@ export default {
 
         // Tham số animation - quay nhiều vòng, chậm dần và chỉ chạy 1 lần
         // Mỗi reel có số frame riêng → dừng lần lượt từ trái → phải (như máy thật)
-        // Giảm số frame để tối ưu tốc độ tạo GIF (vẫn giữ animation mượt)
-        const spinFramesPerReel = [20, 24, 28, 32]; // reel trái dừng trước, reel phải dừng sau
+        const spinFramesPerReel = [50, 60, 70, 80]; // reel trái dừng trước, reel phải dừng sau
         const totalFrames = Math.max(...spinFramesPerReel) + 1; // +1 frame giữ kết quả
         const frameDelay = 50;               // ms/frame khi quay
         const holdDelay = 1000;              // ms giữ kết quả ở frame cuối
@@ -191,11 +190,8 @@ export default {
         const windowHeight = 140;
         const stripHeightOriginal = stripSourceHeight; // 140px
 
-        // Dùng neuquant + getImageData - tối ưu tốc độ tạo GIF
-        // addFrame nhận ImageData trực tiếp (nhanh hơn nhiều so với canvas context)
-        // setQuality(30) - lấy mẫu màu 1/30 pixel, cân bằng tốc độ và chất lượng
         const encoder = new GIFEncoder(canvasWidth, canvasHeight, 'neuquant', false, totalFrames);
-        encoder.setQuality(30);
+        encoder.setQuality(1);
         encoder.setDelay(frameDelay);
         encoder.setRepeat(1); // 1 = chỉ quay 1 lần rồi dừng ở frame kết quả
         encoder.start();
@@ -239,8 +235,7 @@ export default {
 
             // Draw facade lên trên (có cửa sổ trong suốt)
             ctx.drawImage(facade, 0, 0);
-            // Lấy ImageData và truyền trực tiếp vào encoder - nhanh hơn nhiều
-            encoder.addFrame(ctx.getImageData(0, 0, canvasWidth, canvasHeight));
+            encoder.addFrame(ctx);
         }
 
         encoder.finish();
