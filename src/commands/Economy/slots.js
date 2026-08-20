@@ -131,7 +131,7 @@ export default {
         const s4 = Math.floor(Math.random() * symbolsPerReel);
 
         // Animation parameters - optimized for file size
-        const spinFramesPerReel = [30, 36, 42, 48]; // left reel stops first, right stops last (more frames for more spins)
+        const spinFramesPerReel = [28, 38, 48, 58]; // left reel stops first, right stops last - bigger gaps for suspense
         const totalFrames = Math.max(...spinFramesPerReel) + 1; // +1 frame to hold result
         const frameDelay = 50;               // ms/frame during spin
         const holdDelay = 1000;              // ms to hold final frame
@@ -151,10 +151,10 @@ export default {
         });
 
         // Speed profile like real machine: accelerate fast → cruise → decelerate smoothly to 0
-        // 10%: accelerate 0→max | 50%: cruise at max | 40%: decelerate (cubic ease-out)
+        // 8%: accelerate 0→max | 40%: cruise at max | 52%: decelerate (cubic ease-out) - longer deceleration for suspense
         function buildReelPositions(startPos, totalDistance, frames) {
             const accelF = Math.max(1, Math.round(frames * 0.08));
-            const decelF = Math.max(1, Math.round(frames * 0.50));
+            const decelF = Math.max(1, Math.round(frames * 0.52));
             const cruiseF = frames - accelF - decelF;
 
             // Speed weights per frame (not normalized)
@@ -168,7 +168,7 @@ export default {
                     // Cruise at max speed
                     w = 1;
                 } else {
-                    // Decelerate (cubic ease-out) to 0 - smoother than quadratic
+                    // Decelerate (cubic ease-out) to 0 - longer, more dramatic slowdown
                     const u = (i - accelF - cruiseF + 0.5) / decelF;
                     w = (1 - u) * (1 - u) * (1 - u);
                 }
