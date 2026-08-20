@@ -35,7 +35,7 @@ const SYMBOL_EMOJIS = {
     bell: '🔔',
     cherry: '🍒',
     lemon: '🍋',
-    seven: '7️⃣'
+    seven: '<a:sl:1540044349407236187>'
 };
 
 export default {
